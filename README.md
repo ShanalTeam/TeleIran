@@ -2,15 +2,56 @@
 * This project is driven from https://github.com/sochix/TLSharp and thanks to Sochix.
 * Thanks to @XyLoNaMiyX for his amazing AutoCompiler code : https://github.com/LonamiWebs/TLSharp.CodeGenerator
 
+# Status
+Do not try to use this project!!! it is still under development and needs a lot of things to implement!
+
+# How To Use
+1. Create a [developer account](https://my.telegram.org/) in Telegram.
+2. Fill the [Configuration.cs] (https://github.com/ShanalTeam/TeleTurk/blob/master/TeleTurk.Core/Configuration.cs) with apiHash and apiID you got from developer account, you also need to put your registered phonenumber there. 
+
+## Authentication
+
+```
+var store = new FileSessionStore();                     // store session file
+var client = new TelegramClient(store, "session");      // create client
+await client.Connect();                                 // try to connect
+var hash = await client.SendCodeRequest();              // send Code request for registerd phone number
+var code = "87493";                                     // you can change code in debugger
+var user = await client.MakeAuth(hash, code);           // send code and hash to get confirm from telegram
+```
+
+## Using handler requests
+* To Use handler requests you have to create the object of handler that you want and then you will access to all possible request methods
+for example in this case we want to access to channel requests and stablish requests to get dialog results
+
+```
+var store = new FileSessionStore();
+var client = new TelegramClient(store, "session");
+await client.Connect();
+ChannelHandlers channels = new ChannelHandlers(client._sender);
+var dialogs = await channels.getDialogs(0, 100);
+List<Chat> chats = dialogs.Item3;
+```
+
+a list of handlers are inside Handlers folder to improve them you need to add the requests for them.
+
+### Availble handlers
+* Help            -- Done
+* Channels        -- Done
+* Account         -- Incomplete
+* Auth            -- Incomplete
+* Messages        -- Incomplete
+* Photos          -- Incomplete
+* Updates         -- Incomplete
+* Uploads         -- Incomplete
+* Contacts        -- Incomplete
+
 # Donations
 Thanks for donations! It's highly appreciated. 
 Bitcoin wallet: **3K1ocweFgaHnAibJ3n6hX7RNZWFTFcJjUe**
 
 List of donators:
 * [mtbitcoin](https://github.com/mtbitcoin)
-
-# Status
-Do not try to use this project!!! it is still under development and needs a lot of things to implement!
 
 # License
 
