@@ -48,6 +48,19 @@
     <Compile Include="Auth\Step1_PQRequest.cs" />
     <Compile Include="Auth\Step2_DHExchange.cs" />
     <Compile Include="Auth\Step3_CompleteDHExchange.cs" />
+    <Compile Include="Ionic.Zlib\CRC32.cs" />
+    <Compile Include="Ionic.Zlib\Deflate.cs" />
+    <Compile Include="Ionic.Zlib\DeflateStream.cs" />
+    <Compile Include="Ionic.Zlib\GZipStream.cs" />
+    <Compile Include="Ionic.Zlib\Inflate.cs" />
+    <Compile Include="Ionic.Zlib\InfTree.cs" />
+    <Compile Include="Ionic.Zlib\ParallelDeflateOutputStream.cs" />
+    <Compile Include="Ionic.Zlib\Tree.cs" />
+    <Compile Include="Ionic.Zlib\Zlib.cs" />
+    <Compile Include="Ionic.Zlib\ZlibBaseStream.cs" />
+    <Compile Include="Ionic.Zlib\ZlibCodec.cs" />
+    <Compile Include="Ionic.Zlib\ZlibConstants.cs" />
+    <Compile Include="Ionic.Zlib\ZlibStream.cs" />
     <Compile Include="MTProto\Crypto\AES.cs" />
     <Compile Include="MTProto\Crypto\AuthKey.cs" />
     <Compile Include="MTProto\Crypto\BigInteger.cs" />
@@ -84,7 +97,6 @@
     <Compile Include="Utils\Helpers.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <Compile Include="Requests\CreateChatRequest.cs" />
     <None Include="Requests\AddChatUserRequest.cs" />
     <None Include="Requests\DeleteChatUserRequest.cs" />
