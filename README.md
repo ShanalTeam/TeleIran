@@ -1,6 +1,6 @@
 # TeleTurk
-This project is driven from https://github.com/sochix/TLSharp and thanks to Sochix.
-Thanks to @XyLoNaMiyX for his amazing AutoCompiler code : https://github.com/LonamiWebs/TLSharp.CodeGenerator
+* This project is driven from https://github.com/sochix/TLSharp and thanks to Sochix.
+* Thanks to @XyLoNaMiyX for his amazing AutoCompiler code : https://github.com/LonamiWebs/TLSharp.CodeGenerator
 
 # Donations
 Thanks for donations! It's highly appreciated. 
@@ -18,9 +18,9 @@ Do not try to use this project!!! it is still under development and needs a lot 
 
 The MIT License
 
-Copyright (c) 2015 Ilya Pirozhenko http://www.sochix.ru/
-Copyright (c) 2016 Lonami totufals@hotmail.com
-Copyright (c) 2016 Ehsan Hesam ehsan.hesam13@gmail.com
+* Copyright (c) 2015 Ilya Pirozhenko http://www.sochix.ru/
+* Copyright (c) 2016 Lonami totufals@hotmail.com
+* Copyright (c) 2016 Ehsan Hesam ehsan.hesam13@gmail.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
