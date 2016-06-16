@@ -49,6 +49,15 @@
     <Compile Include="Auth\Step2_DHExchange.cs" />
     <Compile Include="Auth\Step3_CompleteDHExchange.cs" />
     <Compile Include="Configuration.cs" />
+    <Compile Include="Handlers\AccountHandlers.cs" />
+    <Compile Include="Handlers\AuthHandlers.cs" />
+    <Compile Include="Handlers\ChannelHandlers.cs" />
+    <Compile Include="Handlers\ContactsHandlers.cs" />
+    <Compile Include="Handlers\HelpHandlers.cs" />
+    <Compile Include="Handlers\MessagesHandlers.cs" />
+    <Compile Include="Handlers\PhotosHandlers.cs" />
+    <Compile Include="Handlers\UpdatesHandlers.cs" />
+    <Compile Include="Handlers\UploadHandlers.cs" />
     <Compile Include="Ionic.Zlib\CRC32.cs" />
     <Compile Include="Ionic.Zlib\Deflate.cs" />
     <Compile Include="Ionic.Zlib\DeflateStream.cs" />
