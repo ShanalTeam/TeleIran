@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Ionic.Zlib;
 using TeleTurk.Core.MTProto;
 using TeleTurk.Core.MTProto.Crypto;
-using TeleTurk.Core.Requests;
 using TeleTurk.Core.Utils;
 
 namespace TeleTurk.Core.Network
@@ -21,17 +20,12 @@ namespace TeleTurk.Core.Network
         private TcpTransport _transport;
         private Session _session;
 
-        public List<ulong> needConfirmation = new List<ulong>();
+        public List<long> needConfirmation = new List<long>();
 
         public MtProtoSender(TcpTransport transport, Session session)
         {
             _transport = transport;
             _session = session;
-        }
-
-        public void ChangeTransport(TcpTransport transport)
-        {
-            _transport = transport;
         }
 
         private int GenerateSequence(bool confirmed)
@@ -44,9 +38,9 @@ namespace TeleTurk.Core.Network
             // TODO: refactor
             if (needConfirmation.Any())
             {
-                var ackRequest = new AckRequest(needConfirmation);
+                var ackRequest = new TL.MsgsAckRequest(needConfirmation);
                 using (var memory = new MemoryStream())
-                using (var writer = new BinaryWriter(memory))
+                using (var writer = new TBinaryWriter(memory))
                 {
                     ackRequest.OnSend(writer);
                     await Send(memory.ToArray(), ackRequest);
@@ -56,7 +50,7 @@ namespace TeleTurk.Core.Network
 
 
             using (var memory = new MemoryStream())
-            using (var writer = new BinaryWriter(memory))
+            using (var writer = new TBinaryWriter(memory))
             {
                 request.OnSend(writer);
                 await Send(memory.ToArray(), request);
@@ -100,19 +94,16 @@ namespace TeleTurk.Core.Network
             }
         }
 
-        private Tuple<byte[], ulong, int> DecodeMessage(byte[] body)
+        private Tuple<byte[], long, int> DecodeMessage(byte[] body)
         {
             byte[] message;
-            ulong remoteMessageId;
+            long remoteMessageId;
             int remoteSequence;
 
-            using (var inputStream = new MemoryStream(body))
-            using (var inputReader = new BinaryReader(inputStream))
+            using (MemoryStream inputStream = new MemoryStream(body))
+            using (BinaryReader inputReader = new BinaryReader(inputStream))
             {
-                if (inputReader.BaseStream.Length < 8)
-                    throw new InvalidOperationException($"Can't decode packet");
-
-                ulong remoteAuthKeyId = inputReader.ReadUInt64(); // TODO: check auth key id
+                long remoteAuthKeyId = inputReader.ReadInt64(); // TODO: check auth key id
                 byte[] msgKey = inputReader.ReadBytes(16); // TODO: check msg_key correctness
                 AESKeyData keyData = Helpers.CalcKey(_session.AuthKey.Data, msgKey, false);
 
@@ -123,23 +114,23 @@ namespace TeleTurk.Core.Network
                 {
                     var remoteSalt = plaintextReader.ReadUInt64();
                     var remoteSessionId = plaintextReader.ReadUInt64();
-                    remoteMessageId = plaintextReader.ReadUInt64();
+                    remoteMessageId = plaintextReader.ReadInt64();
                     remoteSequence = plaintextReader.ReadInt32();
                     int msgLen = plaintextReader.ReadInt32();
                     message = plaintextReader.ReadBytes(msgLen);
                 }
             }
-            return new Tuple<byte[], ulong, int>(message, remoteMessageId, remoteSequence);
+            return new Tuple<byte[], long, int>(message, remoteMessageId, remoteSequence);
         }
 
-        public async Task<byte[]> Recieve(MTProtoRequest request)
+        public async Task<byte[]> Receive(MTProtoRequest request)
         {
             while (!request.ConfirmReceived)
             {
                 var result = DecodeMessage((await _transport.Receieve()).Body);
 
-                using (var messageStream = new MemoryStream(result.Item1, false))
-                using (var messageReader = new BinaryReader(messageStream))
+                using (MemoryStream messageStream = new MemoryStream(result.Item1, false))
+                using (TBinaryReader messageReader = new TBinaryReader(messageStream))
                 {
                     processMessage(result.Item2, result.Item3, messageReader, request);
                 }
@@ -148,7 +139,7 @@ namespace TeleTurk.Core.Network
             return null;
         }
 
-        private bool processMessage(ulong messageId, int sequence, BinaryReader messageReader, MTProtoRequest request)
+        private bool processMessage(long messageId, int sequence, TBinaryReader messageReader, MTProtoRequest request)
         {
             // TODO: check salt
             // TODO: check sessionid
@@ -207,7 +198,7 @@ namespace TeleTurk.Core.Network
             }
         }
 
-        private bool HandleUpdate(ulong messageId, int sequence, BinaryReader messageReader)
+        private bool HandleUpdate(long messageId, int sequence, BinaryReader messageReader)
         {
             return false;
 
@@ -225,12 +216,12 @@ namespace TeleTurk.Core.Network
 			*/
         }
 
-        private bool HandleGzipPacked(ulong messageId, int sequence, BinaryReader messageReader, MTProtoRequest request)
+        private bool HandleGzipPacked(long messageId, int sequence, TBinaryReader messageReader, MTProtoRequest request)
         {
             uint code = messageReader.ReadUInt32();
-            byte[] packedData = GZipStream.UncompressBuffer(Serializers.Bytes.read(messageReader));
+            byte[] packedData = GZipStream.UncompressBuffer(messageReader.ReadBytes());
             using (MemoryStream packedStream = new MemoryStream(packedData, false))
-            using (BinaryReader compressedReader = new BinaryReader(packedStream))
+            using (TBinaryReader compressedReader = new TBinaryReader(packedStream))
             {
                 processMessage(messageId, sequence, compressedReader, request);
             }
@@ -238,7 +229,7 @@ namespace TeleTurk.Core.Network
             return true;
         }
 
-        private bool HandleRpcResult(ulong messageId, int sequence, BinaryReader messageReader, MTProtoRequest request)
+        private bool HandleRpcResult(long messageId, int sequence, TBinaryReader messageReader, MTProtoRequest request)
         {
             uint code = messageReader.ReadUInt32();
             ulong requestId = messageReader.ReadUInt64();
@@ -256,7 +247,6 @@ namespace TeleTurk.Core.Network
 					messageReader.BaseStream.Position -= 12;
 					return false;
 				}
-
 				request = runningRequests[requestId];
 				runningRequests.Remove(requestId);
 			}
@@ -266,7 +256,7 @@ namespace TeleTurk.Core.Network
             if (innerCode == 0x2144ca19)
             { // rpc_error
                 int errorCode = messageReader.ReadInt32();
-                string errorMessage = Serializers.String.read(messageReader);
+                string errorMessage = messageReader.ReadString();
 
                 if (errorMessage.StartsWith("FLOOD_WAIT_"))
                 {
@@ -279,9 +269,7 @@ namespace TeleTurk.Core.Network
                 {
                     var resultString = Regex.Match(errorMessage, @"\d+").Value;
                     var dcIdx = int.Parse(resultString);
-                    var exception = new InvalidOperationException($"Your phone number registered to {dcIdx} dc. Please update settings. See https://github.com/sochix/TeleTurk#i-get-an-error-migrate_x for details.");
-                    exception.Data.Add("dcId", dcIdx);
-                    throw exception;
+                    throw new InvalidOperationException($"Your phone number registered to {dcIdx} dc. Please update settings. See https://github.com/sochix/TeleTurk#i-get-an-error-migrate_x for details.");
                 }
                 else
                 {
@@ -291,20 +279,13 @@ namespace TeleTurk.Core.Network
             }
             else if (innerCode == 0x3072cfa1)
             {
-                try
+                // gzip_packed
+                byte[] packedData = messageReader.ReadBytes();
+                using (MemoryStream packedStream = new MemoryStream(packedData, false))
+                using (System.IO.Compression.GZipStream zipStream = new System.IO.Compression.GZipStream(packedStream, System.IO.Compression.CompressionMode.Decompress))
+                using (TBinaryReader compressedReader = new TBinaryReader(zipStream))
                 {
-                    // gzip_packed
-                    byte[] packedData = Serializers.Bytes.read(messageReader);
-                    using (var packedStream = new MemoryStream(packedData, false))
-                    using (var zipStream = new GZipStream(packedStream, CompressionMode.Decompress))
-                    using (var compressedReader = new BinaryReader(zipStream))
-                    {
-                        request.OnResponse(compressedReader);
-                    }
-                }
-                catch (ZlibException ex)
-                {
-
+                    request.OnResponse(compressedReader);
                 }
             }
             else
@@ -317,12 +298,12 @@ namespace TeleTurk.Core.Network
             return false;
         }
 
-        private bool HandleMsgDetailedInfo(ulong messageId, int sequence, BinaryReader messageReader)
+        private bool HandleMsgDetailedInfo(long messageId, int sequence, BinaryReader messageReader)
         {
             return false;
         }
 
-        private bool HandleBadMsgNotification(ulong messageId, int sequence, BinaryReader messageReader)
+        private bool HandleBadMsgNotification(long messageId, int sequence, BinaryReader messageReader)
         {
             uint code = messageReader.ReadUInt32();
             ulong requestId = messageReader.ReadUInt64();
@@ -375,7 +356,7 @@ namespace TeleTurk.Core.Network
             return true;
         }
 
-        private bool HandleBadServerSalt(ulong messageId, int sequence, BinaryReader messageReader, MTProtoRequest request)
+        private bool HandleBadServerSalt(long messageId, int sequence, BinaryReader messageReader, MTProtoRequest request)
         {
             uint code = messageReader.ReadUInt32();
             ulong badMsgId = messageReader.ReadUInt64();
@@ -403,17 +384,17 @@ namespace TeleTurk.Core.Network
             return true;
         }
 
-        private bool HandleMsgsAck(ulong messageId, int sequence, BinaryReader messageReader)
+        private bool HandleMsgsAck(long messageId, int sequence, BinaryReader messageReader)
         {
             return false;
         }
 
-        private bool HandleNewSessionCreated(ulong messageId, int sequence, BinaryReader messageReader)
+        private bool HandleNewSessionCreated(long messageId, int sequence, BinaryReader messageReader)
         {
             return false;
         }
 
-        private bool HandleFutureSalts(ulong messageId, int sequence, BinaryReader messageReader)
+        private bool HandleFutureSalts(long messageId, int sequence, BinaryReader messageReader)
         {
             uint code = messageReader.ReadUInt32();
             ulong requestId = messageReader.ReadUInt64();
@@ -436,23 +417,23 @@ namespace TeleTurk.Core.Network
             return true;
         }
 
-        private bool HandlePong(ulong messageId, int sequence, BinaryReader messageReader)
+        private bool HandlePong(long messageId, int sequence, BinaryReader messageReader)
         {
             return false;
         }
 
-        private bool HandlePing(ulong messageId, int sequence, BinaryReader messageReader)
+        private bool HandlePing(long messageId, int sequence, BinaryReader messageReader)
         {
             return false;
         }
 
-        private bool HandleContainer(ulong messageId, int sequence, BinaryReader messageReader, MTProtoRequest request)
+        private bool HandleContainer(long messageId, int sequence, TBinaryReader messageReader, MTProtoRequest request)
         {
             uint code = messageReader.ReadUInt32();
             int size = messageReader.ReadInt32();
             for (int i = 0; i < size; i++)
             {
-                ulong innerMessageId = messageReader.ReadUInt64();
+                long innerMessageId = messageReader.ReadInt64();
                 int innerSequence = messageReader.ReadInt32();
                 int innerLength = messageReader.ReadInt32();
                 long beginPosition = messageReader.BaseStream.Position;

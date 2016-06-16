@@ -48,6 +48,7 @@
     <Compile Include="Auth\Step1_PQRequest.cs" />
     <Compile Include="Auth\Step2_DHExchange.cs" />
     <Compile Include="Auth\Step3_CompleteDHExchange.cs" />
+    <Compile Include="Configuration.cs" />
     <Compile Include="Ionic.Zlib\CRC32.cs" />
     <Compile Include="Ionic.Zlib\Deflate.cs" />
     <Compile Include="Ionic.Zlib\DeflateStream.cs" />
@@ -76,30 +77,9 @@
     <Compile Include="Network\TcpMessage.cs" />
     <Compile Include="Network\TcpTransport.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Requests\AckRequest.cs" />
-    <Compile Include="Requests\AuthCheckPhoneRequest.cs" />
-    <Compile Include="Requests\AuthSendCodeRequest.cs" />
-    <Compile Include="Requests\AuthSignInRequest.cs" />
-    <Compile Include="Requests\GetDialogsRequest.cs" />
-    <Compile Include="Requests\GetFileRequest.cs" />
-    <Compile Include="Requests\GetHistoryRequest.cs" />
-    <Compile Include="Requests\GetNearestDcRequest.cs" />
-    <Compile Include="Requests\GetUsersRequest.cs" />
-    <Compile Include="Requests\ImportByUserName.cs" />
-    <Compile Include="Requests\ImportContactRequest.cs" />
-    <Compile Include="Requests\InitConnectionRequest.cs" />
-    <Compile Include="Requests\MTProtoRequest.cs" />
-    <Compile Include="Requests\SendMessageRequest.cs" />
-    <Compile Include="Requests\Message_SendMediaRequest.cs" />
-    <Compile Include="Requests\Upload_SaveFilePartRequest.cs" />
     <Compile Include="Session.cs" />
     <Compile Include="TelegramClient.cs" />
     <Compile Include="Utils\Helpers.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Requests\CreateChatRequest.cs" />
-    <None Include="Requests\AddChatUserRequest.cs" />
-    <None Include="Requests\DeleteChatUserRequest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -2,40 +2,41 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using TeleTurk.Core.Auth;
 using TeleTurk.Core.MTProto;
 using TeleTurk.Core.MTProto.Crypto;
 using TeleTurk.Core.Network;
-using TeleTurk.Core.Requests;
 using MD5 = System.Security.Cryptography.MD5;
 
 namespace TeleTurk.Core
 {
     public class TelegramClient
     {
-        private MtProtoSender _sender;
+        public MtProtoSender _sender;
         private AuthKey _key;
         private TcpTransport _transport;
-        private string _apiHash = "";
-        private int _apiId = 0;
         private Session _session;
         private List<DcOption> dcOptions;
 
-        public TelegramClient(ISessionStore store, string sessionUserId, int apiId, string apiHash)
-        {
-            _apiHash = apiHash;
-            _apiId = apiId;
-            if (_apiId == 0)
-                throw new InvalidOperationException("Your API_ID is invalid. Do a configuration first https://github.com/sochix/TeleTurk#quick-configuration");
+        public User loggedUser { get { return _session.User; } }
+        public Configuration config = new Configuration();
 
-            if (string.IsNullOrEmpty(_apiHash))
-                throw new InvalidOperationException("Your API_ID is invalid. Do a configuration first https://github.com/sochix/TeleTurk#quick-configuration");
+        public List<Chat> chats;
+        public List<User> users;
+
+        public TelegramClient(ISessionStore store, string sessionUserId)
+        {
+            if (config.apiId == 0)
+                throw new InvalidOperationException("Your API_ID is invalid. Do a configuration first");
+
+            if (string.IsNullOrEmpty(config.apiHash))
+                throw new InvalidOperationException("Your API_HASH is invalid. Do a configuration first");
 
             _session = Session.TryLoadOrCreateNew(store, sessionUserId);
             _transport = new TcpTransport(_session.ServerAddress, _session.Port);
         }
+
 
         public async Task<bool> Connect(bool reconnect = false)
         {
@@ -50,12 +51,15 @@ namespace TeleTurk.Core
 
             if (!reconnect)
             {
-                var request = new InitConnectionRequest(_apiId);
+                var request = new TL.InvokeWithLayerRequest(config.currentLayer,
+                    new TL.InitConnectionRequest(config.apiId, config.DeviceModel, config.SystemVersion, config.AppVersion, config.LangCode,
+                        new TL.HelpGetConfigRequest()));
 
                 await _sender.Send(request);
-                await _sender.Recieve(request);
+                await _sender.Receive(request);
 
-                dcOptions = request.ConfigConstructor.dc_options;
+                var result = (TL.ConfigType)request.Result;
+                dcOptions = result.DcOptions;
             }
 
             return true;
@@ -66,11 +70,11 @@ namespace TeleTurk.Core
             if (dcOptions == null || !dcOptions.Any())
                 throw new InvalidOperationException($"Can't reconnect. Establish initial connection first.");
 
-            var dc = dcOptions.Cast<DcOptionConstructor>().First(d => d.id == dcId);
+            var dc = (TL.DcOptionType)dcOptions.First(d => ((TL.DcOptionType)d).Id == dcId);
 
-            _transport = new TcpTransport(dc.ip_address, dc.port);
-            _session.ServerAddress = dc.ip_address;
-            _session.Port = dc.port;
+            _transport = new TcpTransport(dc.IpAddress, dc.Port);
+            _session.ServerAddress = dc.IpAddress;
+            _session.Port = dc.Port;
 
             await Connect(true);
         }
@@ -85,28 +89,27 @@ namespace TeleTurk.Core
             if (_sender == null)
                 throw new InvalidOperationException("Not connected!");
 
-            var authCheckPhoneRequest = new AuthCheckPhoneRequest(phoneNumber);
+            var authCheckPhoneRequest = new TL.AuthCheckPhoneRequest(phoneNumber);
             await _sender.Send(authCheckPhoneRequest);
-            await _sender.Recieve(authCheckPhoneRequest);
+            await _sender.Receive(authCheckPhoneRequest);
 
-            return authCheckPhoneRequest._phoneRegistered;
+            var result = (TL.AuthCheckedPhoneType)authCheckPhoneRequest.Result;
+            return result.PhoneRegistered;
         }
 
-        public async Task<string> SendCodeRequest(string phoneNumber)
+        public async Task<string> SendCodeRequest()
         {
             var completed = false;
 
-            AuthSendCodeRequest request = null;
+            TL.AuthSendCodeRequest request = null;
 
             while (!completed)
             {
-                request = new AuthSendCodeRequest(phoneNumber, 5, _apiId, _apiHash, "en");
+                request = new TL.AuthSendCodeRequest(null, config.phoneNumber, true, config.apiId, config.apiHash, config.LangCode);
                 try
                 {
-
-
                     await _sender.Send(request);
-                    await _sender.Recieve(request);
+                    await _sender.Receive(request);
 
                     completed = true;
                 }
@@ -122,130 +125,77 @@ namespace TeleTurk.Core
                     }
                 }
             }
-
-            return request._phoneCodeHash;
+            // TODO handle other types (such as SMS)
+            var result = (TL.AuthSentCodeType)request.Result;
+            return result.PhoneCodeHash;
         }
 
-        public async Task<User> MakeAuth(string phoneNumber, string phoneHash, string code)
+        public async Task<User> MakeAuth(string phoneHash, string code)
         {
-            var request = new AuthSignInRequest(phoneNumber, phoneHash, code);
+            var request = new TL.AuthSignInRequest(config.phoneNumber, phoneHash, code);
             await _sender.Send(request);
-            await _sender.Recieve(request);
+            await _sender.Receive(request);
 
-            _session.SessionExpires = request.SessionExpires;
-            _session.User = request.user;
+            var result = (TL.AuthAuthorizationType)request.Result;
+            _session.User = result.User;
 
             _session.Save();
 
-            return request.user;
+            return result.User;
         }
 
-        public async Task<InputFile> UploadFile(string name, byte[] data)
+        public async Task<List<User>> ImportContacts(params string[] phoneNumbers)
         {
-            var partSize = 65536;
+            var contacts = new List<InputContact>(phoneNumbers.Length);
+            foreach (var phone in phoneNumbers)
+                contacts.Add(new TL.InputPhoneContactType(0, phone, "Test Name " + phone, string.Empty));
 
-            var file_id = DateTime.Now.Ticks;
+            var request = new TL.ContactsImportContactsRequest(contacts, false);
+            await _sender.Send(request);
+            await _sender.Receive(request);
 
-            var partedData = new Dictionary<int, byte[]>();
-            var parts = Convert.ToInt32(Math.Ceiling(Convert.ToDouble(data.Length) / Convert.ToDouble(partSize)));
-            var remainBytes = data.Length;
-            for (int i = 0; i < parts; i++)
-            {
-                partedData.Add(i, data
-                    .Skip(i * partSize)
-                    .Take(remainBytes < partSize ? remainBytes : partSize)
-                    .ToArray());
+            var result = (TL.ContactsImportedContactsType)request.Result;
 
-                remainBytes -= partSize;
-            }
-
-            for (int i = 0; i < parts; i++)
-            {
-                var saveFilePartRequest = new Upload_SaveFilePartRequest(file_id, i, partedData[i]);
-                await _sender.Send(saveFilePartRequest);
-                await _sender.Recieve(saveFilePartRequest);
-
-                if (saveFilePartRequest.Done == false)
-                    throw new InvalidOperationException($"File part {i} does not uploaded");
-            }
-
-            string md5_checksum;
-            using (var md5 = MD5.Create())
-            {
-                var hash = md5.ComputeHash(data);
-                var hashResult = new StringBuilder(hash.Length * 2);
-
-                for (int i = 0; i < hash.Length; i++)
-                    hashResult.Append(hash[i].ToString("x2"));
-
-                md5_checksum = hashResult.ToString();
-            }
-
-            var inputFile = new InputFileConstructor(file_id, parts, name, md5_checksum);
-
-            return inputFile;
+            return result.Users;
         }
 
-        public async Task<bool> SendMediaMessage(int contactId, InputFile file)
+        public async Task<bool> SendMessage(User user, string message)
         {
-            var request = new Message_SendMediaRequest(
-                new InputPeerContactConstructor(contactId),
-                new InputMediaUploadedPhotoConstructor(file));
+            InputPeer peer;
+            if (user is TL.UserType)
+            {
+                var userType = (TL.UserType)user;
+                peer = new TL.InputPeerUserType(userType.Id, userType.AccessHash ?? 0);
+            }
+            else
+                return false;
+
+            var request = new TL.MessagesSendMessageRequest(null, null, null, null, peer, null, message, getRandomLong(), null, null);
 
             await _sender.Send(request);
-            await _sender.Recieve(request);
+            await _sender.Receive(request);
 
             return true;
         }
 
-        public async Task<int?> ImportContactByPhoneNumber(string phoneNumber)
+        public async Task<UpdatesDifference> GetDifferenceUpdates(int pts, int date, int qts)
         {
-            if (!validateNumber(phoneNumber))
-                throw new InvalidOperationException("Invalid phone number. It should be only digit string, from 5 to 20 digits.");
-
-            var request = new ImportContactRequest(new InputPhoneContactConstructor(0, phoneNumber, "My Test Name", String.Empty));
-            await _sender.Send(request);
-            await _sender.Recieve(request);
-
-            var importedUser = (ImportedContactConstructor)request.imported.FirstOrDefault();
-
-            return importedUser?.user_id;
-        }
-
-        public async Task<int?> ImportByUserName(string username)
-        {
-            if (string.IsNullOrEmpty(username))
-                throw new InvalidOperationException("Username can't be null");
-
-            var request = new ImportByUserName(username);
-            await _sender.Send(request);
-            await _sender.Recieve(request);
-
-            return request.id;
-        }
-
-        public async Task SendMessage(int id, string message)
-        {
-            var request = new SendMessageRequest(new InputPeerContactConstructor(id), message);
+            var request = new TL.UpdatesGetDifferenceRequest(pts, date, qts);
 
             await _sender.Send(request);
-            await _sender.Recieve(request);
+            await _sender.Receive(request);
+
+            var result = (UpdatesDifference)request.Result;
+
+            return result;
         }
 
-        public async Task<List<Message>> GetMessagesHistoryForContact(int user_id, int offset, int limit, int max_id = -1)
+        static readonly Random r = new Random();
+        static long getRandomLong()
         {
-            var request = new GetHistoryRequest(new InputPeerContactConstructor(user_id), offset, max_id, limit);
-            await _sender.Send(request);
-            await _sender.Recieve(request);
-
-            return request.messages;
-        }
-
-        private bool validateNumber(string number)
-        {
-            var regex = new Regex("^\\d{7,20}$");
-
-            return regex.IsMatch(number);
+            var buffer = new byte[sizeof(long)];
+            r.NextBytes(buffer);
+            return BitConverter.ToInt64(buffer, 0);
         }
     }
 }

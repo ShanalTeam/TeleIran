@@ -33,15 +33,15 @@ namespace TeleTurk.Core.Auth
 
             using (MemoryStream pqInnerData = new MemoryStream(255))
             {
-                using (BinaryWriter pqInnerDataWriter = new BinaryWriter(pqInnerData))
+                using (TBinaryWriter pqInnerDataWriter = new TBinaryWriter(pqInnerData))
                 {
                     pqInnerDataWriter.Write(0x83c95aec); // pq_inner_data
-                    Serializers.Bytes.write(pqInnerDataWriter, pq.ToByteArrayUnsigned());
-                    Serializers.Bytes.write(pqInnerDataWriter, pqPair.Min.ToByteArrayUnsigned());
-                    Serializers.Bytes.write(pqInnerDataWriter, pqPair.Max.ToByteArrayUnsigned());
-                    pqInnerDataWriter.Write(nonce);
-                    pqInnerDataWriter.Write(serverNonce);
-                    pqInnerDataWriter.Write(newNonce);
+                    pqInnerDataWriter.Write(pq.ToByteArrayUnsigned());
+                    pqInnerDataWriter.Write(pqPair.Min.ToByteArrayUnsigned());
+                    pqInnerDataWriter.Write(pqPair.Max.ToByteArrayUnsigned());
+                    pqInnerDataWriter.WriteBase(nonce);
+                    pqInnerDataWriter.WriteBase(serverNonce);
+                    pqInnerDataWriter.WriteBase(newNonce);
 
                     byte[] ciphertext = null;
                     byte[] targetFingerprint = null;
@@ -64,15 +64,15 @@ namespace TeleTurk.Core.Auth
 
                     using (MemoryStream reqDHParams = new MemoryStream(1024))
                     {
-                        using (BinaryWriter reqDHParamsWriter = new BinaryWriter(reqDHParams))
+                        using (TBinaryWriter reqDHParamsWriter = new TBinaryWriter(reqDHParams))
                         {
                             reqDHParamsWriter.Write(0xd712e4be); // req_dh_params
-                            reqDHParamsWriter.Write(nonce);
-                            reqDHParamsWriter.Write(serverNonce);
-                            Serializers.Bytes.write(reqDHParamsWriter, pqPair.Min.ToByteArrayUnsigned());
-                            Serializers.Bytes.write(reqDHParamsWriter, pqPair.Max.ToByteArrayUnsigned());
-                            reqDHParamsWriter.Write(targetFingerprint);
-                            Serializers.Bytes.write(reqDHParamsWriter, ciphertext);
+                            reqDHParamsWriter.WriteBase(nonce);
+                            reqDHParamsWriter.WriteBase(serverNonce);
+                            reqDHParamsWriter.Write(pqPair.Min.ToByteArrayUnsigned());
+                            reqDHParamsWriter.Write(pqPair.Max.ToByteArrayUnsigned());
+                            reqDHParamsWriter.WriteBase(targetFingerprint);
+                            reqDHParamsWriter.Write(ciphertext);
 
                             reqDhParamsBytes = reqDHParams.ToArray();
                         }
@@ -88,7 +88,7 @@ namespace TeleTurk.Core.Auth
 
             using (MemoryStream responseStream = new MemoryStream(response, false))
             {
-                using (BinaryReader responseReader = new BinaryReader(responseStream))
+                using (TBinaryReader responseReader = new TBinaryReader(responseStream))
                 {
                     uint responseCode = responseReader.ReadUInt32();
 
@@ -126,7 +126,7 @@ namespace TeleTurk.Core.Auth
 					}
 					*/
 
-                    encryptedAnswer = Serializers.Bytes.read(responseReader);
+                    encryptedAnswer = responseReader.ReadBytes();
 
                     return new Step2_Response()
                     {

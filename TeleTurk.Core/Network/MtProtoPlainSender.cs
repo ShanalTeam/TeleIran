@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using TeleTurk.Core.MTProto;
 
 namespace TeleTurk.Core.Network
 {
@@ -30,13 +31,12 @@ namespace TeleTurk.Core.Network
                     binaryWriter.Write(data);
 
                     byte[] packet = memoryStream.ToArray();
-
                     await _transport.Send(packet);
                 }
             }
         }
 
-        public async Task<byte[]> Recieve()
+        public async Task<byte[]> Receive()
         {
             var result = await _transport.Receieve();
 

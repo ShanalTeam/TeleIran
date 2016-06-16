@@ -710,7 +710,7 @@ namespace TeleTurk.Core.MTProto.Crypto
                 : value.Add(One).magnitude;
 
             bool resultNeg = sign < 0 && value.sign < 0;
-            int resultLength = System.Math.Max(aMag.Length, bMag.Length);
+            int resultLength = Math.Max(aMag.Length, bMag.Length);
             int[] resultMag = new int[resultLength];
 
             int aStart = resultMag.Length - aMag.Length;
@@ -1261,7 +1261,7 @@ namespace TeleTurk.Core.MTProto.Crypto
 
 
             // Try to reduce the penalty for really small numbers
-            int numLists = System.Math.Min(BitLength - 1, primeLists.Length);
+            int numLists = Math.Min(BitLength - 1, primeLists.Length);
 
             for (int i = 0; i < numLists; ++i)
             {
@@ -2341,7 +2341,7 @@ namespace TeleTurk.Core.MTProto.Crypto
                 return ZeroMagnitude;
 
             int numWords = (n + BitsPerInt - 1) / BitsPerInt;
-            numWords = System.Math.Min(numWords, this.magnitude.Length);
+            numWords = Math.Min(numWords, this.magnitude.Length);
             int[] result = new int[numWords];
 
             Array.Copy(this.magnitude, this.magnitude.Length - numWords, result, 0, numWords);
@@ -2954,7 +2954,7 @@ namespace TeleTurk.Core.MTProto.Crypto
                 : value.Add(One).magnitude;
 
             bool resultNeg = sign < 0 || value.sign < 0;
-            int resultLength = System.Math.Max(aMag.Length, bMag.Length);
+            int resultLength = Math.Max(aMag.Length, bMag.Length);
             int[] resultMag = new int[resultLength];
 
             int aStart = resultMag.Length - aMag.Length;
@@ -3013,7 +3013,7 @@ namespace TeleTurk.Core.MTProto.Crypto
 
             // TODO Can just replace with sign != value.sign?
             bool resultNeg = (sign < 0 && value.sign >= 0) || (sign >= 0 && value.sign < 0);
-            int resultLength = System.Math.Max(aMag.Length, bMag.Length);
+            int resultLength = Math.Max(aMag.Length, bMag.Length);
             int[] resultMag = new int[resultLength];
 
             int aStart = resultMag.Length - aMag.Length;

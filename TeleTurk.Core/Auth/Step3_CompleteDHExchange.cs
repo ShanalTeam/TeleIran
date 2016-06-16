@@ -34,7 +34,7 @@ namespace TeleTurk.Core.Auth
 
             using (MemoryStream dhInnerData = new MemoryStream(plaintextAnswer))
             {
-                using (BinaryReader dhInnerDataReader = new BinaryReader(dhInnerData))
+                using (TBinaryReader dhInnerDataReader = new TBinaryReader(dhInnerData))
                 {
                     byte[] hashsum = dhInnerDataReader.ReadBytes(20);
                     uint code = dhInnerDataReader.ReadUInt32();
@@ -62,8 +62,8 @@ namespace TeleTurk.Core.Auth
                     // logger.debug("valid server nonce");
 
                     g = dhInnerDataReader.ReadInt32();
-                    dhPrime = new BigInteger(1, Serializers.Bytes.read(dhInnerDataReader));
-                    ga = new BigInteger(1, Serializers.Bytes.read(dhInnerDataReader));
+                    dhPrime = new BigInteger(1, dhInnerDataReader.ReadBytes());
+                    ga = new BigInteger(1, dhInnerDataReader.ReadBytes());
 
                     int serverTime = dhInnerDataReader.ReadInt32();
                     timeOffset = serverTime - (int)(Convert.ToInt64((DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds) / 1000);
@@ -82,13 +82,13 @@ namespace TeleTurk.Core.Auth
             byte[] clientDHInnerDataBytes;
             using (MemoryStream clientDhInnerData = new MemoryStream())
             {
-                using (BinaryWriter clientDhInnerDataWriter = new BinaryWriter(clientDhInnerData))
+                using (TBinaryWriter clientDhInnerDataWriter = new TBinaryWriter(clientDhInnerData))
                 {
                     clientDhInnerDataWriter.Write(0x6643b654); // client_dh_inner_data
-                    clientDhInnerDataWriter.Write(nonce);
-                    clientDhInnerDataWriter.Write(serverNonce);
+                    clientDhInnerDataWriter.WriteBase(nonce);
+                    clientDhInnerDataWriter.WriteBase(serverNonce);
                     clientDhInnerDataWriter.Write((long)0); // TODO: retry_id
-                    Serializers.Bytes.write(clientDhInnerDataWriter, gb.ToByteArrayUnsigned());
+                    clientDhInnerDataWriter.Write(gb.ToByteArrayUnsigned());
 
                     using (MemoryStream clientDhInnerDataWithHash = new MemoryStream())
                     {
@@ -116,12 +116,12 @@ namespace TeleTurk.Core.Auth
             byte[] setclientDhParamsBytes;
             using (MemoryStream setClientDhParams = new MemoryStream())
             {
-                using (BinaryWriter setClientDhParamsWriter = new BinaryWriter(setClientDhParams))
+                using (TBinaryWriter setClientDhParamsWriter = new TBinaryWriter(setClientDhParams))
                 {
                     setClientDhParamsWriter.Write(0xf5045f1f);
-                    setClientDhParamsWriter.Write(nonce);
-                    setClientDhParamsWriter.Write(serverNonce);
-                    Serializers.Bytes.write(setClientDhParamsWriter, clientDhInnerDataEncryptedBytes);
+                    setClientDhParamsWriter.WriteBase(nonce);
+                    setClientDhParamsWriter.WriteBase(serverNonce);
+                    setClientDhParamsWriter.Write(clientDhInnerDataEncryptedBytes);
 
                     setclientDhParamsBytes = setClientDhParams.ToArray();
                 }
