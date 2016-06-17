@@ -1,6 +1,6 @@
 # TeleTurk
-* This project is driven from https://github.com/sochix/TLSharp and thanks to Sochix.
-* Thanks to @XyLoNaMiyX for his amazing AutoCompiler code : https://github.com/LonamiWebs/TLSharp.CodeGenerator
+* This project is driven from [TLSharp](https://github.com/sochix/TLSharp) and thanks to Sochix.
+* Thanks to @XyLoNaMiyX for his amazing [CodeGenerator](https://github.com/LonamiWebs/TLSharp.CodeGenerator).
 
 # Status
 Do not try to use this project!!! It is still under development and needs a lot of things to implement!
@@ -11,7 +11,7 @@ Do not try to use this project!!! It is still under development and needs a lot 
 
 ## Authentication
 
-```
+```csharp
 var store = new FileSessionStore();                     // store session file
 var client = new TelegramClient(store, "session");      // create client
 await client.Connect();                                 // try to connect
@@ -27,10 +27,7 @@ This is still a work in progress. To implement a new request, open up `TelegramC
 public async Task<...> MakeRequest(...)
 {
     var request = new TL.SomeRequest(...);
-    await _sender.Send(request);
-    await _sender.Receive(request);
-
-    return request.DesiredProperty;
+    return await _sender.SendReceive<...>(request);
 }
 ```
 
@@ -40,10 +37,7 @@ For example, if we wanted to write a request to delete a contact we would do:
 public async Task<bool> DeleteContacts(List<InputUser> inputUsers)
 {
     var request = new TL.ContactsDeleteContactsRequest(inputUsers);
-    await _sender.Send(request);
-    await _sender.Receive(request);
-
-    return request.Result;
+    return await _sender.SendReceive<bool>(request);
 }
 ```
 
@@ -91,7 +85,7 @@ The MIT License
 
 * Copyright (c) 2015 Ilya Pirozhenko http://www.sochix.ru
 * Copyright (c) 2016 Lonami http://lonamiwebs.github.io
-* Copyright (c) 2016 Ehsan Hesam ehsan.hesam13@gmail.com
+* Copyright (c) 2016 Ehsan Hesam http://Shanal.ir
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

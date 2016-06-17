@@ -12,388 +12,158 @@ namespace TeleTurk.Core.Handlers
 {
     class ChannelHandlers
     {
-        private List<Dialog> dialogs;
-        private List<Message> messages;
-        private List<Chat> chats;
-        private List<User> users;
-        private List<MessageGroup> messageGroup;
-        private List<ChannelParticipant> participants;
         private MtProtoSender _sender;
-        private int pts;
-        private int count;
-        private int pts_count;
 
-        public async Task<Tuple<List<Dialog>, List<Message>, List<Chat>, List<User>>> getDialogs(int offset, int limit)
+        public ChannelHandlers(MtProtoSender sender)
         {
-            var request = new TL.ChannelsGetDialogsRequest(offset, limit);
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            if (request.Result is TL.MessagesDialogsType)
-            {
-                var result = (TL.MessagesDialogsType)request.Result;
-                dialogs = result.Dialogs;
-                messages = result.Messages;
-                chats = result.Chats;
-                users = result.Users;
-            }
-            else
-            {
-                var result = (TL.MessagesDialogsSliceType)request.Result;
-                dialogs = result.Dialogs;
-                messages = result.Messages;
-                chats = result.Chats;
-                users = result.Users;
-            }
-
-            return new Tuple<List<Dialog>, List<Message>, List<Chat>, List<User>>(dialogs, messages, chats, users);
+            _sender = sender;
         }
 
-        public async Task<Tuple<List<Message>, List<Chat>, List<User>, List<MessageGroup>, int, int>>
-            getImportantHistory(InputChannel input, int offset_id, int offset_date, int add_offset, int limit, int max_id, int min_id)
+        public async Task<MessagesMessages> getDialogs(int offset, int limit)
         {
-            var request = new TL.ChannelsGetImportantHistoryRequest(input, offset_id, offset_date, add_offset, limit, max_id, min_id);
+            return await _sender.SendReceive<MessagesMessages>(new TL.ChannelsGetDialogsRequest(offset, limit));
+        }
 
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            if (request.Result is TL.MessagesMessagesType)
-            {
-                var result = (TL.MessagesMessagesType)request.Result;
-                messages = result.Messages;
-                chats = result.Chats;
-                users = result.Users;
-            }
-            else if (request.Result is TL.MessagesMessagesSliceType)
-            {
-                var result = (TL.MessagesMessagesSliceType)request.Result;
-                messages = result.Messages;
-                chats = result.Chats;
-                users = result.Users;
-            }
-            else
-            {
-                var result = (TL.MessagesChannelMessagesType)request.Result;
-                messages = result.Messages;
-                chats = result.Chats;
-                users = result.Users;
-                messageGroup = result.Collapsed;
-                pts = result.Pts;
-                count = result.Count;
-            }
-
-            return new Tuple<List<Message>, List<Chat>, List<User>, List<MessageGroup>, int, int>
-                (messages, chats, users, messageGroup, pts, count);
+        public async Task<MessagesMessages> getImportantHistory(InputChannel input, int offset_id, int offset_date, int add_offset,
+            int limit, int max_id, int min_id)
+        {
+            return await _sender.SendReceive<MessagesMessages>(new
+                TL.ChannelsGetImportantHistoryRequest(input, offset_id, offset_date, add_offset, limit, max_id, min_id));
         }
 
         public async Task<bool> readHistory(InputChannel channel, int max_id)
         {
-            var request = new TL.ChannelsReadHistoryRequest(channel, max_id);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<bool>(new TL.ChannelsReadHistoryRequest(channel, max_id));
         }
 
-        public async Task<Tuple<int, int>> deleteMessages(InputChannel channel, List<int> id)
+        public async Task<MessagesAffectedMessages> deleteMessages(InputChannel channel, List<int> id)
         {
-            var request = new TL.ChannelsDeleteMessagesRequest(channel, id);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            var result = (TL.MessagesAffectedMessagesType)request.Result;
-
-            return new Tuple<int, int>(result.Pts, result.PtsCount);
+            return await _sender.SendReceive<MessagesAffectedMessages>(new TL.ChannelsDeleteMessagesRequest(channel, id));
         }
 
-        public async Task<Tuple<int, int>> deleteUserHistory(InputChannel channel, InputUser user_id)
+        public async Task<MessagesAffectedHistory> deleteUserHistory(InputChannel channel, InputUser user_id)
         {
-            var request = new TL.ChannelsDeleteUserHistoryRequest(channel, user_id);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            var result = (TL.MessagesAffectedHistoryType)request.Result;
-
-            return new Tuple<int, int>(result.Pts, result.PtsCount);
+            return await _sender.SendReceive<MessagesAffectedHistory>(new TL.ChannelsDeleteUserHistoryRequest(channel, user_id));
         }
 
         public async Task<bool> reportSpam(InputChannel channel, InputUser user_id, List<int> id)
         {
-            var request = new TL.ChannelsReportSpamRequest(channel, user_id, id);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<bool>(new TL.ChannelsReportSpamRequest(channel, user_id, id));
         }
 
-        public async Task<Tuple<List<Message>, List<Chat>, List<User>, List<MessageGroup>, int, int>> getMessages(InputChannel channel, List<int> id)
+        public async Task<MessagesMessages> getMessages(InputChannel channel, List<int> id)
         {
-            var request = new TL.ChannelsGetMessagesRequest(channel, id);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            if (request.Result is TL.MessagesMessagesType)
-            {
-                var result = (TL.MessagesMessagesType)request.Result;
-                messages = result.Messages;
-                chats = result.Chats;
-                users = result.Users;
-            }
-            else if (request.Result is TL.MessagesMessagesSliceType)
-            {
-                var result = (TL.MessagesMessagesSliceType)request.Result;
-                messages = result.Messages;
-                chats = result.Chats;
-                users = result.Users;
-            }
-            else
-            {
-                var result = (TL.MessagesChannelMessagesType)request.Result;
-                messages = result.Messages;
-                chats = result.Chats;
-                users = result.Users;
-                messageGroup = result.Collapsed;
-                pts = result.Pts;
-                count = result.Count;
-            }
-
-            return new Tuple<List<Message>, List<Chat>, List<User>, List<MessageGroup>, int, int>
-                (messages, chats, users, messageGroup, pts, count);
+            return await _sender.SendReceive<MessagesMessages>(new TL.ChannelsGetMessagesRequest(channel, id));
         }
 
-        public async Task<Tuple<List<User>, List<ChannelParticipant>>> 
-            getParticipants(InputChannel channel, ChannelParticipantsFilter filter, int offset, int limit)
+        public async Task<ChannelsChannelParticipants> getParticipants(InputChannel channel, ChannelParticipantsFilter filter, int offset, int limit)
         {
-            var request = new TL.ChannelsGetParticipantsRequest(channel, filter, offset, limit);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            var result = (TL.ChannelsChannelParticipantsType)request.Result;
-
-            return new Tuple<List<User>, List<ChannelParticipant>>(result.Users, result.Participants);
+            return await _sender.SendReceive<ChannelsChannelParticipants>(new TL.ChannelsGetParticipantsRequest(channel, filter, offset, limit));
         }
 
-        public async Task<Tuple<List<User>, ChannelParticipant>> getParticipant(InputChannel channel, InputUser user_id)
+        public async Task<ChannelsChannelParticipant> getParticipant(InputChannel channel, InputUser user_id)
         {
-            var request = new TL.ChannelsGetParticipantRequest(channel, user_id);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            var result = (TL.ChannelsChannelParticipantType)request.Result;
-
-            return new Tuple<List<User>, ChannelParticipant>(result.Users, result.Participant);
+            return await _sender.SendReceive<ChannelsChannelParticipant>(new TL.ChannelsGetParticipantRequest(channel, user_id));
         }
 
-        public async Task<List<Chat>> getChannels(List<InputChannel> id)
+        public async Task<MessagesChats> getChannels(List<InputChannel> id)
         {
-            var request = new TL.ChannelsGetChannelsRequest(id);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            var result = (TL.MessagesChatsType)request.Result;
-
-            return result.Chats;
+            return await _sender.SendReceive<MessagesChats>(new TL.ChannelsGetChannelsRequest(id));
         }
 
-        public async Task<Tuple<ChatFull, List<Chat>, List<User>>> getFullChannel(InputChannel channel)
+        public async Task<MessagesChatFull> getFullChannel(InputChannel channel)
         {
-            var request = new TL.ChannelsGetFullChannelRequest(channel);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            var result = (TL.MessagesChatFullType)request.Result;
-
-            return new Tuple<ChatFull, List<Chat>, List<User>>(result.FullChat, result.Chats, result.Users);
+            return await _sender.SendReceive<MessagesChatFull>(new TL.ChannelsGetFullChannelRequest(channel));
         }
 
         public async Task<Updates> createChannel(True broadcast, True megagroup, string title, string about)
         {
-            var request = new TL.ChannelsCreateChannelRequest(broadcast, megagroup, title, about);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<Updates>(new TL.ChannelsCreateChannelRequest(broadcast, megagroup, title, about));
         }
 
         public async Task<bool> editAbout(InputChannel channel, string about)
         {
-            var request = new TL.ChannelsEditAboutRequest(channel, about);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<bool>(new TL.ChannelsEditAboutRequest(channel, about));
         }
 
         public async Task<Updates> editAdmin(InputChannel channel, InputUser user_id, ChannelParticipantRole role)
         {
-            var request = new TL.ChannelsEditAdminRequest(channel, user_id, role);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<Updates>(new TL.ChannelsEditAdminRequest(channel, user_id, role));
         }
 
         public async Task<Updates> editTitle(InputChannel channel, string title)
         {
-            var request = new TL.ChannelsEditTitleRequest(channel, title);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<Updates>(new TL.ChannelsEditTitleRequest(channel, title));
         }
 
         public async Task<Updates> editPhoto(InputChannel channel,InputChatPhoto photo)
         {
-            var request = new TL.ChannelsEditPhotoRequest(channel, photo);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<Updates>(new TL.ChannelsEditPhotoRequest(channel, photo));
         }
 
         public async Task<Updates> toggleComments(InputChannel channel, bool enabled)
         {
-            var request = new TL.ChannelsToggleCommentsRequest(channel, enabled);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<Updates>(new TL.ChannelsToggleCommentsRequest(channel, enabled));
         }
 
         public async Task<bool> checkUsername(InputChannel channel, string username)
         {
-            var request = new TL.ChannelsCheckUsernameRequest(channel, username);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<bool>(new TL.ChannelsCheckUsernameRequest(channel, username));
         }
 
         public async Task<bool> updateUsername(InputChannel channel, string username)
         {
-            var request = new TL.ChannelsUpdateUsernameRequest(channel, username);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<bool>(new TL.ChannelsUpdateUsernameRequest(channel, username));
         }
 
         public async Task<Updates> joinChannel(InputChannel channel)
         {
-            var request = new TL.ChannelsJoinChannelRequest(channel);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<Updates>(new TL.ChannelsJoinChannelRequest(channel));
         }
 
         public async Task<Updates> leaveChannel(InputChannel channel)
         {
-            var request = new TL.ChannelsLeaveChannelRequest(channel);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<Updates>(new TL.ChannelsLeaveChannelRequest(channel));
         }
-
 
         public async Task<Updates> inviteToChannel(InputChannel channel, List<InputUser> users)
         {
-            var request = new TL.ChannelsInviteToChannelRequest(channel, users);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<Updates>(new TL.ChannelsInviteToChannelRequest(channel, users));
         }
 
         public async Task<Updates> kickFromChannel(InputChannel channel, InputUser user_id, bool kicked)
         {
-            var request = new TL.ChannelsKickFromChannelRequest(channel, user_id, kicked);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<Updates>(new TL.ChannelsKickFromChannelRequest(channel, user_id, kicked));
         }
 
         public async Task<ExportedChatInvite> exportInvite(InputChannel channel)
         {
-            var request = new TL.ChannelsExportInviteRequest(channel);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<ExportedChatInvite>(new TL.ChannelsExportInviteRequest(channel));
         }
 
         public async Task<Updates> deleteChannel(InputChannel channel)
         {
-            var request = new TL.ChannelsDeleteChannelRequest(channel);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<Updates>(new TL.ChannelsDeleteChannelRequest(channel));
         }
 
         public async Task<Updates> toggleInvites(InputChannel channel, bool enabled)
         {
-            var request = new TL.ChannelsToggleInvitesRequest(channel, enabled);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<Updates>(new TL.ChannelsToggleInvitesRequest(channel, enabled));
         }
 
         public async Task<ExportedMessageLink> exportMessageLink(InputChannel channel, int id)
         {
-            var request = new TL.ChannelsExportMessageLinkRequest(channel, id);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<ExportedMessageLink>(new TL.ChannelsExportMessageLinkRequest(channel, id));
         }
 
         public async Task<Updates> toggleSignatures(InputChannel channel, bool enabled)
         {
-            var request = new TL.ChannelsToggleSignaturesRequest(channel, enabled);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<Updates>(new TL.ChannelsToggleSignaturesRequest(channel, enabled));
         }
 
         public async Task<Updates> updatePinnedMessage(InputChannel channel, True silent, int id)
         {
-            var request = new TL.ChannelsUpdatePinnedMessageRequest(silent, channel, id);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<Updates>(new TL.ChannelsUpdatePinnedMessageRequest(silent, channel, id));
         }
     }
 }

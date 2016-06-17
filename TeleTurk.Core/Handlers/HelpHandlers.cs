@@ -14,90 +14,49 @@ namespace TeleTurk.Core.Handlers
     {
         private MtProtoSender _sender;
 
-        public async Task<TL.ConfigType> getConfig()
+        public HelpHandlers(MtProtoSender sender)
         {
-            var request = new TL.HelpGetConfigRequest();
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return (TL.ConfigType)request.Result;
+            _sender = sender;
         }
 
-        public async Task<TL.NearestDcType> getNearestDc()
+        public async Task<Config> getConfig()
         {
-            var request = new TL.HelpGetNearestDcRequest();
+            return await _sender.SendReceive<Config>(new TL.HelpGetConfigRequest());
+        }
 
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return (TL.NearestDcType)request.Result;
+        public async Task<NearestDc> getNearestDc()
+        {
+            return await _sender.SendReceive<NearestDc>(new TL.HelpGetNearestDcRequest());
         }
 
         public async Task<HelpAppUpdate> getAppUpdate(string device_model, string system_version, string app_version, string lang_code)
         {
-            var request = new TL.HelpGetAppUpdateRequest(device_model, system_version, app_version, lang_code);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<HelpAppUpdate>(new TL.HelpGetAppUpdateRequest(device_model, system_version, app_version, lang_code));
         }
 
         public async Task<bool> saveAppLog(List<InputAppEvent> events)
         {
-            var request = new TL.HelpSaveAppLogRequest(events);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<bool>(new TL.HelpSaveAppLogRequest(events));
         }
 
         public async Task<string> getInviteText(string lang_code)
         {
-            var request = new TL.HelpGetInviteTextRequest(lang_code);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            var element = (TL.HelpInviteTextType)(request.Result);
-
-            return element.Message;
+            return await _sender.SendReceive<string>(new TL.HelpGetInviteTextRequest(lang_code));
         }
 
-        public async Task<Tuple<string , User>> getSupport()
+        public async Task<HelpSupport> getSupport()
         {
-            var request = new TL.HelpGetSupportRequest();
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            var elemnt = (TL.HelpSupportType)request.Result;
-
-            return new Tuple<string, User>(elemnt.PhoneNumber, elemnt.User);
+            return await _sender.SendReceive<HelpSupport>(new TL.HelpGetSupportRequest());
         }
 
         public async Task<HelpAppChangelog> getAppChangelog(string device_model, string system_version, string app_version, string lang_code)
         {
-            var request = new TL.HelpGetAppChangelogRequest(device_model, system_version, app_version, lang_code);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            return request.Result;
+            return await _sender.SendReceive<HelpAppChangelog>(new TL.HelpGetAppChangelogRequest(device_model, system_version, app_version, lang_code));
         }
 
         public async Task<string> getTermsOfService()
         {
-            var request = new TL.HelpGetTermsOfServiceRequest();
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            var elemnt = (TL.HelpTermsOfServiceType)request.Result;
-
-            return elemnt.Text;
+            return await _sender.SendReceive<string>(new TL.HelpGetTermsOfServiceRequest());
         }
     }
 }
