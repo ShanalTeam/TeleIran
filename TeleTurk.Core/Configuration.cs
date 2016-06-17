@@ -19,7 +19,7 @@ namespace TeleTurk.Core
         /// <phoneNumber>
         /// The phone number that will register to telegram
         /// </phoneNumber>
-        public string phoneNumber = "your phone number";
+        public string phoneNumber = "***REMOVED***";
         /// <currentLayer>
         /// Current Layer we are invoking with telegram servers.
         /// </currentLayer>

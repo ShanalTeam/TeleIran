@@ -79,7 +79,6 @@
     <Compile Include="MTProto\Crypto\MD5Digest.cs" />
     <Compile Include="MTProto\Crypto\RSA.cs" />
     <Compile Include="MTProto\Crypto\Salt.cs" />
-    <Compile Include="MTProto\Serializers.cs" />
     <Compile Include="MTProto\TL.cs" />
     <Compile Include="Network\MtProtoPlainSender.cs" />
     <Compile Include="Network\MtProtoSender.cs" />
@@ -89,9 +88,6 @@
     <Compile Include="Session.cs" />
     <Compile Include="TelegramClient.cs" />
     <Compile Include="Utils\Helpers.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="scheme.tl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

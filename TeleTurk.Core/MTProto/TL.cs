@@ -9,16 +9,19 @@ namespace TeleTurk.Core.MTProto
 
     public abstract class TLObject
     {
-        public abstract uint ConstructorCode { get; }
+        public abstract TL.Types ConstructorCode { get; }
         public abstract void Write(TBinaryWriter writer);
         public abstract void Read(TBinaryReader reader);
+
+        public abstract object this[string name] { get; }
+        public abstract bool HasKey(string name); 
     }
 
     public abstract class MTProtoRequest
     {
         public long MessageId { get; set; }
         public int Sequence { get; set; }
-        public abstract uint ConstructorCode { get; }
+        public abstract TL.Types ConstructorCode { get; }
 
         public bool Dirty { get; set; }
 
@@ -60,7 +63,6 @@ namespace TeleTurk.Core.MTProto
     public abstract class DestroySessionRes : TLObject { }
     public abstract class NewSession : TLObject { }
     public abstract class HttpWait : TLObject { }
-    public abstract class Bool : TLObject { }
     public abstract class True : TLObject { }
     public abstract class Error : TLObject { }
     public abstract class Null : TLObject { }
@@ -200,17 +202,9 @@ namespace TeleTurk.Core.MTProto
     public abstract class MessagesBotResults : TLObject { }
     public abstract class ExportedMessageLink : TLObject { }
     public abstract class MessageFwdHeader : TLObject { }
+    public abstract class ChannelsMessageEditData : TLObject { }
     public abstract class AuthCodeType : TLObject { }
     public abstract class AuthSentCodeType : TLObject { }
-    public abstract class MessagesBotCallbackAnswer : TLObject { }
-    public abstract class MessagesMessageEditData : TLObject { }
-    public abstract class InputBotInlineMessageID : TLObject { }
-    public abstract class InlineBotSwitchPM : TLObject { }
-    public abstract class MessagesPeerDialogs : TLObject { }
-    public abstract class TopPeer : TLObject { }
-    public abstract class TopPeerCategory : TLObject { }
-    public abstract class TopPeerCategoryPeers : TLObject { }
-    public abstract class ContactsTopPeers : TLObject { }
 
     #endregion
 
@@ -272,12 +266,16 @@ namespace TeleTurk.Core.MTProto
         public TLObject ReadTLObject()
         {
             var code = ReadUInt32();
-            return ReadTLObject(code);
+            return ReadTLObject((TL.Types)code);
         }
 
         public TLObject ReadTLObject(uint code)
         {
-            TLObject obj = (TLObject)Activator.CreateInstance(TL.Constructors[code]);
+            return ReadTLObject((TL.Types)code);
+        }
+        public TLObject ReadTLObject(TL.Types type)
+        {
+            TLObject obj = (TLObject)Activator.CreateInstance(TL.Constructors[type]);
             obj.Read(this);
             return obj;
         }
@@ -342,462 +340,1017 @@ namespace TeleTurk.Core.MTProto
 
     public class TL
     {
+        #region Types enumeration
+
+        public enum Types : uint
+        {
+            MsgsAckType = 0x62d6b459,
+            MsgsAckRequest = 0x62d6b459,
+            BadMsgNotificationType = 0xa7eff811,
+            BadServerSaltType = 0xedab447b,
+            MsgsStateReqType = 0xda69fb52,
+            MsgsStateInfoType = 0x04deb57d,
+            MsgsAllInfoType = 0x8cc0d131,
+            MsgDetailedInfoType = 0x276d3ec6,
+            MsgNewDetailedInfoType = 0x809db6df,
+            MsgResendReqType = 0x7d861a08,
+            RpcErrorType = 0x2144ca19,
+            RpcAnswerUnknownType = 0x5e2ad36e,
+            RpcAnswerDroppedRunningType = 0xcd78e586,
+            RpcAnswerDroppedType = 0xa43ad8b7,
+            FutureSaltType = 0x0949d9dc,
+            FutureSaltsType = 0xae500895,
+            PongType = 0x347773c5,
+            DestroySessionOkType = 0xe22045fc,
+            DestroySessionNoneType = 0x62d350c9,
+            NewSessionCreatedType = 0x9ec20908,
+            HttpWaitType = 0x9299359f,
+            RpcDropAnswerRequest = 0x58e4a740,
+            GetFutureSaltsRequest = 0xb921bd04,
+            PingRequest = 0x7abe77ec,
+            PingDelayDisconnectRequest = 0xf3427b8c,
+            DestroySessionRequest = 0xe7512126,
+            RegisterSaveDeveloperInfoRequest = 0x9a5f6e95,
+            TrueType = 0x3fedd339,
+            ErrorType = 0xc4b9f9bb,
+            NullType = 0x56730bcc,
+            InputPeerEmptyType = 0x7f3b18ea,
+            InputPeerSelfType = 0x7da07ec9,
+            InputPeerChatType = 0x179be863,
+            InputPeerUserType = 0x7b8e7de6,
+            InputPeerChannelType = 0x20adaef8,
+            InputUserEmptyType = 0xb98886cf,
+            InputUserSelfType = 0xf7c1b13f,
+            InputUserType = 0xd8292816,
+            InputPhoneContactType = 0xf392b7f4,
+            InputFileType = 0xf52ff27f,
+            InputFileBigType = 0xfa4f0bb5,
+            InputMediaEmptyType = 0x9664f57f,
+            InputMediaUploadedPhotoType = 0xf7aff1c0,
+            InputMediaPhotoType = 0xe9bfb4f3,
+            InputMediaGeoPointType = 0xf9c44144,
+            InputMediaContactType = 0xa6e45987,
+            InputMediaUploadedDocumentType = 0x1d89306d,
+            InputMediaUploadedThumbDocumentType = 0xad613491,
+            InputMediaDocumentType = 0x1a77f29c,
+            InputMediaVenueType = 0x2827a81a,
+            InputMediaGifExternalType = 0x4843b0fd,
+            InputChatPhotoEmptyType = 0x1ca48f57,
+            InputChatUploadedPhotoType = 0x94254732,
+            InputChatPhotoType = 0xb2e1bf08,
+            InputGeoPointEmptyType = 0xe4c123d6,
+            InputGeoPointType = 0xf3b7acc9,
+            InputPhotoEmptyType = 0x1cd7bf0d,
+            InputPhotoType = 0xfb95c6c4,
+            InputFileLocationType = 0x14637196,
+            InputEncryptedFileLocationType = 0xf5235d55,
+            InputDocumentFileLocationType = 0x4e45abe9,
+            InputPhotoCropAutoType = 0xade6b004,
+            InputPhotoCropType = 0xd9915325,
+            InputAppEventType = 0x770656a8,
+            PeerUserType = 0x9db1bc6d,
+            PeerChatType = 0xbad0e5bb,
+            PeerChannelType = 0xbddde532,
+            StorageFileUnknownType = 0xaa963b05,
+            StorageFileJpegType = 0x007efe0e,
+            StorageFileGifType = 0xcae1aadf,
+            StorageFilePngType = 0x0a4f63c0,
+            StorageFilePdfType = 0xae1e508d,
+            StorageFileMp3Type = 0x528a0677,
+            StorageFileMovType = 0x4b09ebbc,
+            StorageFilePartialType = 0x40bc6f52,
+            StorageFileMp4Type = 0xb3cea0e4,
+            StorageFileWebpType = 0x1081464c,
+            FileLocationUnavailableType = 0x7c596b46,
+            FileLocationType = 0x53d69076,
+            UserEmptyType = 0x200250ba,
+            UserType = 0xd10d979a,
+            UserProfilePhotoEmptyType = 0x4f11bae1,
+            UserProfilePhotoType = 0xd559d8c8,
+            UserStatusEmptyType = 0x09d05049,
+            UserStatusOnlineType = 0xedb93949,
+            UserStatusOfflineType = 0x008c703f,
+            UserStatusRecentlyType = 0xe26f42f1,
+            UserStatusLastWeekType = 0x07bf09fc,
+            UserStatusLastMonthType = 0x77ebc742,
+            ChatEmptyType = 0x9ba2d800,
+            ChatType = 0xd91cdd54,
+            ChatForbiddenType = 0x07328bdb,
+            ChannelType = 0xa14dca52,
+            ChannelForbiddenType = 0x2d85832c,
+            ChatFullType = 0x2e02a614,
+            ChannelFullType = 0x97bee562,
+            ChatParticipantType = 0xc8d7493e,
+            ChatParticipantCreatorType = 0xda13538a,
+            ChatParticipantAdminType = 0xe2d6e436,
+            ChatParticipantsForbiddenType = 0xfc900c2b,
+            ChatParticipantsType = 0x3f460fed,
+            ChatPhotoEmptyType = 0x37c1011c,
+            ChatPhotoType = 0x6153276a,
+            MessageEmptyType = 0x83e5de54,
+            MessageType = 0xc09be45f,
+            MessageServiceType = 0x9e19a1f6,
+            MessageMediaEmptyType = 0x3ded6320,
+            MessageMediaPhotoType = 0x3d8ce53d,
+            MessageMediaGeoType = 0x56e0d474,
+            MessageMediaContactType = 0x5e7d2f39,
+            MessageMediaUnsupportedType = 0x9f84f49e,
+            MessageMediaDocumentType = 0xf3e02ea8,
+            MessageMediaWebPageType = 0xa32dd600,
+            MessageMediaVenueType = 0x7912b71f,
+            MessageActionEmptyType = 0xb6aef7b0,
+            MessageActionChatCreateType = 0xa6638b9a,
+            MessageActionChatEditTitleType = 0xb5a1ce5a,
+            MessageActionChatEditPhotoType = 0x7fcb13a8,
+            MessageActionChatDeletePhotoType = 0x95e3fbef,
+            MessageActionChatAddUserType = 0x488a7337,
+            MessageActionChatDeleteUserType = 0xb2ae9b0c,
+            MessageActionChatJoinedByLinkType = 0xf89cf5e8,
+            MessageActionChannelCreateType = 0x95d2ac92,
+            MessageActionChatMigrateToType = 0x51bdb021,
+            MessageActionChannelMigrateFromType = 0xb055eaee,
+            MessageActionPinMessageType = 0x94bd38ed,
+            DialogType = 0xc1dd804a,
+            DialogChannelType = 0x5b8496b2,
+            PhotoEmptyType = 0x2331b22d,
+            PhotoType = 0xcded42fe,
+            PhotoSizeEmptyType = 0x0e17e23c,
+            PhotoSizeType = 0x77bfb61b,
+            PhotoCachedSizeType = 0xe9a734fa,
+            GeoPointEmptyType = 0x1117dd5f,
+            GeoPointType = 0x2049d70c,
+            AuthCheckedPhoneType = 0x811ea28e,
+            AuthSentCodeType = 0x5e002502,
+            AuthAuthorizationType = 0xff036af1,
+            AuthExportedAuthorizationType = 0xdf969c2d,
+            InputNotifyPeerType = 0xb8bc5b0c,
+            InputNotifyUsersType = 0x193b4417,
+            InputNotifyChatsType = 0x4a95e84e,
+            InputNotifyAllType = 0xa429b886,
+            InputPeerNotifyEventsEmptyType = 0xf03064d8,
+            InputPeerNotifyEventsAllType = 0xe86a2c74,
+            InputPeerNotifySettingsType = 0x38935eb2,
+            PeerNotifyEventsEmptyType = 0xadd53cb3,
+            PeerNotifyEventsAllType = 0x6d1ded88,
+            PeerNotifySettingsEmptyType = 0x70a68512,
+            PeerNotifySettingsType = 0x9acda4c0,
+            PeerSettingsType = 0x818426cd,
+            WallPaperType = 0xccb03657,
+            WallPaperSolidType = 0x63117f24,
+            InputReportReasonSpamType = 0x58dbcab8,
+            InputReportReasonViolenceType = 0x1e22c78d,
+            InputReportReasonPornographyType = 0x2e59d922,
+            InputReportReasonOtherType = 0xe1746d0a,
+            UserFullType = 0x5932fc03,
+            ContactType = 0xf911c994,
+            ImportedContactType = 0xd0028438,
+            ContactBlockedType = 0x561bc879,
+            ContactStatusType = 0xd3680c61,
+            ContactsLinkType = 0x3ace484c,
+            ContactsContactsNotModifiedType = 0xb74ba9d2,
+            ContactsContactsType = 0x6f8b8cb2,
+            ContactsImportedContactsType = 0xad524315,
+            ContactsBlockedType = 0x1c138d15,
+            ContactsBlockedSliceType = 0x900802a1,
+            MessagesDialogsType = 0x15ba6c40,
+            MessagesDialogsSliceType = 0x71e094f3,
+            MessagesMessagesType = 0x8c718e87,
+            MessagesMessagesSliceType = 0x0b446ae3,
+            MessagesChannelMessagesType = 0xbc0f17bc,
+            MessagesChatsType = 0x64ff9fd5,
+            MessagesChatFullType = 0xe5d7d19c,
+            MessagesAffectedHistoryType = 0xb45c69d1,
+            InputMessagesFilterEmptyType = 0x57e2f66c,
+            InputMessagesFilterPhotosType = 0x9609a51c,
+            InputMessagesFilterVideoType = 0x9fc00e65,
+            InputMessagesFilterPhotoVideoType = 0x56e9f0e4,
+            InputMessagesFilterPhotoVideoDocumentsType = 0xd95e73bb,
+            InputMessagesFilterDocumentType = 0x9eddf188,
+            InputMessagesFilterUrlType = 0x7ef0dd87,
+            InputMessagesFilterGifType = 0xffc86587,
+            InputMessagesFilterVoiceType = 0x50f5c392,
+            InputMessagesFilterMusicType = 0x3751b49e,
+            UpdateNewMessageType = 0x1f2b0afd,
+            UpdateMessageIDType = 0x4e90bfd6,
+            UpdateDeleteMessagesType = 0xa20db0e5,
+            UpdateUserTypingType = 0x5c486927,
+            UpdateChatUserTypingType = 0x9a65ea1f,
+            UpdateChatParticipantsType = 0x07761198,
+            UpdateUserStatusType = 0x1bfbd823,
+            UpdateUserNameType = 0xa7332b73,
+            UpdateUserPhotoType = 0x95313b0c,
+            UpdateContactRegisteredType = 0x2575bbb9,
+            UpdateContactLinkType = 0x9d2e67c5,
+            UpdateNewAuthorizationType = 0x8f06529a,
+            UpdateNewEncryptedMessageType = 0x12bcbd9a,
+            UpdateEncryptedChatTypingType = 0x1710f156,
+            UpdateEncryptionType = 0xb4a2e88d,
+            UpdateEncryptedMessagesReadType = 0x38fe25b7,
+            UpdateChatParticipantAddType = 0xea4b0e5c,
+            UpdateChatParticipantDeleteType = 0x6e5f8c22,
+            UpdateDcOptionsType = 0x8e5e9873,
+            UpdateUserBlockedType = 0x80ece81a,
+            UpdateNotifySettingsType = 0xbec268ef,
+            UpdateServiceNotificationType = 0x382dd3e4,
+            UpdatePrivacyType = 0xee3b272a,
+            UpdateUserPhoneType = 0x12b9417b,
+            UpdateReadHistoryInboxType = 0x9961fd5c,
+            UpdateReadHistoryOutboxType = 0x2f2f21bf,
+            UpdateWebPageType = 0x7f891213,
+            UpdateReadMessagesContentsType = 0x68c13933,
+            UpdateChannelTooLongType = 0xeb0467fb,
+            UpdateChannelType = 0xb6d45656,
+            UpdateChannelGroupType = 0xc36c1e3c,
+            UpdateNewChannelMessageType = 0x62ba04d9,
+            UpdateReadChannelInboxType = 0x4214f37f,
+            UpdateDeleteChannelMessagesType = 0xc37521c9,
+            UpdateChannelMessageViewsType = 0x98a12b4b,
+            UpdateChatAdminsType = 0x6e947941,
+            UpdateChatParticipantAdminType = 0xb6901959,
+            UpdateNewStickerSetType = 0x688a30aa,
+            UpdateStickerSetsOrderType = 0xf0dfb451,
+            UpdateStickerSetsType = 0x43ae3dec,
+            UpdateSavedGifsType = 0x9375341e,
+            UpdateBotInlineQueryType = 0xc01eea08,
+            UpdateBotInlineSendType = 0x0f69e113,
+            UpdateEditChannelMessageType = 0x1b3f4df7,
+            UpdateChannelPinnedMessageType = 0x98592475,
+            UpdatesStateType = 0xa56c2a3e,
+            UpdatesDifferenceEmptyType = 0x5d75a138,
+            UpdatesDifferenceType = 0x00f49ca0,
+            UpdatesDifferenceSliceType = 0xa8fb1981,
+            UpdatesTooLongType = 0xe317af7e,
+            UpdateShortMessageType = 0x914fbf11,
+            UpdateShortChatMessageType = 0x16812688,
+            UpdateShortType = 0x78d4dec1,
+            UpdatesCombinedType = 0x725b04c3,
+            UpdatesType = 0x74ae4240,
+            UpdateShortSentMessageType = 0x11f1331c,
+            PhotosPhotosType = 0x8dca6aa5,
+            PhotosPhotosSliceType = 0x15051f54,
+            PhotosPhotoType = 0x20212ca8,
+            UploadFileType = 0x096a18d5,
+            DcOptionType = 0x05d8c6cc,
+            ConfigType = 0x317ceef4,
+            NearestDcType = 0x8e1a1775,
+            HelpAppUpdateType = 0x8987f311,
+            HelpNoAppUpdateType = 0xc45a6536,
+            HelpInviteTextType = 0x18cb9f78,
+            EncryptedChatEmptyType = 0xab7ec0a0,
+            EncryptedChatWaitingType = 0x3bf703dc,
+            EncryptedChatRequestedType = 0xc878527e,
+            EncryptedChatType = 0xfa56ce36,
+            EncryptedChatDiscardedType = 0x13d6dd27,
+            InputEncryptedChatType = 0xf141b5e1,
+            EncryptedFileEmptyType = 0xc21f497e,
+            EncryptedFileType = 0x4a70994c,
+            InputEncryptedFileEmptyType = 0x1837c364,
+            InputEncryptedFileUploadedType = 0x64bd0306,
+            InputEncryptedFileType = 0x5a17b5e5,
+            InputEncryptedFileBigUploadedType = 0x2dc173c8,
+            EncryptedMessageType = 0xed18c118,
+            EncryptedMessageServiceType = 0x23734b06,
+            MessagesDhConfigNotModifiedType = 0xc0e24635,
+            MessagesDhConfigType = 0x2c221edd,
+            MessagesSentEncryptedMessageType = 0x560f8935,
+            MessagesSentEncryptedFileType = 0x9493ff32,
+            InputDocumentEmptyType = 0x72f0eaae,
+            InputDocumentType = 0x18798952,
+            DocumentEmptyType = 0x36f8c871,
+            DocumentType = 0xf9a39f4f,
+            HelpSupportType = 0x17c6b5f6,
+            NotifyPeerType = 0x9fd40bd8,
+            NotifyUsersType = 0xb4c83b4c,
+            NotifyChatsType = 0xc007cec3,
+            NotifyAllType = 0x74d07c60,
+            SendMessageTypingActionType = 0x16bf744e,
+            SendMessageCancelActionType = 0xfd5ec8f5,
+            SendMessageRecordVideoActionType = 0xa187d66f,
+            SendMessageUploadVideoActionType = 0xe9763aec,
+            SendMessageRecordAudioActionType = 0xd52f73f7,
+            SendMessageUploadAudioActionType = 0xf351d7ab,
+            SendMessageUploadPhotoActionType = 0xd1d34a26,
+            SendMessageUploadDocumentActionType = 0xaa0cd9e4,
+            SendMessageGeoLocationActionType = 0x176f8ba1,
+            SendMessageChooseContactActionType = 0x628cbc6f,
+            ContactsFoundType = 0x1aa1f784,
+            InputPrivacyKeyStatusTimestampType = 0x4f96cb18,
+            InputPrivacyKeyChatInviteType = 0xbdfb0426,
+            PrivacyKeyStatusTimestampType = 0xbc2eab30,
+            PrivacyKeyChatInviteType = 0x500e6dfa,
+            InputPrivacyValueAllowContactsType = 0x0d09e07b,
+            InputPrivacyValueAllowAllType = 0x184b35ce,
+            InputPrivacyValueAllowUsersType = 0x131cc67f,
+            InputPrivacyValueDisallowContactsType = 0x0ba52007,
+            InputPrivacyValueDisallowAllType = 0xd66b66c9,
+            InputPrivacyValueDisallowUsersType = 0x90110467,
+            PrivacyValueAllowContactsType = 0xfffe1bac,
+            PrivacyValueAllowAllType = 0x65427b82,
+            PrivacyValueAllowUsersType = 0x4d5bbe0c,
+            PrivacyValueDisallowContactsType = 0xf888fa1a,
+            PrivacyValueDisallowAllType = 0x8b73e763,
+            PrivacyValueDisallowUsersType = 0x0c7f49b7,
+            AccountPrivacyRulesType = 0x554abb6f,
+            AccountDaysTTLType = 0xb8d0afdf,
+            DocumentAttributeImageSizeType = 0x6c37c15c,
+            DocumentAttributeAnimatedType = 0x11b58939,
+            DocumentAttributeStickerType = 0x3a556302,
+            DocumentAttributeVideoType = 0x5910cccb,
+            DocumentAttributeAudioType = 0x9852f9c6,
+            DocumentAttributeFilenameType = 0x15590068,
+            MessagesStickersNotModifiedType = 0xf1749a22,
+            MessagesStickersType = 0x8a8ecd32,
+            StickerPackType = 0x12b299d4,
+            MessagesAllStickersNotModifiedType = 0xe86602c3,
+            MessagesAllStickersType = 0xedfd405f,
+            DisabledFeatureType = 0xae636f24,
+            MessagesAffectedMessagesType = 0x84d19185,
+            ContactLinkUnknownType = 0x5f4f9247,
+            ContactLinkNoneType = 0xfeedd3ad,
+            ContactLinkHasPhoneType = 0x268f3f59,
+            ContactLinkContactType = 0xd502c2d0,
+            WebPageEmptyType = 0xeb1477e8,
+            WebPagePendingType = 0xc586da1c,
+            WebPageType = 0xca820ed7,
+            AuthorizationType = 0x7bf2e6f6,
+            AccountAuthorizationsType = 0x1250abde,
+            AccountNoPasswordType = 0x96dabc18,
+            AccountPasswordType = 0x7c18141c,
+            AccountPasswordSettingsType = 0xb7b72ab3,
+            AccountPasswordInputSettingsType = 0x86916deb,
+            AuthPasswordRecoveryType = 0x137948a5,
+            ReceivedNotifyMessageType = 0xa384b779,
+            ChatInviteEmptyType = 0x69df3769,
+            ChatInviteExportedType = 0xfc2e05bc,
+            ChatInviteAlreadyType = 0x5a686d7c,
+            ChatInviteType = 0x93e99b60,
+            InputStickerSetEmptyType = 0xffb62b95,
+            InputStickerSetIDType = 0x9de7a269,
+            InputStickerSetShortNameType = 0x861cc8a0,
+            StickerSetType = 0xcd303b41,
+            MessagesStickerSetType = 0xb60a24a6,
+            BotCommandType = 0xc27ac8c7,
+            BotInfoType = 0x98e81d3a,
+            KeyboardButtonType = 0xa2fa4880,
+            KeyboardButtonRowType = 0x77608b83,
+            ReplyKeyboardHideType = 0xa03e5b85,
+            ReplyKeyboardForceReplyType = 0xf4108aa0,
+            ReplyKeyboardMarkupType = 0x3502758c,
+            HelpAppChangelogEmptyType = 0xaf7e0394,
+            HelpAppChangelogType = 0x4668e6bd,
+            MessageEntityUnknownType = 0xbb92ba95,
+            MessageEntityMentionType = 0xfa04579d,
+            MessageEntityHashtagType = 0x6f635b0d,
+            MessageEntityBotCommandType = 0x6cef8ac7,
+            MessageEntityUrlType = 0x6ed02538,
+            MessageEntityEmailType = 0x64e475c2,
+            MessageEntityBoldType = 0xbd610bc9,
+            MessageEntityItalicType = 0x826f8b60,
+            MessageEntityCodeType = 0x28a20571,
+            MessageEntityPreType = 0x73924be0,
+            MessageEntityTextUrlType = 0x76a6d327,
+            InputChannelEmptyType = 0xee8c1e86,
+            InputChannelType = 0xafeb712e,
+            ContactsResolvedPeerType = 0x7f077ad9,
+            MessageRangeType = 0x0ae30253,
+            MessageGroupType = 0xe8346f53,
+            UpdatesChannelDifferenceEmptyType = 0x3e11affb,
+            UpdatesChannelDifferenceTooLongType = 0x5e167646,
+            UpdatesChannelDifferenceType = 0x2064674e,
+            ChannelMessagesFilterEmptyType = 0x94d42ee7,
+            ChannelMessagesFilterType = 0xcd77d957,
+            ChannelMessagesFilterCollapsedType = 0xfa01232e,
+            ChannelParticipantType = 0x15ebac1d,
+            ChannelParticipantSelfType = 0xa3289a6d,
+            ChannelParticipantModeratorType = 0x91057fef,
+            ChannelParticipantEditorType = 0x98192d61,
+            ChannelParticipantKickedType = 0x8cc5e69a,
+            ChannelParticipantCreatorType = 0xe3e2e1f9,
+            ChannelParticipantsRecentType = 0xde3f3c79,
+            ChannelParticipantsAdminsType = 0xb4608969,
+            ChannelParticipantsKickedType = 0x3c37bb7a,
+            ChannelParticipantsBotsType = 0xb0d1865b,
+            ChannelRoleEmptyType = 0xb285a0c6,
+            ChannelRoleModeratorType = 0x9618d975,
+            ChannelRoleEditorType = 0x820bfe8c,
+            ChannelsChannelParticipantsType = 0xf56ee2a8,
+            ChannelsChannelParticipantType = 0xd0d9b163,
+            HelpTermsOfServiceType = 0xf1ee3e90,
+            FoundGifType = 0x162ecc1f,
+            FoundGifCachedType = 0x9c750409,
+            MessagesFoundGifsType = 0x450a1c0a,
+            MessagesSavedGifsNotModifiedType = 0xe8025ca2,
+            MessagesSavedGifsType = 0x2e0709a5,
+            InputBotInlineMessageMediaAutoType = 0x2e43e587,
+            InputBotInlineMessageTextType = 0xadf0df71,
+            InputBotInlineResultType = 0x2cbbe15a,
+            BotInlineMessageMediaAutoType = 0xfc56e87d,
+            BotInlineMessageTextType = 0xa56197a9,
+            BotInlineMediaResultDocumentType = 0xf897d33e,
+            BotInlineMediaResultPhotoType = 0xc5528587,
+            BotInlineResultType = 0x9bebaeb9,
+            MessagesBotResultsType = 0x1170b0a3,
+            ExportedMessageLinkType = 0x1f486803,
+            MessageFwdHeaderType = 0xc786ddcb,
+            ChannelsMessageEditDataType = 0x67e1255f,
+            AuthCodeTypeSmsType = 0x72a3158c,
+            AuthCodeTypeCallType = 0x741cd3e3,
+            AuthCodeTypeFlashCallType = 0x226ccefb,
+            AuthSentCodeTypeAppType = 0x3dbb5986,
+            AuthSentCodeTypeSmsType = 0xc000bba2,
+            AuthSentCodeTypeCallType = 0x5353e5a7,
+            AuthSentCodeTypeFlashCallType = 0xab03c6d9,
+            InvokeAfterMsgRequest = 0xcb9f372d,
+            InvokeAfterMsgsRequest = 0x3dc4b4f0,
+            InitConnectionRequest = 0x69796de9,
+            InvokeWithLayerRequest = 0xda9b0d0d,
+            InvokeWithoutUpdatesRequest = 0xbf9459b7,
+            AuthCheckPhoneRequest = 0x6fe51dfb,
+            AuthSendCodeRequest = 0xccfd70cf,
+            AuthSignUpRequest = 0x1b067634,
+            AuthSignInRequest = 0xbcd51581,
+            AuthLogOutRequest = 0x5717da40,
+            AuthResetAuthorizationsRequest = 0x9fab0d1a,
+            AuthSendInvitesRequest = 0x771c1d97,
+            AuthExportAuthorizationRequest = 0xe5bfffcd,
+            AuthImportAuthorizationRequest = 0xe3ef9613,
+            AuthBindTempAuthKeyRequest = 0xcdd42a05,
+            AuthImportBotAuthorizationRequest = 0x67a3ff2c,
+            AuthCheckPasswordRequest = 0x0a63011e,
+            AuthRequestPasswordRecoveryRequest = 0xd897bc66,
+            AuthRecoverPasswordRequest = 0x4ea56e92,
+            AuthResendCodeRequest = 0x3ef1a9bf,
+            AuthCancelCodeRequest = 0x1f040578,
+            AccountRegisterDeviceRequest = 0x446c712c,
+            AccountUnregisterDeviceRequest = 0x65c55b40,
+            AccountUpdateNotifySettingsRequest = 0x84be5b93,
+            AccountGetNotifySettingsRequest = 0x12b3ad31,
+            AccountResetNotifySettingsRequest = 0xdb7e1747,
+            AccountUpdateProfileRequest = 0x78515775,
+            AccountUpdateStatusRequest = 0x6628562c,
+            AccountGetWallPapersRequest = 0xc04cfac2,
+            AccountReportPeerRequest = 0xae189d5f,
+            AccountCheckUsernameRequest = 0x2714d86c,
+            AccountUpdateUsernameRequest = 0x3e0bdd7c,
+            AccountGetPrivacyRequest = 0xdadbc950,
+            AccountSetPrivacyRequest = 0xc9f81ce8,
+            AccountDeleteAccountRequest = 0x418d4e0b,
+            AccountGetAccountTTLRequest = 0x08fc711d,
+            AccountSetAccountTTLRequest = 0x2442485e,
+            AccountSendChangePhoneCodeRequest = 0x08e57deb,
+            AccountChangePhoneRequest = 0x70c32edb,
+            AccountUpdateDeviceLockedRequest = 0x38df3532,
+            AccountGetAuthorizationsRequest = 0xe320c158,
+            AccountResetAuthorizationRequest = 0xdf77f3bc,
+            AccountGetPasswordRequest = 0x548a30f5,
+            AccountGetPasswordSettingsRequest = 0xbc8d11bb,
+            AccountUpdatePasswordSettingsRequest = 0xfa7c4b86,
+            UsersGetUsersRequest = 0x0d91a548,
+            UsersGetFullUserRequest = 0xca30a5b1,
+            ContactsGetStatusesRequest = 0xc4a353ee,
+            ContactsGetContactsRequest = 0x22c6aa08,
+            ContactsImportContactsRequest = 0xda30b32d,
+            ContactsDeleteContactRequest = 0x8e953744,
+            ContactsDeleteContactsRequest = 0x59ab389e,
+            ContactsBlockRequest = 0x332b49fc,
+            ContactsUnblockRequest = 0xe54100bd,
+            ContactsGetBlockedRequest = 0xf57c350f,
+            ContactsExportCardRequest = 0x84e53737,
+            ContactsImportCardRequest = 0x4fe196fe,
+            ContactsSearchRequest = 0x11f812d8,
+            ContactsResolveUsernameRequest = 0xf93ccba3,
+            MessagesGetMessagesRequest = 0x4222fa74,
+            MessagesGetDialogsRequest = 0x6b47f94d,
+            MessagesGetHistoryRequest = 0xafa92846,
+            MessagesSearchRequest = 0xd4569248,
+            MessagesReadHistoryRequest = 0x0e306d3a,
+            MessagesDeleteHistoryRequest = 0xb7c13bd9,
+            MessagesDeleteMessagesRequest = 0xa5f18925,
+            MessagesReceivedMessagesRequest = 0x05a954c0,
+            MessagesSetTypingRequest = 0xa3825e50,
+            MessagesSendMessageRequest = 0xfa88427a,
+            MessagesSendMediaRequest = 0xc8f16791,
+            MessagesForwardMessagesRequest = 0x708e0195,
+            MessagesReportSpamRequest = 0xcf1592db,
+            MessagesHideReportSpamRequest = 0xa8f1709b,
+            MessagesGetPeerSettingsRequest = 0x3672e09c,
+            MessagesGetChatsRequest = 0x3c6aa187,
+            MessagesGetFullChatRequest = 0x3b831c66,
+            MessagesEditChatTitleRequest = 0xdc452855,
+            MessagesEditChatPhotoRequest = 0xca4c79d8,
+            MessagesAddChatUserRequest = 0xf9a0aa09,
+            MessagesDeleteChatUserRequest = 0xe0611f16,
+            MessagesCreateChatRequest = 0x09cb126e,
+            MessagesForwardMessageRequest = 0x33963bf9,
+            MessagesSendBroadcastRequest = 0xbf73f4da,
+            MessagesGetDhConfigRequest = 0x26cf8950,
+            MessagesRequestEncryptionRequest = 0xf64daf43,
+            MessagesAcceptEncryptionRequest = 0x3dbc0415,
+            MessagesDiscardEncryptionRequest = 0xedd923c5,
+            MessagesSetEncryptedTypingRequest = 0x791451ed,
+            MessagesReadEncryptedHistoryRequest = 0x7f4b690a,
+            MessagesSendEncryptedRequest = 0xa9776773,
+            MessagesSendEncryptedFileRequest = 0x9a901b66,
+            MessagesSendEncryptedServiceRequest = 0x32d439a4,
+            MessagesReceivedQueueRequest = 0x55a5bb66,
+            MessagesReadMessageContentsRequest = 0x36a73f77,
+            MessagesGetStickersRequest = 0xae22e045,
+            MessagesGetAllStickersRequest = 0x1c9618b1,
+            MessagesGetWebPagePreviewRequest = 0x25223e24,
+            MessagesExportChatInviteRequest = 0x7d885289,
+            MessagesCheckChatInviteRequest = 0x3eadb1bb,
+            MessagesImportChatInviteRequest = 0x6c50051c,
+            MessagesGetStickerSetRequest = 0x2619a90e,
+            MessagesInstallStickerSetRequest = 0x7b30c3a6,
+            MessagesUninstallStickerSetRequest = 0xf96e55de,
+            MessagesStartBotRequest = 0xe6df7378,
+            MessagesGetMessagesViewsRequest = 0xc4c8a55d,
+            MessagesToggleChatAdminsRequest = 0xec8bd9e1,
+            MessagesEditChatAdminRequest = 0xa9e69f2e,
+            MessagesMigrateChatRequest = 0x15a3b8e3,
+            MessagesSearchGlobalRequest = 0x9e3cacb0,
+            MessagesReorderStickerSetsRequest = 0x9fcfbc30,
+            MessagesGetDocumentByHashRequest = 0x338e2464,
+            MessagesSearchGifsRequest = 0xbf9a776b,
+            MessagesGetSavedGifsRequest = 0x83bf3d52,
+            MessagesSaveGifRequest = 0x327a30cb,
+            MessagesGetInlineBotResultsRequest = 0x9324600d,
+            MessagesSetInlineBotResultsRequest = 0x3f23ec12,
+            MessagesSendInlineBotResultRequest = 0xb16e06fe,
+            UpdatesGetStateRequest = 0xedd4882a,
+            UpdatesGetDifferenceRequest = 0x0a041495,
+            UpdatesGetChannelDifferenceRequest = 0xbb32d7c0,
+            PhotosUpdateProfilePhotoRequest = 0xeef579a0,
+            PhotosUploadProfilePhotoRequest = 0xd50f9c88,
+            PhotosDeletePhotosRequest = 0x87cf7f2f,
+            PhotosGetUserPhotosRequest = 0x91cd32a8,
+            UploadSaveFilePartRequest = 0xb304a621,
+            UploadGetFileRequest = 0xe3a6cfb5,
+            UploadSaveBigFilePartRequest = 0xde7b673d,
+            HelpGetConfigRequest = 0xc4f9186b,
+            HelpGetNearestDcRequest = 0x1fb33026,
+            HelpGetAppUpdateRequest = 0xc812ac7e,
+            HelpSaveAppLogRequest = 0x6f02f748,
+            HelpGetInviteTextRequest = 0xa4a95186,
+            HelpGetSupportRequest = 0x9cdf08cd,
+            HelpGetAppChangelogRequest = 0x5bab7fb2,
+            HelpGetTermsOfServiceRequest = 0x37d78f83,
+            ChannelsGetDialogsRequest = 0xa9d3d249,
+            ChannelsGetImportantHistoryRequest = 0x8f494bb2,
+            ChannelsReadHistoryRequest = 0xcc104937,
+            ChannelsDeleteMessagesRequest = 0x84c1fd4e,
+            ChannelsDeleteUserHistoryRequest = 0xd10dd71b,
+            ChannelsReportSpamRequest = 0xfe087810,
+            ChannelsGetMessagesRequest = 0x93d7b347,
+            ChannelsGetParticipantsRequest = 0x24d98f92,
+            ChannelsGetParticipantRequest = 0x546dd7a6,
+            ChannelsGetChannelsRequest = 0x0a7f6bbb,
+            ChannelsGetFullChannelRequest = 0x08736a09,
+            ChannelsCreateChannelRequest = 0xf4893d7f,
+            ChannelsEditAboutRequest = 0x13e27f1e,
+            ChannelsEditAdminRequest = 0xeb7611d0,
+            ChannelsEditTitleRequest = 0x566decd0,
+            ChannelsEditPhotoRequest = 0xf12e57c9,
+            ChannelsToggleCommentsRequest = 0xaaa29e88,
+            ChannelsCheckUsernameRequest = 0x10e6bd2c,
+            ChannelsUpdateUsernameRequest = 0x3514b3de,
+            ChannelsJoinChannelRequest = 0x24b524c5,
+            ChannelsLeaveChannelRequest = 0xf836aa95,
+            ChannelsInviteToChannelRequest = 0x199f3a6c,
+            ChannelsKickFromChannelRequest = 0xa672de14,
+            ChannelsExportInviteRequest = 0xc7560885,
+            ChannelsDeleteChannelRequest = 0xc0111fe3,
+            ChannelsToggleInvitesRequest = 0x49609307,
+            ChannelsExportMessageLinkRequest = 0xc846d22d,
+            ChannelsToggleSignaturesRequest = 0x1f69b606,
+            ChannelsGetMessageEditDataRequest = 0x27ea3a28,
+            ChannelsEditMessageRequest = 0xdcda80ed,
+            ChannelsUpdatePinnedMessageRequest = 0xa72ded52        }
+
+        #endregion
+
         #region Constructors dictionary
 
-        public static readonly Dictionary<uint, Type> Constructors = new Dictionary<uint, Type>()
+        public static readonly Dictionary<Types, Type> Constructors = new Dictionary<Types, Type>()
         {
-            { 0x62d6b459, typeof(MsgsAckType) },
-            { 0xa7eff811, typeof(BadMsgNotificationType) },
-            { 0xedab447b, typeof(BadServerSaltType) },
-            { 0xda69fb52, typeof(MsgsStateReqType) },
-            { 0x04deb57d, typeof(MsgsStateInfoType) },
-            { 0x8cc0d131, typeof(MsgsAllInfoType) },
-            { 0x276d3ec6, typeof(MsgDetailedInfoType) },
-            { 0x809db6df, typeof(MsgNewDetailedInfoType) },
-            { 0x7d861a08, typeof(MsgResendReqType) },
-            { 0x2144ca19, typeof(RpcErrorType) },
-            { 0x5e2ad36e, typeof(RpcAnswerUnknownType) },
-            { 0xcd78e586, typeof(RpcAnswerDroppedRunningType) },
-            { 0xa43ad8b7, typeof(RpcAnswerDroppedType) },
-            { 0x0949d9dc, typeof(FutureSaltType) },
-            { 0xae500895, typeof(FutureSaltsType) },
-            { 0x347773c5, typeof(PongType) },
-            { 0xe22045fc, typeof(DestroySessionOkType) },
-            { 0x62d350c9, typeof(DestroySessionNoneType) },
-            { 0x9ec20908, typeof(NewSessionCreatedType) },
-            { 0x9299359f, typeof(HttpWaitType) },
-            { 0x3fedd339, typeof(TrueType) },
-            { 0xbc799737, typeof(BoolFalseType) },
-            { 0x997275b5, typeof(BoolTrueType) },
-            { 0xc4b9f9bb, typeof(ErrorType) },
-            { 0x56730bcc, typeof(NullType) },
-            { 0x7f3b18ea, typeof(InputPeerEmptyType) },
-            { 0x7da07ec9, typeof(InputPeerSelfType) },
-            { 0x179be863, typeof(InputPeerChatType) },
-            { 0x7b8e7de6, typeof(InputPeerUserType) },
-            { 0x20adaef8, typeof(InputPeerChannelType) },
-            { 0xb98886cf, typeof(InputUserEmptyType) },
-            { 0xf7c1b13f, typeof(InputUserSelfType) },
-            { 0xd8292816, typeof(InputUserType) },
-            { 0xf392b7f4, typeof(InputPhoneContactType) },
-            { 0xf52ff27f, typeof(InputFileType) },
-            { 0xfa4f0bb5, typeof(InputFileBigType) },
-            { 0x9664f57f, typeof(InputMediaEmptyType) },
-            { 0xf7aff1c0, typeof(InputMediaUploadedPhotoType) },
-            { 0xe9bfb4f3, typeof(InputMediaPhotoType) },
-            { 0xf9c44144, typeof(InputMediaGeoPointType) },
-            { 0xa6e45987, typeof(InputMediaContactType) },
-            { 0x1d89306d, typeof(InputMediaUploadedDocumentType) },
-            { 0xad613491, typeof(InputMediaUploadedThumbDocumentType) },
-            { 0x1a77f29c, typeof(InputMediaDocumentType) },
-            { 0x2827a81a, typeof(InputMediaVenueType) },
-            { 0x4843b0fd, typeof(InputMediaGifExternalType) },
-            { 0x1ca48f57, typeof(InputChatPhotoEmptyType) },
-            { 0x94254732, typeof(InputChatUploadedPhotoType) },
-            { 0xb2e1bf08, typeof(InputChatPhotoType) },
-            { 0xe4c123d6, typeof(InputGeoPointEmptyType) },
-            { 0xf3b7acc9, typeof(InputGeoPointType) },
-            { 0x1cd7bf0d, typeof(InputPhotoEmptyType) },
-            { 0xfb95c6c4, typeof(InputPhotoType) },
-            { 0x14637196, typeof(InputFileLocationType) },
-            { 0xf5235d55, typeof(InputEncryptedFileLocationType) },
-            { 0x4e45abe9, typeof(InputDocumentFileLocationType) },
-            { 0xade6b004, typeof(InputPhotoCropAutoType) },
-            { 0xd9915325, typeof(InputPhotoCropType) },
-            { 0x770656a8, typeof(InputAppEventType) },
-            { 0x9db1bc6d, typeof(PeerUserType) },
-            { 0xbad0e5bb, typeof(PeerChatType) },
-            { 0xbddde532, typeof(PeerChannelType) },
-            { 0xaa963b05, typeof(StorageFileUnknownType) },
-            { 0x007efe0e, typeof(StorageFileJpegType) },
-            { 0xcae1aadf, typeof(StorageFileGifType) },
-            { 0x0a4f63c0, typeof(StorageFilePngType) },
-            { 0xae1e508d, typeof(StorageFilePdfType) },
-            { 0x528a0677, typeof(StorageFileMp3Type) },
-            { 0x4b09ebbc, typeof(StorageFileMovType) },
-            { 0x40bc6f52, typeof(StorageFilePartialType) },
-            { 0xb3cea0e4, typeof(StorageFileMp4Type) },
-            { 0x1081464c, typeof(StorageFileWebpType) },
-            { 0x7c596b46, typeof(FileLocationUnavailableType) },
-            { 0x53d69076, typeof(FileLocationType) },
-            { 0x200250ba, typeof(UserEmptyType) },
-            { 0xd10d979a, typeof(UserType) },
-            { 0x4f11bae1, typeof(UserProfilePhotoEmptyType) },
-            { 0xd559d8c8, typeof(UserProfilePhotoType) },
-            { 0x09d05049, typeof(UserStatusEmptyType) },
-            { 0xedb93949, typeof(UserStatusOnlineType) },
-            { 0x008c703f, typeof(UserStatusOfflineType) },
-            { 0xe26f42f1, typeof(UserStatusRecentlyType) },
-            { 0x07bf09fc, typeof(UserStatusLastWeekType) },
-            { 0x77ebc742, typeof(UserStatusLastMonthType) },
-            { 0x9ba2d800, typeof(ChatEmptyType) },
-            { 0xd91cdd54, typeof(ChatType) },
-            { 0x07328bdb, typeof(ChatForbiddenType) },
-            { 0xa14dca52, typeof(ChannelType) },
-            { 0x2d85832c, typeof(ChannelForbiddenType) },
-            { 0x2e02a614, typeof(ChatFullType) },
-            { 0x97bee562, typeof(ChannelFullType) },
-            { 0xc8d7493e, typeof(ChatParticipantType) },
-            { 0xda13538a, typeof(ChatParticipantCreatorType) },
-            { 0xe2d6e436, typeof(ChatParticipantAdminType) },
-            { 0xfc900c2b, typeof(ChatParticipantsForbiddenType) },
-            { 0x3f460fed, typeof(ChatParticipantsType) },
-            { 0x37c1011c, typeof(ChatPhotoEmptyType) },
-            { 0x6153276a, typeof(ChatPhotoType) },
-            { 0x83e5de54, typeof(MessageEmptyType) },
-            { 0xc09be45f, typeof(MessageType) },
-            { 0x9e19a1f6, typeof(MessageServiceType) },
-            { 0x3ded6320, typeof(MessageMediaEmptyType) },
-            { 0x3d8ce53d, typeof(MessageMediaPhotoType) },
-            { 0x56e0d474, typeof(MessageMediaGeoType) },
-            { 0x5e7d2f39, typeof(MessageMediaContactType) },
-            { 0x9f84f49e, typeof(MessageMediaUnsupportedType) },
-            { 0xf3e02ea8, typeof(MessageMediaDocumentType) },
-            { 0xa32dd600, typeof(MessageMediaWebPageType) },
-            { 0x7912b71f, typeof(MessageMediaVenueType) },
-            { 0xb6aef7b0, typeof(MessageActionEmptyType) },
-            { 0xa6638b9a, typeof(MessageActionChatCreateType) },
-            { 0xb5a1ce5a, typeof(MessageActionChatEditTitleType) },
-            { 0x7fcb13a8, typeof(MessageActionChatEditPhotoType) },
-            { 0x95e3fbef, typeof(MessageActionChatDeletePhotoType) },
-            { 0x488a7337, typeof(MessageActionChatAddUserType) },
-            { 0xb2ae9b0c, typeof(MessageActionChatDeleteUserType) },
-            { 0xf89cf5e8, typeof(MessageActionChatJoinedByLinkType) },
-            { 0x95d2ac92, typeof(MessageActionChannelCreateType) },
-            { 0x51bdb021, typeof(MessageActionChatMigrateToType) },
-            { 0xb055eaee, typeof(MessageActionChannelMigrateFromType) },
-            { 0x94bd38ed, typeof(MessageActionPinMessageType) },
-            { 0xc1dd804a, typeof(DialogType) },
-            { 0x5b8496b2, typeof(DialogChannelType) },
-            { 0x2331b22d, typeof(PhotoEmptyType) },
-            { 0xcded42fe, typeof(PhotoType) },
-            { 0x0e17e23c, typeof(PhotoSizeEmptyType) },
-            { 0x77bfb61b, typeof(PhotoSizeType) },
-            { 0xe9a734fa, typeof(PhotoCachedSizeType) },
-            { 0x1117dd5f, typeof(GeoPointEmptyType) },
-            { 0x2049d70c, typeof(GeoPointType) },
-            { 0x811ea28e, typeof(AuthCheckedPhoneType) },
-            { 0x5e002502, typeof(AuthSentCodeType) },
-            { 0xff036af1, typeof(AuthAuthorizationType) },
-            { 0xdf969c2d, typeof(AuthExportedAuthorizationType) },
-            { 0xb8bc5b0c, typeof(InputNotifyPeerType) },
-            { 0x193b4417, typeof(InputNotifyUsersType) },
-            { 0x4a95e84e, typeof(InputNotifyChatsType) },
-            { 0xa429b886, typeof(InputNotifyAllType) },
-            { 0xf03064d8, typeof(InputPeerNotifyEventsEmptyType) },
-            { 0xe86a2c74, typeof(InputPeerNotifyEventsAllType) },
-            { 0x38935eb2, typeof(InputPeerNotifySettingsType) },
-            { 0xadd53cb3, typeof(PeerNotifyEventsEmptyType) },
-            { 0x6d1ded88, typeof(PeerNotifyEventsAllType) },
-            { 0x70a68512, typeof(PeerNotifySettingsEmptyType) },
-            { 0x9acda4c0, typeof(PeerNotifySettingsType) },
-            { 0x818426cd, typeof(PeerSettingsType) },
-            { 0xccb03657, typeof(WallPaperType) },
-            { 0x63117f24, typeof(WallPaperSolidType) },
-            { 0x58dbcab8, typeof(InputReportReasonSpamType) },
-            { 0x1e22c78d, typeof(InputReportReasonViolenceType) },
-            { 0x2e59d922, typeof(InputReportReasonPornographyType) },
-            { 0xe1746d0a, typeof(InputReportReasonOtherType) },
-            { 0x5932fc03, typeof(UserFullType) },
-            { 0xf911c994, typeof(ContactType) },
-            { 0xd0028438, typeof(ImportedContactType) },
-            { 0x561bc879, typeof(ContactBlockedType) },
-            { 0xd3680c61, typeof(ContactStatusType) },
-            { 0x3ace484c, typeof(ContactsLinkType) },
-            { 0xb74ba9d2, typeof(ContactsContactsNotModifiedType) },
-            { 0x6f8b8cb2, typeof(ContactsContactsType) },
-            { 0xad524315, typeof(ContactsImportedContactsType) },
-            { 0x1c138d15, typeof(ContactsBlockedType) },
-            { 0x900802a1, typeof(ContactsBlockedSliceType) },
-            { 0x15ba6c40, typeof(MessagesDialogsType) },
-            { 0x71e094f3, typeof(MessagesDialogsSliceType) },
-            { 0x8c718e87, typeof(MessagesMessagesType) },
-            { 0x0b446ae3, typeof(MessagesMessagesSliceType) },
-            { 0xbc0f17bc, typeof(MessagesChannelMessagesType) },
-            { 0x64ff9fd5, typeof(MessagesChatsType) },
-            { 0xe5d7d19c, typeof(MessagesChatFullType) },
-            { 0xb45c69d1, typeof(MessagesAffectedHistoryType) },
-            { 0x57e2f66c, typeof(InputMessagesFilterEmptyType) },
-            { 0x9609a51c, typeof(InputMessagesFilterPhotosType) },
-            { 0x9fc00e65, typeof(InputMessagesFilterVideoType) },
-            { 0x56e9f0e4, typeof(InputMessagesFilterPhotoVideoType) },
-            { 0xd95e73bb, typeof(InputMessagesFilterPhotoVideoDocumentsType) },
-            { 0x9eddf188, typeof(InputMessagesFilterDocumentType) },
-            { 0x7ef0dd87, typeof(InputMessagesFilterUrlType) },
-            { 0xffc86587, typeof(InputMessagesFilterGifType) },
-            { 0x50f5c392, typeof(InputMessagesFilterVoiceType) },
-            { 0x3751b49e, typeof(InputMessagesFilterMusicType) },
-            { 0x1f2b0afd, typeof(UpdateNewMessageType) },
-            { 0x4e90bfd6, typeof(UpdateMessageIDType) },
-            { 0xa20db0e5, typeof(UpdateDeleteMessagesType) },
-            { 0x5c486927, typeof(UpdateUserTypingType) },
-            { 0x9a65ea1f, typeof(UpdateChatUserTypingType) },
-            { 0x07761198, typeof(UpdateChatParticipantsType) },
-            { 0x1bfbd823, typeof(UpdateUserStatusType) },
-            { 0xa7332b73, typeof(UpdateUserNameType) },
-            { 0x95313b0c, typeof(UpdateUserPhotoType) },
-            { 0x2575bbb9, typeof(UpdateContactRegisteredType) },
-            { 0x9d2e67c5, typeof(UpdateContactLinkType) },
-            { 0x8f06529a, typeof(UpdateNewAuthorizationType) },
-            { 0x12bcbd9a, typeof(UpdateNewEncryptedMessageType) },
-            { 0x1710f156, typeof(UpdateEncryptedChatTypingType) },
-            { 0xb4a2e88d, typeof(UpdateEncryptionType) },
-            { 0x38fe25b7, typeof(UpdateEncryptedMessagesReadType) },
-            { 0xea4b0e5c, typeof(UpdateChatParticipantAddType) },
-            { 0x6e5f8c22, typeof(UpdateChatParticipantDeleteType) },
-            { 0x8e5e9873, typeof(UpdateDcOptionsType) },
-            { 0x80ece81a, typeof(UpdateUserBlockedType) },
-            { 0xbec268ef, typeof(UpdateNotifySettingsType) },
-            { 0x382dd3e4, typeof(UpdateServiceNotificationType) },
-            { 0xee3b272a, typeof(UpdatePrivacyType) },
-            { 0x12b9417b, typeof(UpdateUserPhoneType) },
-            { 0x9961fd5c, typeof(UpdateReadHistoryInboxType) },
-            { 0x2f2f21bf, typeof(UpdateReadHistoryOutboxType) },
-            { 0x7f891213, typeof(UpdateWebPageType) },
-            { 0x68c13933, typeof(UpdateReadMessagesContentsType) },
-            { 0xeb0467fb, typeof(UpdateChannelTooLongType) },
-            { 0xb6d45656, typeof(UpdateChannelType) },
-            { 0xc36c1e3c, typeof(UpdateChannelGroupType) },
-            { 0x62ba04d9, typeof(UpdateNewChannelMessageType) },
-            { 0x4214f37f, typeof(UpdateReadChannelInboxType) },
-            { 0xc37521c9, typeof(UpdateDeleteChannelMessagesType) },
-            { 0x98a12b4b, typeof(UpdateChannelMessageViewsType) },
-            { 0x6e947941, typeof(UpdateChatAdminsType) },
-            { 0xb6901959, typeof(UpdateChatParticipantAdminType) },
-            { 0x688a30aa, typeof(UpdateNewStickerSetType) },
-            { 0xf0dfb451, typeof(UpdateStickerSetsOrderType) },
-            { 0x43ae3dec, typeof(UpdateStickerSetsType) },
-            { 0x9375341e, typeof(UpdateSavedGifsType) },
-            { 0x54826690, typeof(UpdateBotInlineQueryType) },
-            { 0x0e48f964, typeof(UpdateBotInlineSendType) },
-            { 0x1b3f4df7, typeof(UpdateEditChannelMessageType) },
-            { 0x98592475, typeof(UpdateChannelPinnedMessageType) },
-            { 0xa68c688c, typeof(UpdateBotCallbackQueryType) },
-            { 0xe40370a3, typeof(UpdateEditMessageType) },
-            { 0x2cbd95af, typeof(UpdateInlineBotCallbackQueryType) },
-            { 0xa56c2a3e, typeof(UpdatesStateType) },
-            { 0x5d75a138, typeof(UpdatesDifferenceEmptyType) },
-            { 0x00f49ca0, typeof(UpdatesDifferenceType) },
-            { 0xa8fb1981, typeof(UpdatesDifferenceSliceType) },
-            { 0xe317af7e, typeof(UpdatesTooLongType) },
-            { 0x914fbf11, typeof(UpdateShortMessageType) },
-            { 0x16812688, typeof(UpdateShortChatMessageType) },
-            { 0x78d4dec1, typeof(UpdateShortType) },
-            { 0x725b04c3, typeof(UpdatesCombinedType) },
-            { 0x74ae4240, typeof(UpdatesType) },
-            { 0x11f1331c, typeof(UpdateShortSentMessageType) },
-            { 0x8dca6aa5, typeof(PhotosPhotosType) },
-            { 0x15051f54, typeof(PhotosPhotosSliceType) },
-            { 0x20212ca8, typeof(PhotosPhotoType) },
-            { 0x096a18d5, typeof(UploadFileType) },
-            { 0x05d8c6cc, typeof(DcOptionType) },
-            { 0xc9411388, typeof(ConfigType) },
-            { 0x8e1a1775, typeof(NearestDcType) },
-            { 0x8987f311, typeof(HelpAppUpdateType) },
-            { 0xc45a6536, typeof(HelpNoAppUpdateType) },
-            { 0x18cb9f78, typeof(HelpInviteTextType) },
-            { 0xab7ec0a0, typeof(EncryptedChatEmptyType) },
-            { 0x3bf703dc, typeof(EncryptedChatWaitingType) },
-            { 0xc878527e, typeof(EncryptedChatRequestedType) },
-            { 0xfa56ce36, typeof(EncryptedChatType) },
-            { 0x13d6dd27, typeof(EncryptedChatDiscardedType) },
-            { 0xf141b5e1, typeof(InputEncryptedChatType) },
-            { 0xc21f497e, typeof(EncryptedFileEmptyType) },
-            { 0x4a70994c, typeof(EncryptedFileType) },
-            { 0x1837c364, typeof(InputEncryptedFileEmptyType) },
-            { 0x64bd0306, typeof(InputEncryptedFileUploadedType) },
-            { 0x5a17b5e5, typeof(InputEncryptedFileType) },
-            { 0x2dc173c8, typeof(InputEncryptedFileBigUploadedType) },
-            { 0xed18c118, typeof(EncryptedMessageType) },
-            { 0x23734b06, typeof(EncryptedMessageServiceType) },
-            { 0xc0e24635, typeof(MessagesDhConfigNotModifiedType) },
-            { 0x2c221edd, typeof(MessagesDhConfigType) },
-            { 0x560f8935, typeof(MessagesSentEncryptedMessageType) },
-            { 0x9493ff32, typeof(MessagesSentEncryptedFileType) },
-            { 0x72f0eaae, typeof(InputDocumentEmptyType) },
-            { 0x18798952, typeof(InputDocumentType) },
-            { 0x36f8c871, typeof(DocumentEmptyType) },
-            { 0xf9a39f4f, typeof(DocumentType) },
-            { 0x17c6b5f6, typeof(HelpSupportType) },
-            { 0x9fd40bd8, typeof(NotifyPeerType) },
-            { 0xb4c83b4c, typeof(NotifyUsersType) },
-            { 0xc007cec3, typeof(NotifyChatsType) },
-            { 0x74d07c60, typeof(NotifyAllType) },
-            { 0x16bf744e, typeof(SendMessageTypingActionType) },
-            { 0xfd5ec8f5, typeof(SendMessageCancelActionType) },
-            { 0xa187d66f, typeof(SendMessageRecordVideoActionType) },
-            { 0xe9763aec, typeof(SendMessageUploadVideoActionType) },
-            { 0xd52f73f7, typeof(SendMessageRecordAudioActionType) },
-            { 0xf351d7ab, typeof(SendMessageUploadAudioActionType) },
-            { 0xd1d34a26, typeof(SendMessageUploadPhotoActionType) },
-            { 0xaa0cd9e4, typeof(SendMessageUploadDocumentActionType) },
-            { 0x176f8ba1, typeof(SendMessageGeoLocationActionType) },
-            { 0x628cbc6f, typeof(SendMessageChooseContactActionType) },
-            { 0x1aa1f784, typeof(ContactsFoundType) },
-            { 0x4f96cb18, typeof(InputPrivacyKeyStatusTimestampType) },
-            { 0xbdfb0426, typeof(InputPrivacyKeyChatInviteType) },
-            { 0xbc2eab30, typeof(PrivacyKeyStatusTimestampType) },
-            { 0x500e6dfa, typeof(PrivacyKeyChatInviteType) },
-            { 0x0d09e07b, typeof(InputPrivacyValueAllowContactsType) },
-            { 0x184b35ce, typeof(InputPrivacyValueAllowAllType) },
-            { 0x131cc67f, typeof(InputPrivacyValueAllowUsersType) },
-            { 0x0ba52007, typeof(InputPrivacyValueDisallowContactsType) },
-            { 0xd66b66c9, typeof(InputPrivacyValueDisallowAllType) },
-            { 0x90110467, typeof(InputPrivacyValueDisallowUsersType) },
-            { 0xfffe1bac, typeof(PrivacyValueAllowContactsType) },
-            { 0x65427b82, typeof(PrivacyValueAllowAllType) },
-            { 0x4d5bbe0c, typeof(PrivacyValueAllowUsersType) },
-            { 0xf888fa1a, typeof(PrivacyValueDisallowContactsType) },
-            { 0x8b73e763, typeof(PrivacyValueDisallowAllType) },
-            { 0x0c7f49b7, typeof(PrivacyValueDisallowUsersType) },
-            { 0x554abb6f, typeof(AccountPrivacyRulesType) },
-            { 0xb8d0afdf, typeof(AccountDaysTTLType) },
-            { 0x6c37c15c, typeof(DocumentAttributeImageSizeType) },
-            { 0x11b58939, typeof(DocumentAttributeAnimatedType) },
-            { 0x3a556302, typeof(DocumentAttributeStickerType) },
-            { 0x5910cccb, typeof(DocumentAttributeVideoType) },
-            { 0x9852f9c6, typeof(DocumentAttributeAudioType) },
-            { 0x15590068, typeof(DocumentAttributeFilenameType) },
-            { 0xf1749a22, typeof(MessagesStickersNotModifiedType) },
-            { 0x8a8ecd32, typeof(MessagesStickersType) },
-            { 0x12b299d4, typeof(StickerPackType) },
-            { 0xe86602c3, typeof(MessagesAllStickersNotModifiedType) },
-            { 0xedfd405f, typeof(MessagesAllStickersType) },
-            { 0xae636f24, typeof(DisabledFeatureType) },
-            { 0x84d19185, typeof(MessagesAffectedMessagesType) },
-            { 0x5f4f9247, typeof(ContactLinkUnknownType) },
-            { 0xfeedd3ad, typeof(ContactLinkNoneType) },
-            { 0x268f3f59, typeof(ContactLinkHasPhoneType) },
-            { 0xd502c2d0, typeof(ContactLinkContactType) },
-            { 0xeb1477e8, typeof(WebPageEmptyType) },
-            { 0xc586da1c, typeof(WebPagePendingType) },
-            { 0xca820ed7, typeof(WebPageType) },
-            { 0x7bf2e6f6, typeof(AuthorizationType) },
-            { 0x1250abde, typeof(AccountAuthorizationsType) },
-            { 0x96dabc18, typeof(AccountNoPasswordType) },
-            { 0x7c18141c, typeof(AccountPasswordType) },
-            { 0xb7b72ab3, typeof(AccountPasswordSettingsType) },
-            { 0x86916deb, typeof(AccountPasswordInputSettingsType) },
-            { 0x137948a5, typeof(AuthPasswordRecoveryType) },
-            { 0xa384b779, typeof(ReceivedNotifyMessageType) },
-            { 0x69df3769, typeof(ChatInviteEmptyType) },
-            { 0xfc2e05bc, typeof(ChatInviteExportedType) },
-            { 0x5a686d7c, typeof(ChatInviteAlreadyType) },
-            { 0x93e99b60, typeof(ChatInviteType) },
-            { 0xffb62b95, typeof(InputStickerSetEmptyType) },
-            { 0x9de7a269, typeof(InputStickerSetIDType) },
-            { 0x861cc8a0, typeof(InputStickerSetShortNameType) },
-            { 0xcd303b41, typeof(StickerSetType) },
-            { 0xb60a24a6, typeof(MessagesStickerSetType) },
-            { 0xc27ac8c7, typeof(BotCommandType) },
-            { 0x98e81d3a, typeof(BotInfoType) },
-            { 0xa2fa4880, typeof(KeyboardButtonType) },
-            { 0x258aff05, typeof(KeyboardButtonUrlType) },
-            { 0x683a5e46, typeof(KeyboardButtonCallbackType) },
-            { 0xb16a6c29, typeof(KeyboardButtonRequestPhoneType) },
-            { 0xfc796b3f, typeof(KeyboardButtonRequestGeoLocationType) },
-            { 0xea1b7a14, typeof(KeyboardButtonSwitchInlineType) },
-            { 0x77608b83, typeof(KeyboardButtonRowType) },
-            { 0xa03e5b85, typeof(ReplyKeyboardHideType) },
-            { 0xf4108aa0, typeof(ReplyKeyboardForceReplyType) },
-            { 0x3502758c, typeof(ReplyKeyboardMarkupType) },
-            { 0x48a30254, typeof(ReplyInlineMarkupType) },
-            { 0xaf7e0394, typeof(HelpAppChangelogEmptyType) },
-            { 0x4668e6bd, typeof(HelpAppChangelogType) },
-            { 0xbb92ba95, typeof(MessageEntityUnknownType) },
-            { 0xfa04579d, typeof(MessageEntityMentionType) },
-            { 0x6f635b0d, typeof(MessageEntityHashtagType) },
-            { 0x6cef8ac7, typeof(MessageEntityBotCommandType) },
-            { 0x6ed02538, typeof(MessageEntityUrlType) },
-            { 0x64e475c2, typeof(MessageEntityEmailType) },
-            { 0xbd610bc9, typeof(MessageEntityBoldType) },
-            { 0x826f8b60, typeof(MessageEntityItalicType) },
-            { 0x28a20571, typeof(MessageEntityCodeType) },
-            { 0x73924be0, typeof(MessageEntityPreType) },
-            { 0x76a6d327, typeof(MessageEntityTextUrlType) },
-            { 0x352dca58, typeof(MessageEntityMentionNameType) },
-            { 0x208e68c9, typeof(InputMessageEntityMentionNameType) },
-            { 0xee8c1e86, typeof(InputChannelEmptyType) },
-            { 0xafeb712e, typeof(InputChannelType) },
-            { 0x7f077ad9, typeof(ContactsResolvedPeerType) },
-            { 0x0ae30253, typeof(MessageRangeType) },
-            { 0xe8346f53, typeof(MessageGroupType) },
-            { 0x3e11affb, typeof(UpdatesChannelDifferenceEmptyType) },
-            { 0x5e167646, typeof(UpdatesChannelDifferenceTooLongType) },
-            { 0x2064674e, typeof(UpdatesChannelDifferenceType) },
-            { 0x94d42ee7, typeof(ChannelMessagesFilterEmptyType) },
-            { 0xcd77d957, typeof(ChannelMessagesFilterType) },
-            { 0xfa01232e, typeof(ChannelMessagesFilterCollapsedType) },
-            { 0x15ebac1d, typeof(ChannelParticipantType) },
-            { 0xa3289a6d, typeof(ChannelParticipantSelfType) },
-            { 0x91057fef, typeof(ChannelParticipantModeratorType) },
-            { 0x98192d61, typeof(ChannelParticipantEditorType) },
-            { 0x8cc5e69a, typeof(ChannelParticipantKickedType) },
-            { 0xe3e2e1f9, typeof(ChannelParticipantCreatorType) },
-            { 0xde3f3c79, typeof(ChannelParticipantsRecentType) },
-            { 0xb4608969, typeof(ChannelParticipantsAdminsType) },
-            { 0x3c37bb7a, typeof(ChannelParticipantsKickedType) },
-            { 0xb0d1865b, typeof(ChannelParticipantsBotsType) },
-            { 0xb285a0c6, typeof(ChannelRoleEmptyType) },
-            { 0x9618d975, typeof(ChannelRoleModeratorType) },
-            { 0x820bfe8c, typeof(ChannelRoleEditorType) },
-            { 0xf56ee2a8, typeof(ChannelsChannelParticipantsType) },
-            { 0xd0d9b163, typeof(ChannelsChannelParticipantType) },
-            { 0xf1ee3e90, typeof(HelpTermsOfServiceType) },
-            { 0x162ecc1f, typeof(FoundGifType) },
-            { 0x9c750409, typeof(FoundGifCachedType) },
-            { 0x450a1c0a, typeof(MessagesFoundGifsType) },
-            { 0xe8025ca2, typeof(MessagesSavedGifsNotModifiedType) },
-            { 0x2e0709a5, typeof(MessagesSavedGifsType) },
-            { 0x292fed13, typeof(InputBotInlineMessageMediaAutoType) },
-            { 0x3dcd7a87, typeof(InputBotInlineMessageTextType) },
-            { 0xf4a59de1, typeof(InputBotInlineMessageMediaGeoType) },
-            { 0xaaafadc8, typeof(InputBotInlineMessageMediaVenueType) },
-            { 0x2daf01a7, typeof(InputBotInlineMessageMediaContactType) },
-            { 0x2cbbe15a, typeof(InputBotInlineResultType) },
-            { 0xa8d864a7, typeof(InputBotInlineResultPhotoType) },
-            { 0xfff8fdc4, typeof(InputBotInlineResultDocumentType) },
-            { 0x0a74b15b, typeof(BotInlineMessageMediaAutoType) },
-            { 0x8c7f65e2, typeof(BotInlineMessageTextType) },
-            { 0x3a8fd8b8, typeof(BotInlineMessageMediaGeoType) },
-            { 0x4366232e, typeof(BotInlineMessageMediaVenueType) },
-            { 0x35edb4d4, typeof(BotInlineMessageMediaContactType) },
-            { 0x9bebaeb9, typeof(BotInlineResultType) },
-            { 0x17db940b, typeof(BotInlineMediaResultType) },
-            { 0x256709a6, typeof(MessagesBotResultsType) },
-            { 0x1f486803, typeof(ExportedMessageLinkType) },
-            { 0xc786ddcb, typeof(MessageFwdHeaderType) },
-            { 0x72a3158c, typeof(AuthCodeTypeSmsType) },
-            { 0x741cd3e3, typeof(AuthCodeTypeCallType) },
-            { 0x226ccefb, typeof(AuthCodeTypeFlashCallType) },
-            { 0x3dbb5986, typeof(AuthSentCodeTypeAppType) },
-            { 0xc000bba2, typeof(AuthSentCodeTypeSmsType) },
-            { 0x5353e5a7, typeof(AuthSentCodeTypeCallType) },
-            { 0xab03c6d9, typeof(AuthSentCodeTypeFlashCallType) },
-            { 0x1264f1c6, typeof(MessagesBotCallbackAnswerType) },
-            { 0x26b5dde6, typeof(MessagesMessageEditDataType) },
-            { 0x890c3d89, typeof(InputBotInlineMessageIDType) },
-            { 0x3c20629f, typeof(InlineBotSwitchPMType) },
-            { 0x3371c354, typeof(MessagesPeerDialogsType) },
-            { 0xedcdc05b, typeof(TopPeerType) },
-            { 0xab661b5b, typeof(TopPeerCategoryBotsPMType) },
-            { 0x148677e2, typeof(TopPeerCategoryBotsInlineType) },
-            { 0x0637b7ed, typeof(TopPeerCategoryCorrespondentsType) },
-            { 0xbd17a14a, typeof(TopPeerCategoryGroupsType) },
-            { 0x161d9628, typeof(TopPeerCategoryChannelsType) },
-            { 0xfb834291, typeof(TopPeerCategoryPeersType) },
-            { 0xde266ef5, typeof(ContactsTopPeersNotModifiedType) },
-            { 0x70b772a8, typeof(ContactsTopPeersType) }
+            { Types.MsgsAckType, typeof(MsgsAckType) },
+            { Types.BadMsgNotificationType, typeof(BadMsgNotificationType) },
+            { Types.BadServerSaltType, typeof(BadServerSaltType) },
+            { Types.MsgsStateReqType, typeof(MsgsStateReqType) },
+            { Types.MsgsStateInfoType, typeof(MsgsStateInfoType) },
+            { Types.MsgsAllInfoType, typeof(MsgsAllInfoType) },
+            { Types.MsgDetailedInfoType, typeof(MsgDetailedInfoType) },
+            { Types.MsgNewDetailedInfoType, typeof(MsgNewDetailedInfoType) },
+            { Types.MsgResendReqType, typeof(MsgResendReqType) },
+            { Types.RpcErrorType, typeof(RpcErrorType) },
+            { Types.RpcAnswerUnknownType, typeof(RpcAnswerUnknownType) },
+            { Types.RpcAnswerDroppedRunningType, typeof(RpcAnswerDroppedRunningType) },
+            { Types.RpcAnswerDroppedType, typeof(RpcAnswerDroppedType) },
+            { Types.FutureSaltType, typeof(FutureSaltType) },
+            { Types.FutureSaltsType, typeof(FutureSaltsType) },
+            { Types.PongType, typeof(PongType) },
+            { Types.DestroySessionOkType, typeof(DestroySessionOkType) },
+            { Types.DestroySessionNoneType, typeof(DestroySessionNoneType) },
+            { Types.NewSessionCreatedType, typeof(NewSessionCreatedType) },
+            { Types.HttpWaitType, typeof(HttpWaitType) },
+            { Types.TrueType, typeof(TrueType) },
+            { Types.ErrorType, typeof(ErrorType) },
+            { Types.NullType, typeof(NullType) },
+            { Types.InputPeerEmptyType, typeof(InputPeerEmptyType) },
+            { Types.InputPeerSelfType, typeof(InputPeerSelfType) },
+            { Types.InputPeerChatType, typeof(InputPeerChatType) },
+            { Types.InputPeerUserType, typeof(InputPeerUserType) },
+            { Types.InputPeerChannelType, typeof(InputPeerChannelType) },
+            { Types.InputUserEmptyType, typeof(InputUserEmptyType) },
+            { Types.InputUserSelfType, typeof(InputUserSelfType) },
+            { Types.InputUserType, typeof(InputUserType) },
+            { Types.InputPhoneContactType, typeof(InputPhoneContactType) },
+            { Types.InputFileType, typeof(InputFileType) },
+            { Types.InputFileBigType, typeof(InputFileBigType) },
+            { Types.InputMediaEmptyType, typeof(InputMediaEmptyType) },
+            { Types.InputMediaUploadedPhotoType, typeof(InputMediaUploadedPhotoType) },
+            { Types.InputMediaPhotoType, typeof(InputMediaPhotoType) },
+            { Types.InputMediaGeoPointType, typeof(InputMediaGeoPointType) },
+            { Types.InputMediaContactType, typeof(InputMediaContactType) },
+            { Types.InputMediaUploadedDocumentType, typeof(InputMediaUploadedDocumentType) },
+            { Types.InputMediaUploadedThumbDocumentType, typeof(InputMediaUploadedThumbDocumentType) },
+            { Types.InputMediaDocumentType, typeof(InputMediaDocumentType) },
+            { Types.InputMediaVenueType, typeof(InputMediaVenueType) },
+            { Types.InputMediaGifExternalType, typeof(InputMediaGifExternalType) },
+            { Types.InputChatPhotoEmptyType, typeof(InputChatPhotoEmptyType) },
+            { Types.InputChatUploadedPhotoType, typeof(InputChatUploadedPhotoType) },
+            { Types.InputChatPhotoType, typeof(InputChatPhotoType) },
+            { Types.InputGeoPointEmptyType, typeof(InputGeoPointEmptyType) },
+            { Types.InputGeoPointType, typeof(InputGeoPointType) },
+            { Types.InputPhotoEmptyType, typeof(InputPhotoEmptyType) },
+            { Types.InputPhotoType, typeof(InputPhotoType) },
+            { Types.InputFileLocationType, typeof(InputFileLocationType) },
+            { Types.InputEncryptedFileLocationType, typeof(InputEncryptedFileLocationType) },
+            { Types.InputDocumentFileLocationType, typeof(InputDocumentFileLocationType) },
+            { Types.InputPhotoCropAutoType, typeof(InputPhotoCropAutoType) },
+            { Types.InputPhotoCropType, typeof(InputPhotoCropType) },
+            { Types.InputAppEventType, typeof(InputAppEventType) },
+            { Types.PeerUserType, typeof(PeerUserType) },
+            { Types.PeerChatType, typeof(PeerChatType) },
+            { Types.PeerChannelType, typeof(PeerChannelType) },
+            { Types.StorageFileUnknownType, typeof(StorageFileUnknownType) },
+            { Types.StorageFileJpegType, typeof(StorageFileJpegType) },
+            { Types.StorageFileGifType, typeof(StorageFileGifType) },
+            { Types.StorageFilePngType, typeof(StorageFilePngType) },
+            { Types.StorageFilePdfType, typeof(StorageFilePdfType) },
+            { Types.StorageFileMp3Type, typeof(StorageFileMp3Type) },
+            { Types.StorageFileMovType, typeof(StorageFileMovType) },
+            { Types.StorageFilePartialType, typeof(StorageFilePartialType) },
+            { Types.StorageFileMp4Type, typeof(StorageFileMp4Type) },
+            { Types.StorageFileWebpType, typeof(StorageFileWebpType) },
+            { Types.FileLocationUnavailableType, typeof(FileLocationUnavailableType) },
+            { Types.FileLocationType, typeof(FileLocationType) },
+            { Types.UserEmptyType, typeof(UserEmptyType) },
+            { Types.UserType, typeof(UserType) },
+            { Types.UserProfilePhotoEmptyType, typeof(UserProfilePhotoEmptyType) },
+            { Types.UserProfilePhotoType, typeof(UserProfilePhotoType) },
+            { Types.UserStatusEmptyType, typeof(UserStatusEmptyType) },
+            { Types.UserStatusOnlineType, typeof(UserStatusOnlineType) },
+            { Types.UserStatusOfflineType, typeof(UserStatusOfflineType) },
+            { Types.UserStatusRecentlyType, typeof(UserStatusRecentlyType) },
+            { Types.UserStatusLastWeekType, typeof(UserStatusLastWeekType) },
+            { Types.UserStatusLastMonthType, typeof(UserStatusLastMonthType) },
+            { Types.ChatEmptyType, typeof(ChatEmptyType) },
+            { Types.ChatType, typeof(ChatType) },
+            { Types.ChatForbiddenType, typeof(ChatForbiddenType) },
+            { Types.ChannelType, typeof(ChannelType) },
+            { Types.ChannelForbiddenType, typeof(ChannelForbiddenType) },
+            { Types.ChatFullType, typeof(ChatFullType) },
+            { Types.ChannelFullType, typeof(ChannelFullType) },
+            { Types.ChatParticipantType, typeof(ChatParticipantType) },
+            { Types.ChatParticipantCreatorType, typeof(ChatParticipantCreatorType) },
+            { Types.ChatParticipantAdminType, typeof(ChatParticipantAdminType) },
+            { Types.ChatParticipantsForbiddenType, typeof(ChatParticipantsForbiddenType) },
+            { Types.ChatParticipantsType, typeof(ChatParticipantsType) },
+            { Types.ChatPhotoEmptyType, typeof(ChatPhotoEmptyType) },
+            { Types.ChatPhotoType, typeof(ChatPhotoType) },
+            { Types.MessageEmptyType, typeof(MessageEmptyType) },
+            { Types.MessageType, typeof(MessageType) },
+            { Types.MessageServiceType, typeof(MessageServiceType) },
+            { Types.MessageMediaEmptyType, typeof(MessageMediaEmptyType) },
+            { Types.MessageMediaPhotoType, typeof(MessageMediaPhotoType) },
+            { Types.MessageMediaGeoType, typeof(MessageMediaGeoType) },
+            { Types.MessageMediaContactType, typeof(MessageMediaContactType) },
+            { Types.MessageMediaUnsupportedType, typeof(MessageMediaUnsupportedType) },
+            { Types.MessageMediaDocumentType, typeof(MessageMediaDocumentType) },
+            { Types.MessageMediaWebPageType, typeof(MessageMediaWebPageType) },
+            { Types.MessageMediaVenueType, typeof(MessageMediaVenueType) },
+            { Types.MessageActionEmptyType, typeof(MessageActionEmptyType) },
+            { Types.MessageActionChatCreateType, typeof(MessageActionChatCreateType) },
+            { Types.MessageActionChatEditTitleType, typeof(MessageActionChatEditTitleType) },
+            { Types.MessageActionChatEditPhotoType, typeof(MessageActionChatEditPhotoType) },
+            { Types.MessageActionChatDeletePhotoType, typeof(MessageActionChatDeletePhotoType) },
+            { Types.MessageActionChatAddUserType, typeof(MessageActionChatAddUserType) },
+            { Types.MessageActionChatDeleteUserType, typeof(MessageActionChatDeleteUserType) },
+            { Types.MessageActionChatJoinedByLinkType, typeof(MessageActionChatJoinedByLinkType) },
+            { Types.MessageActionChannelCreateType, typeof(MessageActionChannelCreateType) },
+            { Types.MessageActionChatMigrateToType, typeof(MessageActionChatMigrateToType) },
+            { Types.MessageActionChannelMigrateFromType, typeof(MessageActionChannelMigrateFromType) },
+            { Types.MessageActionPinMessageType, typeof(MessageActionPinMessageType) },
+            { Types.DialogType, typeof(DialogType) },
+            { Types.DialogChannelType, typeof(DialogChannelType) },
+            { Types.PhotoEmptyType, typeof(PhotoEmptyType) },
+            { Types.PhotoType, typeof(PhotoType) },
+            { Types.PhotoSizeEmptyType, typeof(PhotoSizeEmptyType) },
+            { Types.PhotoSizeType, typeof(PhotoSizeType) },
+            { Types.PhotoCachedSizeType, typeof(PhotoCachedSizeType) },
+            { Types.GeoPointEmptyType, typeof(GeoPointEmptyType) },
+            { Types.GeoPointType, typeof(GeoPointType) },
+            { Types.AuthCheckedPhoneType, typeof(AuthCheckedPhoneType) },
+            { Types.AuthSentCodeType, typeof(AuthSentCodeType) },
+            { Types.AuthAuthorizationType, typeof(AuthAuthorizationType) },
+            { Types.AuthExportedAuthorizationType, typeof(AuthExportedAuthorizationType) },
+            { Types.InputNotifyPeerType, typeof(InputNotifyPeerType) },
+            { Types.InputNotifyUsersType, typeof(InputNotifyUsersType) },
+            { Types.InputNotifyChatsType, typeof(InputNotifyChatsType) },
+            { Types.InputNotifyAllType, typeof(InputNotifyAllType) },
+            { Types.InputPeerNotifyEventsEmptyType, typeof(InputPeerNotifyEventsEmptyType) },
+            { Types.InputPeerNotifyEventsAllType, typeof(InputPeerNotifyEventsAllType) },
+            { Types.InputPeerNotifySettingsType, typeof(InputPeerNotifySettingsType) },
+            { Types.PeerNotifyEventsEmptyType, typeof(PeerNotifyEventsEmptyType) },
+            { Types.PeerNotifyEventsAllType, typeof(PeerNotifyEventsAllType) },
+            { Types.PeerNotifySettingsEmptyType, typeof(PeerNotifySettingsEmptyType) },
+            { Types.PeerNotifySettingsType, typeof(PeerNotifySettingsType) },
+            { Types.PeerSettingsType, typeof(PeerSettingsType) },
+            { Types.WallPaperType, typeof(WallPaperType) },
+            { Types.WallPaperSolidType, typeof(WallPaperSolidType) },
+            { Types.InputReportReasonSpamType, typeof(InputReportReasonSpamType) },
+            { Types.InputReportReasonViolenceType, typeof(InputReportReasonViolenceType) },
+            { Types.InputReportReasonPornographyType, typeof(InputReportReasonPornographyType) },
+            { Types.InputReportReasonOtherType, typeof(InputReportReasonOtherType) },
+            { Types.UserFullType, typeof(UserFullType) },
+            { Types.ContactType, typeof(ContactType) },
+            { Types.ImportedContactType, typeof(ImportedContactType) },
+            { Types.ContactBlockedType, typeof(ContactBlockedType) },
+            { Types.ContactStatusType, typeof(ContactStatusType) },
+            { Types.ContactsLinkType, typeof(ContactsLinkType) },
+            { Types.ContactsContactsNotModifiedType, typeof(ContactsContactsNotModifiedType) },
+            { Types.ContactsContactsType, typeof(ContactsContactsType) },
+            { Types.ContactsImportedContactsType, typeof(ContactsImportedContactsType) },
+            { Types.ContactsBlockedType, typeof(ContactsBlockedType) },
+            { Types.ContactsBlockedSliceType, typeof(ContactsBlockedSliceType) },
+            { Types.MessagesDialogsType, typeof(MessagesDialogsType) },
+            { Types.MessagesDialogsSliceType, typeof(MessagesDialogsSliceType) },
+            { Types.MessagesMessagesType, typeof(MessagesMessagesType) },
+            { Types.MessagesMessagesSliceType, typeof(MessagesMessagesSliceType) },
+            { Types.MessagesChannelMessagesType, typeof(MessagesChannelMessagesType) },
+            { Types.MessagesChatsType, typeof(MessagesChatsType) },
+            { Types.MessagesChatFullType, typeof(MessagesChatFullType) },
+            { Types.MessagesAffectedHistoryType, typeof(MessagesAffectedHistoryType) },
+            { Types.InputMessagesFilterEmptyType, typeof(InputMessagesFilterEmptyType) },
+            { Types.InputMessagesFilterPhotosType, typeof(InputMessagesFilterPhotosType) },
+            { Types.InputMessagesFilterVideoType, typeof(InputMessagesFilterVideoType) },
+            { Types.InputMessagesFilterPhotoVideoType, typeof(InputMessagesFilterPhotoVideoType) },
+            { Types.InputMessagesFilterPhotoVideoDocumentsType, typeof(InputMessagesFilterPhotoVideoDocumentsType) },
+            { Types.InputMessagesFilterDocumentType, typeof(InputMessagesFilterDocumentType) },
+            { Types.InputMessagesFilterUrlType, typeof(InputMessagesFilterUrlType) },
+            { Types.InputMessagesFilterGifType, typeof(InputMessagesFilterGifType) },
+            { Types.InputMessagesFilterVoiceType, typeof(InputMessagesFilterVoiceType) },
+            { Types.InputMessagesFilterMusicType, typeof(InputMessagesFilterMusicType) },
+            { Types.UpdateNewMessageType, typeof(UpdateNewMessageType) },
+            { Types.UpdateMessageIDType, typeof(UpdateMessageIDType) },
+            { Types.UpdateDeleteMessagesType, typeof(UpdateDeleteMessagesType) },
+            { Types.UpdateUserTypingType, typeof(UpdateUserTypingType) },
+            { Types.UpdateChatUserTypingType, typeof(UpdateChatUserTypingType) },
+            { Types.UpdateChatParticipantsType, typeof(UpdateChatParticipantsType) },
+            { Types.UpdateUserStatusType, typeof(UpdateUserStatusType) },
+            { Types.UpdateUserNameType, typeof(UpdateUserNameType) },
+            { Types.UpdateUserPhotoType, typeof(UpdateUserPhotoType) },
+            { Types.UpdateContactRegisteredType, typeof(UpdateContactRegisteredType) },
+            { Types.UpdateContactLinkType, typeof(UpdateContactLinkType) },
+            { Types.UpdateNewAuthorizationType, typeof(UpdateNewAuthorizationType) },
+            { Types.UpdateNewEncryptedMessageType, typeof(UpdateNewEncryptedMessageType) },
+            { Types.UpdateEncryptedChatTypingType, typeof(UpdateEncryptedChatTypingType) },
+            { Types.UpdateEncryptionType, typeof(UpdateEncryptionType) },
+            { Types.UpdateEncryptedMessagesReadType, typeof(UpdateEncryptedMessagesReadType) },
+            { Types.UpdateChatParticipantAddType, typeof(UpdateChatParticipantAddType) },
+            { Types.UpdateChatParticipantDeleteType, typeof(UpdateChatParticipantDeleteType) },
+            { Types.UpdateDcOptionsType, typeof(UpdateDcOptionsType) },
+            { Types.UpdateUserBlockedType, typeof(UpdateUserBlockedType) },
+            { Types.UpdateNotifySettingsType, typeof(UpdateNotifySettingsType) },
+            { Types.UpdateServiceNotificationType, typeof(UpdateServiceNotificationType) },
+            { Types.UpdatePrivacyType, typeof(UpdatePrivacyType) },
+            { Types.UpdateUserPhoneType, typeof(UpdateUserPhoneType) },
+            { Types.UpdateReadHistoryInboxType, typeof(UpdateReadHistoryInboxType) },
+            { Types.UpdateReadHistoryOutboxType, typeof(UpdateReadHistoryOutboxType) },
+            { Types.UpdateWebPageType, typeof(UpdateWebPageType) },
+            { Types.UpdateReadMessagesContentsType, typeof(UpdateReadMessagesContentsType) },
+            { Types.UpdateChannelTooLongType, typeof(UpdateChannelTooLongType) },
+            { Types.UpdateChannelType, typeof(UpdateChannelType) },
+            { Types.UpdateChannelGroupType, typeof(UpdateChannelGroupType) },
+            { Types.UpdateNewChannelMessageType, typeof(UpdateNewChannelMessageType) },
+            { Types.UpdateReadChannelInboxType, typeof(UpdateReadChannelInboxType) },
+            { Types.UpdateDeleteChannelMessagesType, typeof(UpdateDeleteChannelMessagesType) },
+            { Types.UpdateChannelMessageViewsType, typeof(UpdateChannelMessageViewsType) },
+            { Types.UpdateChatAdminsType, typeof(UpdateChatAdminsType) },
+            { Types.UpdateChatParticipantAdminType, typeof(UpdateChatParticipantAdminType) },
+            { Types.UpdateNewStickerSetType, typeof(UpdateNewStickerSetType) },
+            { Types.UpdateStickerSetsOrderType, typeof(UpdateStickerSetsOrderType) },
+            { Types.UpdateStickerSetsType, typeof(UpdateStickerSetsType) },
+            { Types.UpdateSavedGifsType, typeof(UpdateSavedGifsType) },
+            { Types.UpdateBotInlineQueryType, typeof(UpdateBotInlineQueryType) },
+            { Types.UpdateBotInlineSendType, typeof(UpdateBotInlineSendType) },
+            { Types.UpdateEditChannelMessageType, typeof(UpdateEditChannelMessageType) },
+            { Types.UpdateChannelPinnedMessageType, typeof(UpdateChannelPinnedMessageType) },
+            { Types.UpdatesStateType, typeof(UpdatesStateType) },
+            { Types.UpdatesDifferenceEmptyType, typeof(UpdatesDifferenceEmptyType) },
+            { Types.UpdatesDifferenceType, typeof(UpdatesDifferenceType) },
+            { Types.UpdatesDifferenceSliceType, typeof(UpdatesDifferenceSliceType) },
+            { Types.UpdatesTooLongType, typeof(UpdatesTooLongType) },
+            { Types.UpdateShortMessageType, typeof(UpdateShortMessageType) },
+            { Types.UpdateShortChatMessageType, typeof(UpdateShortChatMessageType) },
+            { Types.UpdateShortType, typeof(UpdateShortType) },
+            { Types.UpdatesCombinedType, typeof(UpdatesCombinedType) },
+            { Types.UpdatesType, typeof(UpdatesType) },
+            { Types.UpdateShortSentMessageType, typeof(UpdateShortSentMessageType) },
+            { Types.PhotosPhotosType, typeof(PhotosPhotosType) },
+            { Types.PhotosPhotosSliceType, typeof(PhotosPhotosSliceType) },
+            { Types.PhotosPhotoType, typeof(PhotosPhotoType) },
+            { Types.UploadFileType, typeof(UploadFileType) },
+            { Types.DcOptionType, typeof(DcOptionType) },
+            { Types.ConfigType, typeof(ConfigType) },
+            { Types.NearestDcType, typeof(NearestDcType) },
+            { Types.HelpAppUpdateType, typeof(HelpAppUpdateType) },
+            { Types.HelpNoAppUpdateType, typeof(HelpNoAppUpdateType) },
+            { Types.HelpInviteTextType, typeof(HelpInviteTextType) },
+            { Types.EncryptedChatEmptyType, typeof(EncryptedChatEmptyType) },
+            { Types.EncryptedChatWaitingType, typeof(EncryptedChatWaitingType) },
+            { Types.EncryptedChatRequestedType, typeof(EncryptedChatRequestedType) },
+            { Types.EncryptedChatType, typeof(EncryptedChatType) },
+            { Types.EncryptedChatDiscardedType, typeof(EncryptedChatDiscardedType) },
+            { Types.InputEncryptedChatType, typeof(InputEncryptedChatType) },
+            { Types.EncryptedFileEmptyType, typeof(EncryptedFileEmptyType) },
+            { Types.EncryptedFileType, typeof(EncryptedFileType) },
+            { Types.InputEncryptedFileEmptyType, typeof(InputEncryptedFileEmptyType) },
+            { Types.InputEncryptedFileUploadedType, typeof(InputEncryptedFileUploadedType) },
+            { Types.InputEncryptedFileType, typeof(InputEncryptedFileType) },
+            { Types.InputEncryptedFileBigUploadedType, typeof(InputEncryptedFileBigUploadedType) },
+            { Types.EncryptedMessageType, typeof(EncryptedMessageType) },
+            { Types.EncryptedMessageServiceType, typeof(EncryptedMessageServiceType) },
+            { Types.MessagesDhConfigNotModifiedType, typeof(MessagesDhConfigNotModifiedType) },
+            { Types.MessagesDhConfigType, typeof(MessagesDhConfigType) },
+            { Types.MessagesSentEncryptedMessageType, typeof(MessagesSentEncryptedMessageType) },
+            { Types.MessagesSentEncryptedFileType, typeof(MessagesSentEncryptedFileType) },
+            { Types.InputDocumentEmptyType, typeof(InputDocumentEmptyType) },
+            { Types.InputDocumentType, typeof(InputDocumentType) },
+            { Types.DocumentEmptyType, typeof(DocumentEmptyType) },
+            { Types.DocumentType, typeof(DocumentType) },
+            { Types.HelpSupportType, typeof(HelpSupportType) },
+            { Types.NotifyPeerType, typeof(NotifyPeerType) },
+            { Types.NotifyUsersType, typeof(NotifyUsersType) },
+            { Types.NotifyChatsType, typeof(NotifyChatsType) },
+            { Types.NotifyAllType, typeof(NotifyAllType) },
+            { Types.SendMessageTypingActionType, typeof(SendMessageTypingActionType) },
+            { Types.SendMessageCancelActionType, typeof(SendMessageCancelActionType) },
+            { Types.SendMessageRecordVideoActionType, typeof(SendMessageRecordVideoActionType) },
+            { Types.SendMessageUploadVideoActionType, typeof(SendMessageUploadVideoActionType) },
+            { Types.SendMessageRecordAudioActionType, typeof(SendMessageRecordAudioActionType) },
+            { Types.SendMessageUploadAudioActionType, typeof(SendMessageUploadAudioActionType) },
+            { Types.SendMessageUploadPhotoActionType, typeof(SendMessageUploadPhotoActionType) },
+            { Types.SendMessageUploadDocumentActionType, typeof(SendMessageUploadDocumentActionType) },
+            { Types.SendMessageGeoLocationActionType, typeof(SendMessageGeoLocationActionType) },
+            { Types.SendMessageChooseContactActionType, typeof(SendMessageChooseContactActionType) },
+            { Types.ContactsFoundType, typeof(ContactsFoundType) },
+            { Types.InputPrivacyKeyStatusTimestampType, typeof(InputPrivacyKeyStatusTimestampType) },
+            { Types.InputPrivacyKeyChatInviteType, typeof(InputPrivacyKeyChatInviteType) },
+            { Types.PrivacyKeyStatusTimestampType, typeof(PrivacyKeyStatusTimestampType) },
+            { Types.PrivacyKeyChatInviteType, typeof(PrivacyKeyChatInviteType) },
+            { Types.InputPrivacyValueAllowContactsType, typeof(InputPrivacyValueAllowContactsType) },
+            { Types.InputPrivacyValueAllowAllType, typeof(InputPrivacyValueAllowAllType) },
+            { Types.InputPrivacyValueAllowUsersType, typeof(InputPrivacyValueAllowUsersType) },
+            { Types.InputPrivacyValueDisallowContactsType, typeof(InputPrivacyValueDisallowContactsType) },
+            { Types.InputPrivacyValueDisallowAllType, typeof(InputPrivacyValueDisallowAllType) },
+            { Types.InputPrivacyValueDisallowUsersType, typeof(InputPrivacyValueDisallowUsersType) },
+            { Types.PrivacyValueAllowContactsType, typeof(PrivacyValueAllowContactsType) },
+            { Types.PrivacyValueAllowAllType, typeof(PrivacyValueAllowAllType) },
+            { Types.PrivacyValueAllowUsersType, typeof(PrivacyValueAllowUsersType) },
+            { Types.PrivacyValueDisallowContactsType, typeof(PrivacyValueDisallowContactsType) },
+            { Types.PrivacyValueDisallowAllType, typeof(PrivacyValueDisallowAllType) },
+            { Types.PrivacyValueDisallowUsersType, typeof(PrivacyValueDisallowUsersType) },
+            { Types.AccountPrivacyRulesType, typeof(AccountPrivacyRulesType) },
+            { Types.AccountDaysTTLType, typeof(AccountDaysTTLType) },
+            { Types.DocumentAttributeImageSizeType, typeof(DocumentAttributeImageSizeType) },
+            { Types.DocumentAttributeAnimatedType, typeof(DocumentAttributeAnimatedType) },
+            { Types.DocumentAttributeStickerType, typeof(DocumentAttributeStickerType) },
+            { Types.DocumentAttributeVideoType, typeof(DocumentAttributeVideoType) },
+            { Types.DocumentAttributeAudioType, typeof(DocumentAttributeAudioType) },
+            { Types.DocumentAttributeFilenameType, typeof(DocumentAttributeFilenameType) },
+            { Types.MessagesStickersNotModifiedType, typeof(MessagesStickersNotModifiedType) },
+            { Types.MessagesStickersType, typeof(MessagesStickersType) },
+            { Types.StickerPackType, typeof(StickerPackType) },
+            { Types.MessagesAllStickersNotModifiedType, typeof(MessagesAllStickersNotModifiedType) },
+            { Types.MessagesAllStickersType, typeof(MessagesAllStickersType) },
+            { Types.DisabledFeatureType, typeof(DisabledFeatureType) },
+            { Types.MessagesAffectedMessagesType, typeof(MessagesAffectedMessagesType) },
+            { Types.ContactLinkUnknownType, typeof(ContactLinkUnknownType) },
+            { Types.ContactLinkNoneType, typeof(ContactLinkNoneType) },
+            { Types.ContactLinkHasPhoneType, typeof(ContactLinkHasPhoneType) },
+            { Types.ContactLinkContactType, typeof(ContactLinkContactType) },
+            { Types.WebPageEmptyType, typeof(WebPageEmptyType) },
+            { Types.WebPagePendingType, typeof(WebPagePendingType) },
+            { Types.WebPageType, typeof(WebPageType) },
+            { Types.AuthorizationType, typeof(AuthorizationType) },
+            { Types.AccountAuthorizationsType, typeof(AccountAuthorizationsType) },
+            { Types.AccountNoPasswordType, typeof(AccountNoPasswordType) },
+            { Types.AccountPasswordType, typeof(AccountPasswordType) },
+            { Types.AccountPasswordSettingsType, typeof(AccountPasswordSettingsType) },
+            { Types.AccountPasswordInputSettingsType, typeof(AccountPasswordInputSettingsType) },
+            { Types.AuthPasswordRecoveryType, typeof(AuthPasswordRecoveryType) },
+            { Types.ReceivedNotifyMessageType, typeof(ReceivedNotifyMessageType) },
+            { Types.ChatInviteEmptyType, typeof(ChatInviteEmptyType) },
+            { Types.ChatInviteExportedType, typeof(ChatInviteExportedType) },
+            { Types.ChatInviteAlreadyType, typeof(ChatInviteAlreadyType) },
+            { Types.ChatInviteType, typeof(ChatInviteType) },
+            { Types.InputStickerSetEmptyType, typeof(InputStickerSetEmptyType) },
+            { Types.InputStickerSetIDType, typeof(InputStickerSetIDType) },
+            { Types.InputStickerSetShortNameType, typeof(InputStickerSetShortNameType) },
+            { Types.StickerSetType, typeof(StickerSetType) },
+            { Types.MessagesStickerSetType, typeof(MessagesStickerSetType) },
+            { Types.BotCommandType, typeof(BotCommandType) },
+            { Types.BotInfoType, typeof(BotInfoType) },
+            { Types.KeyboardButtonType, typeof(KeyboardButtonType) },
+            { Types.KeyboardButtonRowType, typeof(KeyboardButtonRowType) },
+            { Types.ReplyKeyboardHideType, typeof(ReplyKeyboardHideType) },
+            { Types.ReplyKeyboardForceReplyType, typeof(ReplyKeyboardForceReplyType) },
+            { Types.ReplyKeyboardMarkupType, typeof(ReplyKeyboardMarkupType) },
+            { Types.HelpAppChangelogEmptyType, typeof(HelpAppChangelogEmptyType) },
+            { Types.HelpAppChangelogType, typeof(HelpAppChangelogType) },
+            { Types.MessageEntityUnknownType, typeof(MessageEntityUnknownType) },
+            { Types.MessageEntityMentionType, typeof(MessageEntityMentionType) },
+            { Types.MessageEntityHashtagType, typeof(MessageEntityHashtagType) },
+            { Types.MessageEntityBotCommandType, typeof(MessageEntityBotCommandType) },
+            { Types.MessageEntityUrlType, typeof(MessageEntityUrlType) },
+            { Types.MessageEntityEmailType, typeof(MessageEntityEmailType) },
+            { Types.MessageEntityBoldType, typeof(MessageEntityBoldType) },
+            { Types.MessageEntityItalicType, typeof(MessageEntityItalicType) },
+            { Types.MessageEntityCodeType, typeof(MessageEntityCodeType) },
+            { Types.MessageEntityPreType, typeof(MessageEntityPreType) },
+            { Types.MessageEntityTextUrlType, typeof(MessageEntityTextUrlType) },
+            { Types.InputChannelEmptyType, typeof(InputChannelEmptyType) },
+            { Types.InputChannelType, typeof(InputChannelType) },
+            { Types.ContactsResolvedPeerType, typeof(ContactsResolvedPeerType) },
+            { Types.MessageRangeType, typeof(MessageRangeType) },
+            { Types.MessageGroupType, typeof(MessageGroupType) },
+            { Types.UpdatesChannelDifferenceEmptyType, typeof(UpdatesChannelDifferenceEmptyType) },
+            { Types.UpdatesChannelDifferenceTooLongType, typeof(UpdatesChannelDifferenceTooLongType) },
+            { Types.UpdatesChannelDifferenceType, typeof(UpdatesChannelDifferenceType) },
+            { Types.ChannelMessagesFilterEmptyType, typeof(ChannelMessagesFilterEmptyType) },
+            { Types.ChannelMessagesFilterType, typeof(ChannelMessagesFilterType) },
+            { Types.ChannelMessagesFilterCollapsedType, typeof(ChannelMessagesFilterCollapsedType) },
+            { Types.ChannelParticipantType, typeof(ChannelParticipantType) },
+            { Types.ChannelParticipantSelfType, typeof(ChannelParticipantSelfType) },
+            { Types.ChannelParticipantModeratorType, typeof(ChannelParticipantModeratorType) },
+            { Types.ChannelParticipantEditorType, typeof(ChannelParticipantEditorType) },
+            { Types.ChannelParticipantKickedType, typeof(ChannelParticipantKickedType) },
+            { Types.ChannelParticipantCreatorType, typeof(ChannelParticipantCreatorType) },
+            { Types.ChannelParticipantsRecentType, typeof(ChannelParticipantsRecentType) },
+            { Types.ChannelParticipantsAdminsType, typeof(ChannelParticipantsAdminsType) },
+            { Types.ChannelParticipantsKickedType, typeof(ChannelParticipantsKickedType) },
+            { Types.ChannelParticipantsBotsType, typeof(ChannelParticipantsBotsType) },
+            { Types.ChannelRoleEmptyType, typeof(ChannelRoleEmptyType) },
+            { Types.ChannelRoleModeratorType, typeof(ChannelRoleModeratorType) },
+            { Types.ChannelRoleEditorType, typeof(ChannelRoleEditorType) },
+            { Types.ChannelsChannelParticipantsType, typeof(ChannelsChannelParticipantsType) },
+            { Types.ChannelsChannelParticipantType, typeof(ChannelsChannelParticipantType) },
+            { Types.HelpTermsOfServiceType, typeof(HelpTermsOfServiceType) },
+            { Types.FoundGifType, typeof(FoundGifType) },
+            { Types.FoundGifCachedType, typeof(FoundGifCachedType) },
+            { Types.MessagesFoundGifsType, typeof(MessagesFoundGifsType) },
+            { Types.MessagesSavedGifsNotModifiedType, typeof(MessagesSavedGifsNotModifiedType) },
+            { Types.MessagesSavedGifsType, typeof(MessagesSavedGifsType) },
+            { Types.InputBotInlineMessageMediaAutoType, typeof(InputBotInlineMessageMediaAutoType) },
+            { Types.InputBotInlineMessageTextType, typeof(InputBotInlineMessageTextType) },
+            { Types.InputBotInlineResultType, typeof(InputBotInlineResultType) },
+            { Types.BotInlineMessageMediaAutoType, typeof(BotInlineMessageMediaAutoType) },
+            { Types.BotInlineMessageTextType, typeof(BotInlineMessageTextType) },
+            { Types.BotInlineMediaResultDocumentType, typeof(BotInlineMediaResultDocumentType) },
+            { Types.BotInlineMediaResultPhotoType, typeof(BotInlineMediaResultPhotoType) },
+            { Types.BotInlineResultType, typeof(BotInlineResultType) },
+            { Types.MessagesBotResultsType, typeof(MessagesBotResultsType) },
+            { Types.ExportedMessageLinkType, typeof(ExportedMessageLinkType) },
+            { Types.MessageFwdHeaderType, typeof(MessageFwdHeaderType) },
+            { Types.ChannelsMessageEditDataType, typeof(ChannelsMessageEditDataType) },
+            { Types.AuthCodeTypeSmsType, typeof(AuthCodeTypeSmsType) },
+            { Types.AuthCodeTypeCallType, typeof(AuthCodeTypeCallType) },
+            { Types.AuthCodeTypeFlashCallType, typeof(AuthCodeTypeFlashCallType) },
+            { Types.AuthSentCodeTypeAppType, typeof(AuthSentCodeTypeAppType) },
+            { Types.AuthSentCodeTypeSmsType, typeof(AuthSentCodeTypeSmsType) },
+            { Types.AuthSentCodeTypeCallType, typeof(AuthSentCodeTypeCallType) },
+            { Types.AuthSentCodeTypeFlashCallType, typeof(AuthSentCodeTypeFlashCallType) }
         };
 
         #endregion
 
         #region Functions (requests)
 
-
         public class MsgsAckRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x62d6b459;
+            public override Types ConstructorCode => Types.MsgsAckRequest;
 
             public List<long> MsgIds;
 
@@ -812,7 +1365,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(MsgIds.Count);
                 foreach (long MsgIdsElement in MsgIds)
@@ -838,10 +1391,9 @@ namespace TeleTurk.Core.MTProto
             }
         }
 
-
         public class RpcDropAnswerRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x58e4a740;
+            public override Types ConstructorCode => Types.RpcDropAnswerRequest;
 
             public long ReqMsgId;
 
@@ -856,7 +1408,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ReqMsgId);
             }
 
@@ -881,7 +1433,7 @@ namespace TeleTurk.Core.MTProto
 
         public class GetFutureSaltsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xb921bd04;
+            public override Types ConstructorCode => Types.GetFutureSaltsRequest;
 
             public int Num;
 
@@ -896,7 +1448,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Num);
             }
 
@@ -921,7 +1473,7 @@ namespace TeleTurk.Core.MTProto
 
         public class PingRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x7abe77ec;
+            public override Types ConstructorCode => Types.PingRequest;
 
             public long PingId;
 
@@ -936,7 +1488,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(PingId);
             }
 
@@ -961,7 +1513,7 @@ namespace TeleTurk.Core.MTProto
 
         public class PingDelayDisconnectRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xf3427b8c;
+            public override Types ConstructorCode => Types.PingDelayDisconnectRequest;
 
             public long PingId;
             public int DisconnectDelay;
@@ -978,7 +1530,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(PingId);
                 writer.Write(DisconnectDelay);
             }
@@ -1004,7 +1556,7 @@ namespace TeleTurk.Core.MTProto
 
         public class DestroySessionRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xe7512126;
+            public override Types ConstructorCode => Types.DestroySessionRequest;
 
             public long SessionId;
 
@@ -1019,7 +1571,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(SessionId);
             }
 
@@ -1044,7 +1596,7 @@ namespace TeleTurk.Core.MTProto
 
         public class RegisterSaveDeveloperInfoRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x9a5f6e95;
+            public override Types ConstructorCode => Types.RegisterSaveDeveloperInfoRequest;
 
             public string Name;
             public string Email;
@@ -1067,7 +1619,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Name);
                 writer.Write(Email);
                 writer.Write(PhoneNumber);
@@ -1096,7 +1648,7 @@ namespace TeleTurk.Core.MTProto
 
         public class InvokeAfterMsgRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xcb9f372d;
+            public override Types ConstructorCode => Types.InvokeAfterMsgRequest;
 
             public long MsgId;
             public MTProtoRequest Query;
@@ -1113,7 +1665,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(MsgId);
                 Query.OnSend(writer);
             }
@@ -1139,7 +1691,7 @@ namespace TeleTurk.Core.MTProto
 
         public class InvokeAfterMsgsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x3dc4b4f0;
+            public override Types ConstructorCode => Types.InvokeAfterMsgsRequest;
 
             public List<long> MsgIds;
             public MTProtoRequest Query;
@@ -1156,7 +1708,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(MsgIds.Count);
                 foreach (long MsgIdsElement in MsgIds)
@@ -1185,7 +1737,7 @@ namespace TeleTurk.Core.MTProto
 
         public class InitConnectionRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x69796de9;
+            public override Types ConstructorCode => Types.InitConnectionRequest;
 
             public int ApiId;
             public string DeviceModel;
@@ -1210,7 +1762,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ApiId);
                 writer.Write(DeviceModel);
                 writer.Write(SystemVersion);
@@ -1240,7 +1792,7 @@ namespace TeleTurk.Core.MTProto
 
         public class InvokeWithLayerRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xda9b0d0d;
+            public override Types ConstructorCode => Types.InvokeWithLayerRequest;
 
             public int Layer;
             public MTProtoRequest Query;
@@ -1257,7 +1809,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Layer);
                 Query.OnSend(writer);
             }
@@ -1283,7 +1835,7 @@ namespace TeleTurk.Core.MTProto
 
         public class InvokeWithoutUpdatesRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xbf9459b7;
+            public override Types ConstructorCode => Types.InvokeWithoutUpdatesRequest;
 
             public MTProtoRequest Query;
 
@@ -1298,7 +1850,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Query.OnSend(writer);
             }
 
@@ -1323,7 +1875,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AuthCheckPhoneRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x6fe51dfb;
+            public override Types ConstructorCode => Types.AuthCheckPhoneRequest;
 
             public string PhoneNumber;
 
@@ -1338,7 +1890,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(PhoneNumber);
             }
 
@@ -1363,7 +1915,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AuthSendCodeRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xccfd70cf;
+            public override Types ConstructorCode => Types.AuthSendCodeRequest;
 
             public True AllowFlashcall;
             public string PhoneNumber;
@@ -1401,7 +1953,7 @@ namespace TeleTurk.Core.MTProto
                     (AllowFlashcall != null ? 1 << 0 : 0) |
                     (CurrentNumber != null ? 1 << 0 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (AllowFlashcall != null) {
@@ -1439,7 +1991,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AuthSignUpRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x1b067634;
+            public override Types ConstructorCode => Types.AuthSignUpRequest;
 
             public string PhoneNumber;
             public string PhoneCodeHash;
@@ -1462,7 +2014,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(PhoneNumber);
                 writer.Write(PhoneCodeHash);
                 writer.Write(PhoneCode);
@@ -1491,7 +2043,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AuthSignInRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xbcd51581;
+            public override Types ConstructorCode => Types.AuthSignInRequest;
 
             public string PhoneNumber;
             public string PhoneCodeHash;
@@ -1510,7 +2062,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(PhoneNumber);
                 writer.Write(PhoneCodeHash);
                 writer.Write(PhoneCode);
@@ -1537,7 +2089,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AuthLogOutRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x5717da40;
+            public override Types ConstructorCode => Types.AuthLogOutRequest;
 
             public bool Result;
 
@@ -1545,7 +2097,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -1569,7 +2121,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AuthResetAuthorizationsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x9fab0d1a;
+            public override Types ConstructorCode => Types.AuthResetAuthorizationsRequest;
 
             public bool Result;
 
@@ -1577,7 +2129,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -1601,7 +2153,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AuthSendInvitesRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x771c1d97;
+            public override Types ConstructorCode => Types.AuthSendInvitesRequest;
 
             public List<string> PhoneNumbers;
             public string Message;
@@ -1618,7 +2170,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(PhoneNumbers.Count);
                 foreach (string PhoneNumbersElement in PhoneNumbers)
@@ -1647,7 +2199,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AuthExportAuthorizationRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xe5bfffcd;
+            public override Types ConstructorCode => Types.AuthExportAuthorizationRequest;
 
             public int DcId;
 
@@ -1662,7 +2214,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(DcId);
             }
 
@@ -1687,7 +2239,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AuthImportAuthorizationRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xe3ef9613;
+            public override Types ConstructorCode => Types.AuthImportAuthorizationRequest;
 
             public int Id;
             public byte[] Bytes;
@@ -1704,7 +2256,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(Bytes);
             }
@@ -1730,7 +2282,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AuthBindTempAuthKeyRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xcdd42a05;
+            public override Types ConstructorCode => Types.AuthBindTempAuthKeyRequest;
 
             public long PermAuthKeyId;
             public long Nonce;
@@ -1751,7 +2303,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(PermAuthKeyId);
                 writer.Write(Nonce);
                 writer.Write(ExpiresAt);
@@ -1779,7 +2331,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AuthImportBotAuthorizationRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x67a3ff2c;
+            public override Types ConstructorCode => Types.AuthImportBotAuthorizationRequest;
 
             public int Flags;
             public int ApiId;
@@ -1800,7 +2352,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Flags);
                 writer.Write(ApiId);
                 writer.Write(ApiHash);
@@ -1828,7 +2380,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AuthCheckPasswordRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x0a63011e;
+            public override Types ConstructorCode => Types.AuthCheckPasswordRequest;
 
             public byte[] PasswordHash;
 
@@ -1843,7 +2395,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(PasswordHash);
             }
 
@@ -1868,7 +2420,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AuthRequestPasswordRecoveryRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xd897bc66;
+            public override Types ConstructorCode => Types.AuthRequestPasswordRecoveryRequest;
 
             public AuthPasswordRecovery Result;
 
@@ -1876,7 +2428,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -1900,7 +2452,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AuthRecoverPasswordRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x4ea56e92;
+            public override Types ConstructorCode => Types.AuthRecoverPasswordRequest;
 
             public string Code;
 
@@ -1915,7 +2467,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Code);
             }
 
@@ -1940,7 +2492,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AuthResendCodeRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x3ef1a9bf;
+            public override Types ConstructorCode => Types.AuthResendCodeRequest;
 
             public string PhoneNumber;
             public string PhoneCodeHash;
@@ -1957,7 +2509,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(PhoneNumber);
                 writer.Write(PhoneCodeHash);
             }
@@ -1983,7 +2535,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AuthCancelCodeRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x1f040578;
+            public override Types ConstructorCode => Types.AuthCancelCodeRequest;
 
             public string PhoneNumber;
             public string PhoneCodeHash;
@@ -2000,7 +2552,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(PhoneNumber);
                 writer.Write(PhoneCodeHash);
             }
@@ -2026,7 +2578,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountRegisterDeviceRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x446c712c;
+            public override Types ConstructorCode => Types.AccountRegisterDeviceRequest;
 
             public int TokenType;
             public string Token;
@@ -2053,7 +2605,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(TokenType);
                 writer.Write(Token);
                 writer.Write(DeviceModel);
@@ -2084,7 +2636,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountUnregisterDeviceRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x65c55b40;
+            public override Types ConstructorCode => Types.AccountUnregisterDeviceRequest;
 
             public int TokenType;
             public string Token;
@@ -2101,7 +2653,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(TokenType);
                 writer.Write(Token);
             }
@@ -2127,7 +2679,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountUpdateNotifySettingsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x84be5b93;
+            public override Types ConstructorCode => Types.AccountUpdateNotifySettingsRequest;
 
             public InputNotifyPeer Peer;
             public InputPeerNotifySettings Settings;
@@ -2144,7 +2696,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 Settings.Write(writer);
             }
@@ -2170,7 +2722,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountGetNotifySettingsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x12b3ad31;
+            public override Types ConstructorCode => Types.AccountGetNotifySettingsRequest;
 
             public InputNotifyPeer Peer;
 
@@ -2185,7 +2737,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
             }
 
@@ -2210,7 +2762,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountResetNotifySettingsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xdb7e1747;
+            public override Types ConstructorCode => Types.AccountResetNotifySettingsRequest;
 
             public bool Result;
 
@@ -2218,7 +2770,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -2242,7 +2794,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountUpdateProfileRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x78515775;
+            public override Types ConstructorCode => Types.AccountUpdateProfileRequest;
 
             public string FirstName;
             public string LastName;
@@ -2272,7 +2824,7 @@ namespace TeleTurk.Core.MTProto
                     (LastName != null ? 1 << 1 : 0) |
                     (About != null ? 1 << 2 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (FirstName != null) {
@@ -2310,7 +2862,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountUpdateStatusRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x6628562c;
+            public override Types ConstructorCode => Types.AccountUpdateStatusRequest;
 
             public bool Offline;
 
@@ -2325,7 +2877,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Offline);
             }
 
@@ -2350,7 +2902,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountGetWallPapersRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xc04cfac2;
+            public override Types ConstructorCode => Types.AccountGetWallPapersRequest;
 
             public List<WallPaper> Result;
 
@@ -2358,7 +2910,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -2382,7 +2934,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountReportPeerRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xae189d5f;
+            public override Types ConstructorCode => Types.AccountReportPeerRequest;
 
             public InputPeer Peer;
             public ReportReason Reason;
@@ -2399,7 +2951,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 Reason.Write(writer);
             }
@@ -2425,7 +2977,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountCheckUsernameRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x2714d86c;
+            public override Types ConstructorCode => Types.AccountCheckUsernameRequest;
 
             public string Username;
 
@@ -2440,7 +2992,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Username);
             }
 
@@ -2465,7 +3017,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountUpdateUsernameRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x3e0bdd7c;
+            public override Types ConstructorCode => Types.AccountUpdateUsernameRequest;
 
             public string Username;
 
@@ -2480,7 +3032,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Username);
             }
 
@@ -2505,7 +3057,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountGetPrivacyRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xdadbc950;
+            public override Types ConstructorCode => Types.AccountGetPrivacyRequest;
 
             public InputPrivacyKey Key;
 
@@ -2520,7 +3072,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Key.Write(writer);
             }
 
@@ -2545,7 +3097,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountSetPrivacyRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xc9f81ce8;
+            public override Types ConstructorCode => Types.AccountSetPrivacyRequest;
 
             public InputPrivacyKey Key;
             public List<InputPrivacyRule> Rules;
@@ -2562,7 +3114,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Key.Write(writer);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Rules.Count);
@@ -2591,7 +3143,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountDeleteAccountRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x418d4e0b;
+            public override Types ConstructorCode => Types.AccountDeleteAccountRequest;
 
             public string Reason;
 
@@ -2606,7 +3158,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Reason);
             }
 
@@ -2631,7 +3183,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountGetAccountTTLRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x08fc711d;
+            public override Types ConstructorCode => Types.AccountGetAccountTTLRequest;
 
             public AccountDaysTTL Result;
 
@@ -2639,7 +3191,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -2663,7 +3215,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountSetAccountTTLRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x2442485e;
+            public override Types ConstructorCode => Types.AccountSetAccountTTLRequest;
 
             public AccountDaysTTL Ttl;
 
@@ -2678,7 +3230,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Ttl.Write(writer);
             }
 
@@ -2703,7 +3255,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountSendChangePhoneCodeRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x08e57deb;
+            public override Types ConstructorCode => Types.AccountSendChangePhoneCodeRequest;
 
             public True AllowFlashcall;
             public string PhoneNumber;
@@ -2732,7 +3284,7 @@ namespace TeleTurk.Core.MTProto
                     (AllowFlashcall != null ? 1 << 0 : 0) |
                     (CurrentNumber != null ? 1 << 0 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (AllowFlashcall != null) {
@@ -2767,7 +3319,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountChangePhoneRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x70c32edb;
+            public override Types ConstructorCode => Types.AccountChangePhoneRequest;
 
             public string PhoneNumber;
             public string PhoneCodeHash;
@@ -2786,7 +3338,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(PhoneNumber);
                 writer.Write(PhoneCodeHash);
                 writer.Write(PhoneCode);
@@ -2813,7 +3365,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountUpdateDeviceLockedRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x38df3532;
+            public override Types ConstructorCode => Types.AccountUpdateDeviceLockedRequest;
 
             public int Period;
 
@@ -2828,7 +3380,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Period);
             }
 
@@ -2853,7 +3405,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountGetAuthorizationsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xe320c158;
+            public override Types ConstructorCode => Types.AccountGetAuthorizationsRequest;
 
             public AccountAuthorizations Result;
 
@@ -2861,7 +3413,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -2885,7 +3437,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountResetAuthorizationRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xdf77f3bc;
+            public override Types ConstructorCode => Types.AccountResetAuthorizationRequest;
 
             public long Hash;
 
@@ -2900,7 +3452,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Hash);
             }
 
@@ -2925,7 +3477,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountGetPasswordRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x548a30f5;
+            public override Types ConstructorCode => Types.AccountGetPasswordRequest;
 
             public AccountPassword Result;
 
@@ -2933,7 +3485,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -2957,7 +3509,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountGetPasswordSettingsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xbc8d11bb;
+            public override Types ConstructorCode => Types.AccountGetPasswordSettingsRequest;
 
             public byte[] CurrentPasswordHash;
 
@@ -2972,7 +3524,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(CurrentPasswordHash);
             }
 
@@ -2997,7 +3549,7 @@ namespace TeleTurk.Core.MTProto
 
         public class AccountUpdatePasswordSettingsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xfa7c4b86;
+            public override Types ConstructorCode => Types.AccountUpdatePasswordSettingsRequest;
 
             public byte[] CurrentPasswordHash;
             public AccountPasswordInputSettings NewSettings;
@@ -3014,7 +3566,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(CurrentPasswordHash);
                 NewSettings.Write(writer);
             }
@@ -3040,7 +3592,7 @@ namespace TeleTurk.Core.MTProto
 
         public class UsersGetUsersRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x0d91a548;
+            public override Types ConstructorCode => Types.UsersGetUsersRequest;
 
             public List<InputUser> Id;
 
@@ -3055,7 +3607,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Id.Count);
                 foreach (InputUser IdElement in Id)
@@ -3083,7 +3635,7 @@ namespace TeleTurk.Core.MTProto
 
         public class UsersGetFullUserRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xca30a5b1;
+            public override Types ConstructorCode => Types.UsersGetFullUserRequest;
 
             public InputUser Id;
 
@@ -3098,7 +3650,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Id.Write(writer);
             }
 
@@ -3123,7 +3675,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ContactsGetStatusesRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xc4a353ee;
+            public override Types ConstructorCode => Types.ContactsGetStatusesRequest;
 
             public List<ContactStatus> Result;
 
@@ -3131,7 +3683,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -3155,7 +3707,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ContactsGetContactsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x22c6aa08;
+            public override Types ConstructorCode => Types.ContactsGetContactsRequest;
 
             public string Hash;
 
@@ -3170,7 +3722,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Hash);
             }
 
@@ -3195,7 +3747,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ContactsImportContactsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xda30b32d;
+            public override Types ConstructorCode => Types.ContactsImportContactsRequest;
 
             public List<InputContact> Contacts;
             public bool Replace;
@@ -3212,7 +3764,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Contacts.Count);
                 foreach (InputContact ContactsElement in Contacts)
@@ -3241,7 +3793,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ContactsDeleteContactRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x8e953744;
+            public override Types ConstructorCode => Types.ContactsDeleteContactRequest;
 
             public InputUser Id;
 
@@ -3256,7 +3808,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Id.Write(writer);
             }
 
@@ -3281,7 +3833,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ContactsDeleteContactsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x59ab389e;
+            public override Types ConstructorCode => Types.ContactsDeleteContactsRequest;
 
             public List<InputUser> Id;
 
@@ -3296,7 +3848,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Id.Count);
                 foreach (InputUser IdElement in Id)
@@ -3324,7 +3876,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ContactsBlockRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x332b49fc;
+            public override Types ConstructorCode => Types.ContactsBlockRequest;
 
             public InputUser Id;
 
@@ -3339,7 +3891,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Id.Write(writer);
             }
 
@@ -3364,7 +3916,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ContactsUnblockRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xe54100bd;
+            public override Types ConstructorCode => Types.ContactsUnblockRequest;
 
             public InputUser Id;
 
@@ -3379,7 +3931,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Id.Write(writer);
             }
 
@@ -3404,7 +3956,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ContactsGetBlockedRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xf57c350f;
+            public override Types ConstructorCode => Types.ContactsGetBlockedRequest;
 
             public int Offset;
             public int Limit;
@@ -3421,7 +3973,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Offset);
                 writer.Write(Limit);
             }
@@ -3447,7 +3999,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ContactsExportCardRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x84e53737;
+            public override Types ConstructorCode => Types.ContactsExportCardRequest;
 
             public List<int> Result;
 
@@ -3455,7 +4007,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -3479,7 +4031,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ContactsImportCardRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x4fe196fe;
+            public override Types ConstructorCode => Types.ContactsImportCardRequest;
 
             public List<int> ExportCard;
 
@@ -3494,7 +4046,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(ExportCard.Count);
                 foreach (int ExportCardElement in ExportCard)
@@ -3522,7 +4074,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ContactsSearchRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x11f812d8;
+            public override Types ConstructorCode => Types.ContactsSearchRequest;
 
             public string Q;
             public int Limit;
@@ -3539,7 +4091,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Q);
                 writer.Write(Limit);
             }
@@ -3565,7 +4117,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ContactsResolveUsernameRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xf93ccba3;
+            public override Types ConstructorCode => Types.ContactsResolveUsernameRequest;
 
             public string Username;
 
@@ -3580,7 +4132,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Username);
             }
 
@@ -3603,148 +4155,9 @@ namespace TeleTurk.Core.MTProto
             }
         }
 
-        public class ContactsGetTopPeersRequest : MTProtoRequest
-        {
-            public override uint ConstructorCode => 0xd4982db5;
-
-            public True Correspondents;
-            public True BotsPm;
-            public True BotsInline;
-            public True Groups;
-            public True Channels;
-            public int Offset;
-            public int Limit;
-            public int Hash;
-
-            public ContactsTopPeers Result;
-
-            public ContactsGetTopPeersRequest() { }
-
-            /// <summary>
-            /// The following arguments can be null: Correspondents, BotsPm, BotsInline, Groups, Channels
-            /// </summary>
-            /// <param name="Correspondents">Can be null</param>
-            /// <param name="BotsPm">Can be null</param>
-            /// <param name="BotsInline">Can be null</param>
-            /// <param name="Groups">Can be null</param>
-            /// <param name="Channels">Can be null</param>
-            /// <param name="Offset">Can NOT be null</param>
-            /// <param name="Limit">Can NOT be null</param>
-            /// <param name="Hash">Can NOT be null</param>
-            public ContactsGetTopPeersRequest(True Correspondents, True BotsPm, True BotsInline, True Groups, True Channels, int Offset, int Limit, int Hash)
-            {
-                this.Correspondents = Correspondents;
-                this.BotsPm = BotsPm;
-                this.BotsInline = BotsInline;
-                this.Groups = Groups;
-                this.Channels = Channels;
-                this.Offset = Offset;
-                this.Limit = Limit;
-                this.Hash = Hash;
-            }
-
-            public override void OnSend(TBinaryWriter writer)
-            {
-                int flags =
-                    (Correspondents != null ? 1 << 0 : 0) |
-                    (BotsPm != null ? 1 << 1 : 0) |
-                    (BotsInline != null ? 1 << 2 : 0) |
-                    (Groups != null ? 1 << 10 : 0) |
-                    (Channels != null ? 1 << 15 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
-                if (Correspondents != null) {
-
-                }
-
-                if (BotsPm != null) {
-
-                }
-
-                if (BotsInline != null) {
-
-                }
-
-                if (Groups != null) {
-
-                }
-
-                if (Channels != null) {
-
-                }
-
-                writer.Write(Offset);
-                writer.Write(Limit);
-                writer.Write(Hash);
-            }
-
-            public override void OnResponse(TBinaryReader reader)
-            {
-                Result = reader.Read<ContactsTopPeers>();
-            }
-
-            public override void OnException(Exception exception)
-            {
-                throw exception;
-            }
-
-            public override bool Confirmed => true;
-            public override bool Responded { get; }
-
-            public override string ToString()
-            {
-                return string.Format("(ContactsGetTopPeersRequest Correspondents:{0} BotsPm:{1} BotsInline:{2} Groups:{3} Channels:{4} Offset:{5} Limit:{6} Hash:{7})", Correspondents, BotsPm, BotsInline, Groups, Channels, Offset, Limit, Hash);
-            }
-        }
-
-        public class ContactsResetTopPeerRatingRequest : MTProtoRequest
-        {
-            public override uint ConstructorCode => 0x1ae373ac;
-
-            public TopPeerCategory Category;
-            public InputPeer Peer;
-
-            public bool Result;
-
-            public ContactsResetTopPeerRatingRequest() { }
-
-            public ContactsResetTopPeerRatingRequest(TopPeerCategory Category, InputPeer Peer)
-            {
-                this.Category = Category;
-                this.Peer = Peer;
-            }
-
-            public override void OnSend(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                Category.Write(writer);
-                Peer.Write(writer);
-            }
-
-            public override void OnResponse(TBinaryReader reader)
-            {
-                Result = reader.ReadBoolean();
-            }
-
-            public override void OnException(Exception exception)
-            {
-                throw exception;
-            }
-
-            public override bool Confirmed => true;
-            public override bool Responded { get; }
-
-            public override string ToString()
-            {
-                return string.Format("(ContactsResetTopPeerRatingRequest Category:{0} Peer:{1})", Category, Peer);
-            }
-        }
-
         public class MessagesGetMessagesRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x4222fa74;
+            public override Types ConstructorCode => Types.MessagesGetMessagesRequest;
 
             public List<int> Id;
 
@@ -3759,7 +4172,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Id.Count);
                 foreach (int IdElement in Id)
@@ -3787,7 +4200,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesGetDialogsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x6b47f94d;
+            public override Types ConstructorCode => Types.MessagesGetDialogsRequest;
 
             public int OffsetDate;
             public int OffsetId;
@@ -3808,7 +4221,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(OffsetDate);
                 writer.Write(OffsetId);
                 OffsetPeer.Write(writer);
@@ -3836,7 +4249,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesGetHistoryRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xafa92846;
+            public override Types ConstructorCode => Types.MessagesGetHistoryRequest;
 
             public InputPeer Peer;
             public int OffsetId;
@@ -3863,7 +4276,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 writer.Write(OffsetId);
                 writer.Write(OffsetDate);
@@ -3894,7 +4307,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesSearchRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xd4569248;
+            public override Types ConstructorCode => Types.MessagesSearchRequest;
 
             public True ImportantOnly;
             public InputPeer Peer;
@@ -3940,7 +4353,7 @@ namespace TeleTurk.Core.MTProto
                 int flags =
                     (ImportantOnly != null ? 1 << 0 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (ImportantOnly != null) {
@@ -3978,7 +4391,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesReadHistoryRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x0e306d3a;
+            public override Types ConstructorCode => Types.MessagesReadHistoryRequest;
 
             public InputPeer Peer;
             public int MaxId;
@@ -3995,7 +4408,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 writer.Write(MaxId);
             }
@@ -4021,7 +4434,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesDeleteHistoryRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xb7c13bd9;
+            public override Types ConstructorCode => Types.MessagesDeleteHistoryRequest;
 
             public InputPeer Peer;
             public int MaxId;
@@ -4038,7 +4451,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 writer.Write(MaxId);
             }
@@ -4064,7 +4477,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesDeleteMessagesRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xa5f18925;
+            public override Types ConstructorCode => Types.MessagesDeleteMessagesRequest;
 
             public List<int> Id;
 
@@ -4079,7 +4492,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Id.Count);
                 foreach (int IdElement in Id)
@@ -4107,7 +4520,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesReceivedMessagesRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x05a954c0;
+            public override Types ConstructorCode => Types.MessagesReceivedMessagesRequest;
 
             public int MaxId;
 
@@ -4122,7 +4535,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(MaxId);
             }
 
@@ -4147,7 +4560,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesSetTypingRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xa3825e50;
+            public override Types ConstructorCode => Types.MessagesSetTypingRequest;
 
             public InputPeer Peer;
             public SendMessageAction Action;
@@ -4164,7 +4577,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 Action.Write(writer);
             }
@@ -4190,7 +4603,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesSendMessageRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xfa88427a;
+            public override Types ConstructorCode => Types.MessagesSendMessageRequest;
 
             public True NoWebpage;
             public True Broadcast;
@@ -4245,7 +4658,7 @@ namespace TeleTurk.Core.MTProto
                     (ReplyMarkup != null ? 1 << 2 : 0) |
                     (Entities != null ? 1 << 3 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (NoWebpage != null) {
@@ -4305,7 +4718,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesSendMediaRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xc8f16791;
+            public override Types ConstructorCode => Types.MessagesSendMediaRequest;
 
             public True Broadcast;
             public True Silent;
@@ -4352,7 +4765,7 @@ namespace TeleTurk.Core.MTProto
                     (ReplyToMsgId != null ? 1 << 0 : 0) |
                     (ReplyMarkup != null ? 1 << 2 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Broadcast != null) {
@@ -4401,7 +4814,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesForwardMessagesRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x708e0195;
+            public override Types ConstructorCode => Types.MessagesForwardMessagesRequest;
 
             public True Broadcast;
             public True Silent;
@@ -4443,7 +4856,7 @@ namespace TeleTurk.Core.MTProto
                     (Silent != null ? 1 << 5 : 0) |
                     (Background != null ? 1 << 6 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Broadcast != null) {
@@ -4491,7 +4904,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesReportSpamRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xcf1592db;
+            public override Types ConstructorCode => Types.MessagesReportSpamRequest;
 
             public InputPeer Peer;
 
@@ -4506,7 +4919,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
             }
 
@@ -4531,7 +4944,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesHideReportSpamRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xa8f1709b;
+            public override Types ConstructorCode => Types.MessagesHideReportSpamRequest;
 
             public InputPeer Peer;
 
@@ -4546,7 +4959,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
             }
 
@@ -4571,7 +4984,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesGetPeerSettingsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x3672e09c;
+            public override Types ConstructorCode => Types.MessagesGetPeerSettingsRequest;
 
             public InputPeer Peer;
 
@@ -4586,7 +4999,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
             }
 
@@ -4611,7 +5024,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesGetChatsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x3c6aa187;
+            public override Types ConstructorCode => Types.MessagesGetChatsRequest;
 
             public List<int> Id;
 
@@ -4626,7 +5039,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Id.Count);
                 foreach (int IdElement in Id)
@@ -4654,7 +5067,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesGetFullChatRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x3b831c66;
+            public override Types ConstructorCode => Types.MessagesGetFullChatRequest;
 
             public int ChatId;
 
@@ -4669,7 +5082,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
             }
 
@@ -4694,7 +5107,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesEditChatTitleRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xdc452855;
+            public override Types ConstructorCode => Types.MessagesEditChatTitleRequest;
 
             public int ChatId;
             public string Title;
@@ -4711,7 +5124,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
                 writer.Write(Title);
             }
@@ -4737,7 +5150,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesEditChatPhotoRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xca4c79d8;
+            public override Types ConstructorCode => Types.MessagesEditChatPhotoRequest;
 
             public int ChatId;
             public InputChatPhoto Photo;
@@ -4754,7 +5167,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
                 Photo.Write(writer);
             }
@@ -4780,7 +5193,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesAddChatUserRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xf9a0aa09;
+            public override Types ConstructorCode => Types.MessagesAddChatUserRequest;
 
             public int ChatId;
             public InputUser UserId;
@@ -4799,7 +5212,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
                 UserId.Write(writer);
                 writer.Write(FwdLimit);
@@ -4826,7 +5239,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesDeleteChatUserRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xe0611f16;
+            public override Types ConstructorCode => Types.MessagesDeleteChatUserRequest;
 
             public int ChatId;
             public InputUser UserId;
@@ -4843,7 +5256,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
                 UserId.Write(writer);
             }
@@ -4869,7 +5282,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesCreateChatRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x09cb126e;
+            public override Types ConstructorCode => Types.MessagesCreateChatRequest;
 
             public List<InputUser> Users;
             public string Title;
@@ -4886,7 +5299,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Users.Count);
                 foreach (InputUser UsersElement in Users)
@@ -4915,7 +5328,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesForwardMessageRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x33963bf9;
+            public override Types ConstructorCode => Types.MessagesForwardMessageRequest;
 
             public InputPeer Peer;
             public int Id;
@@ -4934,7 +5347,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 writer.Write(Id);
                 writer.Write(RandomId);
@@ -4961,7 +5374,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesSendBroadcastRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xbf73f4da;
+            public override Types ConstructorCode => Types.MessagesSendBroadcastRequest;
 
             public List<InputUser> Contacts;
             public List<long> RandomId;
@@ -4982,7 +5395,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Contacts.Count);
                 foreach (InputUser ContactsElement in Contacts)
@@ -5016,7 +5429,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesGetDhConfigRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x26cf8950;
+            public override Types ConstructorCode => Types.MessagesGetDhConfigRequest;
 
             public int Version;
             public int RandomLength;
@@ -5033,7 +5446,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Version);
                 writer.Write(RandomLength);
             }
@@ -5059,7 +5472,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesRequestEncryptionRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xf64daf43;
+            public override Types ConstructorCode => Types.MessagesRequestEncryptionRequest;
 
             public InputUser UserId;
             public int RandomId;
@@ -5078,7 +5491,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 UserId.Write(writer);
                 writer.Write(RandomId);
                 writer.Write(GA);
@@ -5105,7 +5518,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesAcceptEncryptionRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x3dbc0415;
+            public override Types ConstructorCode => Types.MessagesAcceptEncryptionRequest;
 
             public InputEncryptedChat Peer;
             public byte[] GB;
@@ -5124,7 +5537,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 writer.Write(GB);
                 writer.Write(KeyFingerprint);
@@ -5151,7 +5564,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesDiscardEncryptionRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xedd923c5;
+            public override Types ConstructorCode => Types.MessagesDiscardEncryptionRequest;
 
             public int ChatId;
 
@@ -5166,7 +5579,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
             }
 
@@ -5191,7 +5604,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesSetEncryptedTypingRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x791451ed;
+            public override Types ConstructorCode => Types.MessagesSetEncryptedTypingRequest;
 
             public InputEncryptedChat Peer;
             public bool Typing;
@@ -5208,7 +5621,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 writer.Write(Typing);
             }
@@ -5234,7 +5647,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesReadEncryptedHistoryRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x7f4b690a;
+            public override Types ConstructorCode => Types.MessagesReadEncryptedHistoryRequest;
 
             public InputEncryptedChat Peer;
             public int MaxDate;
@@ -5251,7 +5664,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 writer.Write(MaxDate);
             }
@@ -5277,7 +5690,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesSendEncryptedRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xa9776773;
+            public override Types ConstructorCode => Types.MessagesSendEncryptedRequest;
 
             public InputEncryptedChat Peer;
             public long RandomId;
@@ -5296,7 +5709,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 writer.Write(RandomId);
                 writer.Write(Data);
@@ -5323,7 +5736,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesSendEncryptedFileRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x9a901b66;
+            public override Types ConstructorCode => Types.MessagesSendEncryptedFileRequest;
 
             public InputEncryptedChat Peer;
             public long RandomId;
@@ -5344,7 +5757,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 writer.Write(RandomId);
                 writer.Write(Data);
@@ -5372,7 +5785,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesSendEncryptedServiceRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x32d439a4;
+            public override Types ConstructorCode => Types.MessagesSendEncryptedServiceRequest;
 
             public InputEncryptedChat Peer;
             public long RandomId;
@@ -5391,7 +5804,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 writer.Write(RandomId);
                 writer.Write(Data);
@@ -5418,7 +5831,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesReceivedQueueRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x55a5bb66;
+            public override Types ConstructorCode => Types.MessagesReceivedQueueRequest;
 
             public int MaxQts;
 
@@ -5433,7 +5846,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(MaxQts);
             }
 
@@ -5458,7 +5871,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesReadMessageContentsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x36a73f77;
+            public override Types ConstructorCode => Types.MessagesReadMessageContentsRequest;
 
             public List<int> Id;
 
@@ -5473,7 +5886,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Id.Count);
                 foreach (int IdElement in Id)
@@ -5501,7 +5914,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesGetStickersRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xae22e045;
+            public override Types ConstructorCode => Types.MessagesGetStickersRequest;
 
             public string Emoticon;
             public string Hash;
@@ -5518,7 +5931,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Emoticon);
                 writer.Write(Hash);
             }
@@ -5544,7 +5957,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesGetAllStickersRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x1c9618b1;
+            public override Types ConstructorCode => Types.MessagesGetAllStickersRequest;
 
             public int Hash;
 
@@ -5559,7 +5972,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Hash);
             }
 
@@ -5584,7 +5997,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesGetWebPagePreviewRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x25223e24;
+            public override Types ConstructorCode => Types.MessagesGetWebPagePreviewRequest;
 
             public string Message;
 
@@ -5599,7 +6012,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Message);
             }
 
@@ -5624,7 +6037,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesExportChatInviteRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x7d885289;
+            public override Types ConstructorCode => Types.MessagesExportChatInviteRequest;
 
             public int ChatId;
 
@@ -5639,7 +6052,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
             }
 
@@ -5664,7 +6077,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesCheckChatInviteRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x3eadb1bb;
+            public override Types ConstructorCode => Types.MessagesCheckChatInviteRequest;
 
             public string Hash;
 
@@ -5679,7 +6092,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Hash);
             }
 
@@ -5704,7 +6117,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesImportChatInviteRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x6c50051c;
+            public override Types ConstructorCode => Types.MessagesImportChatInviteRequest;
 
             public string Hash;
 
@@ -5719,7 +6132,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Hash);
             }
 
@@ -5744,7 +6157,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesGetStickerSetRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x2619a90e;
+            public override Types ConstructorCode => Types.MessagesGetStickerSetRequest;
 
             public InputStickerSet Stickerset;
 
@@ -5759,7 +6172,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Stickerset.Write(writer);
             }
 
@@ -5784,7 +6197,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesInstallStickerSetRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x7b30c3a6;
+            public override Types ConstructorCode => Types.MessagesInstallStickerSetRequest;
 
             public InputStickerSet Stickerset;
             public bool Disabled;
@@ -5801,7 +6214,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Stickerset.Write(writer);
                 writer.Write(Disabled);
             }
@@ -5827,7 +6240,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesUninstallStickerSetRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xf96e55de;
+            public override Types ConstructorCode => Types.MessagesUninstallStickerSetRequest;
 
             public InputStickerSet Stickerset;
 
@@ -5842,7 +6255,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Stickerset.Write(writer);
             }
 
@@ -5867,7 +6280,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesStartBotRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xe6df7378;
+            public override Types ConstructorCode => Types.MessagesStartBotRequest;
 
             public InputUser Bot;
             public InputPeer Peer;
@@ -5888,7 +6301,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Bot.Write(writer);
                 Peer.Write(writer);
                 writer.Write(RandomId);
@@ -5916,7 +6329,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesGetMessagesViewsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xc4c8a55d;
+            public override Types ConstructorCode => Types.MessagesGetMessagesViewsRequest;
 
             public InputPeer Peer;
             public List<int> Id;
@@ -5935,7 +6348,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Id.Count);
@@ -5965,7 +6378,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesToggleChatAdminsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xec8bd9e1;
+            public override Types ConstructorCode => Types.MessagesToggleChatAdminsRequest;
 
             public int ChatId;
             public bool Enabled;
@@ -5982,7 +6395,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
                 writer.Write(Enabled);
             }
@@ -6008,7 +6421,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesEditChatAdminRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xa9e69f2e;
+            public override Types ConstructorCode => Types.MessagesEditChatAdminRequest;
 
             public int ChatId;
             public InputUser UserId;
@@ -6027,7 +6440,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
                 UserId.Write(writer);
                 writer.Write(IsAdmin);
@@ -6054,7 +6467,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesMigrateChatRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x15a3b8e3;
+            public override Types ConstructorCode => Types.MessagesMigrateChatRequest;
 
             public int ChatId;
 
@@ -6069,7 +6482,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
             }
 
@@ -6094,7 +6507,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesSearchGlobalRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x9e3cacb0;
+            public override Types ConstructorCode => Types.MessagesSearchGlobalRequest;
 
             public string Q;
             public int OffsetDate;
@@ -6117,7 +6530,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Q);
                 writer.Write(OffsetDate);
                 OffsetPeer.Write(writer);
@@ -6146,7 +6559,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesReorderStickerSetsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x9fcfbc30;
+            public override Types ConstructorCode => Types.MessagesReorderStickerSetsRequest;
 
             public List<long> Order;
 
@@ -6161,7 +6574,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Order.Count);
                 foreach (long OrderElement in Order)
@@ -6189,7 +6602,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesGetDocumentByHashRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x338e2464;
+            public override Types ConstructorCode => Types.MessagesGetDocumentByHashRequest;
 
             public byte[] Sha256;
             public int Size;
@@ -6208,7 +6621,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Sha256);
                 writer.Write(Size);
                 writer.Write(MimeType);
@@ -6235,7 +6648,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesSearchGifsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xbf9a776b;
+            public override Types ConstructorCode => Types.MessagesSearchGifsRequest;
 
             public string Q;
             public int Offset;
@@ -6252,7 +6665,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Q);
                 writer.Write(Offset);
             }
@@ -6278,7 +6691,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesGetSavedGifsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x83bf3d52;
+            public override Types ConstructorCode => Types.MessagesGetSavedGifsRequest;
 
             public int Hash;
 
@@ -6293,7 +6706,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Hash);
             }
 
@@ -6318,7 +6731,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesSaveGifRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x327a30cb;
+            public override Types ConstructorCode => Types.MessagesSaveGifRequest;
 
             public InputDocument Id;
             public bool Unsave;
@@ -6335,7 +6748,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Id.Write(writer);
                 writer.Write(Unsave);
             }
@@ -6361,11 +6774,9 @@ namespace TeleTurk.Core.MTProto
 
         public class MessagesGetInlineBotResultsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x514e999d;
+            public override Types ConstructorCode => Types.MessagesGetInlineBotResultsRequest;
 
             public InputUser Bot;
-            public InputPeer Peer;
-            public InputGeoPoint GeoPoint;
             public string Query;
             public string Offset;
 
@@ -6373,37 +6784,17 @@ namespace TeleTurk.Core.MTProto
 
             public MessagesGetInlineBotResultsRequest() { }
 
-            /// <summary>
-            /// The following arguments can be null: GeoPoint
-            /// </summary>
-            /// <param name="Bot">Can NOT be null</param>
-            /// <param name="Peer">Can NOT be null</param>
-            /// <param name="GeoPoint">Can be null</param>
-            /// <param name="Query">Can NOT be null</param>
-            /// <param name="Offset">Can NOT be null</param>
-            public MessagesGetInlineBotResultsRequest(InputUser Bot, InputPeer Peer, InputGeoPoint GeoPoint, string Query, string Offset)
+            public MessagesGetInlineBotResultsRequest(InputUser Bot, string Query, string Offset)
             {
                 this.Bot = Bot;
-                this.Peer = Peer;
-                this.GeoPoint = GeoPoint;
                 this.Query = Query;
                 this.Offset = Offset;
             }
 
             public override void OnSend(TBinaryWriter writer)
             {
-                int flags =
-                    (GeoPoint != null ? 1 << 0 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
+                writer.Write((uint)ConstructorCode);
                 Bot.Write(writer);
-                Peer.Write(writer);
-                if (GeoPoint != null) {
-                    GeoPoint.Write(writer);
-                }
-
                 writer.Write(Query);
                 writer.Write(Offset);
             }
@@ -6423,13 +6814,13 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(MessagesGetInlineBotResultsRequest Bot:{0} Peer:{1} GeoPoint:{2} Query:{3} Offset:{4})", Bot, Peer, GeoPoint, Query, Offset);
+                return string.Format("(MessagesGetInlineBotResultsRequest Bot:{0} Query:{1} Offset:{2})", Bot, Query, Offset);
             }
         }
 
         public class MessagesSetInlineBotResultsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xeb5ea206;
+            public override Types ConstructorCode => Types.MessagesSetInlineBotResultsRequest;
 
             public True Gallery;
             public True Private;
@@ -6437,14 +6828,13 @@ namespace TeleTurk.Core.MTProto
             public List<InputBotInlineResult> Results;
             public int CacheTime;
             public string NextOffset;
-            public InlineBotSwitchPM SwitchPm;
 
             public bool Result;
 
             public MessagesSetInlineBotResultsRequest() { }
 
             /// <summary>
-            /// The following arguments can be null: Gallery, Private, NextOffset, SwitchPm
+            /// The following arguments can be null: Gallery, Private, NextOffset
             /// </summary>
             /// <param name="Gallery">Can be null</param>
             /// <param name="Private">Can be null</param>
@@ -6452,8 +6842,7 @@ namespace TeleTurk.Core.MTProto
             /// <param name="Results">Can NOT be null</param>
             /// <param name="CacheTime">Can NOT be null</param>
             /// <param name="NextOffset">Can be null</param>
-            /// <param name="SwitchPm">Can be null</param>
-            public MessagesSetInlineBotResultsRequest(True Gallery, True Private, long QueryId, List<InputBotInlineResult> Results, int CacheTime, string NextOffset, InlineBotSwitchPM SwitchPm)
+            public MessagesSetInlineBotResultsRequest(True Gallery, True Private, long QueryId, List<InputBotInlineResult> Results, int CacheTime, string NextOffset)
             {
                 this.Gallery = Gallery;
                 this.Private = Private;
@@ -6461,7 +6850,6 @@ namespace TeleTurk.Core.MTProto
                 this.Results = Results;
                 this.CacheTime = CacheTime;
                 this.NextOffset = NextOffset;
-                this.SwitchPm = SwitchPm;
             }
 
             public override void OnSend(TBinaryWriter writer)
@@ -6469,10 +6857,9 @@ namespace TeleTurk.Core.MTProto
                 int flags =
                     (Gallery != null ? 1 << 0 : 0) |
                     (Private != null ? 1 << 1 : 0) |
-                    (NextOffset != null ? 1 << 2 : 0) |
-                    (SwitchPm != null ? 1 << 3 : 0);
+                    (NextOffset != null ? 1 << 2 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Gallery != null) {
@@ -6493,10 +6880,6 @@ namespace TeleTurk.Core.MTProto
                     writer.Write(NextOffset);
                 }
 
-                if (SwitchPm != null) {
-                    SwitchPm.Write(writer);
-                }
-
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -6514,13 +6897,13 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(MessagesSetInlineBotResultsRequest Gallery:{0} Private:{1} QueryId:{2} Results:{3} CacheTime:{4} NextOffset:{5} SwitchPm:{6})", Gallery, Private, QueryId, Results, CacheTime, NextOffset, SwitchPm);
+                return string.Format("(MessagesSetInlineBotResultsRequest Gallery:{0} Private:{1} QueryId:{2} Results:{3} CacheTime:{4} NextOffset:{5})", Gallery, Private, QueryId, Results, CacheTime, NextOffset);
             }
         }
 
         public class MessagesSendInlineBotResultRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xb16e06fe;
+            public override Types ConstructorCode => Types.MessagesSendInlineBotResultRequest;
 
             public True Broadcast;
             public True Silent;
@@ -6566,7 +6949,7 @@ namespace TeleTurk.Core.MTProto
                     (Background != null ? 1 << 6 : 0) |
                     (ReplyToMsgId != null ? 1 << 0 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Broadcast != null) {
@@ -6610,375 +6993,9 @@ namespace TeleTurk.Core.MTProto
             }
         }
 
-        public class MessagesGetMessageEditDataRequest : MTProtoRequest
-        {
-            public override uint ConstructorCode => 0xfda68d36;
-
-            public InputPeer Peer;
-            public int Id;
-
-            public MessagesMessageEditData Result;
-
-            public MessagesGetMessageEditDataRequest() { }
-
-            public MessagesGetMessageEditDataRequest(InputPeer Peer, int Id)
-            {
-                this.Peer = Peer;
-                this.Id = Id;
-            }
-
-            public override void OnSend(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                Peer.Write(writer);
-                writer.Write(Id);
-            }
-
-            public override void OnResponse(TBinaryReader reader)
-            {
-                Result = reader.Read<MessagesMessageEditData>();
-            }
-
-            public override void OnException(Exception exception)
-            {
-                throw exception;
-            }
-
-            public override bool Confirmed => true;
-            public override bool Responded { get; }
-
-            public override string ToString()
-            {
-                return string.Format("(MessagesGetMessageEditDataRequest Peer:{0} Id:{1})", Peer, Id);
-            }
-        }
-
-        public class MessagesEditMessageRequest : MTProtoRequest
-        {
-            public override uint ConstructorCode => 0xce91e4ca;
-
-            public True NoWebpage;
-            public InputPeer Peer;
-            public int Id;
-            public string Message;
-            public ReplyMarkup ReplyMarkup;
-            public List<MessageEntity> Entities;
-
-            public Updates Result;
-
-            public MessagesEditMessageRequest() { }
-
-            /// <summary>
-            /// The following arguments can be null: NoWebpage, Message, ReplyMarkup, Entities
-            /// </summary>
-            /// <param name="NoWebpage">Can be null</param>
-            /// <param name="Peer">Can NOT be null</param>
-            /// <param name="Id">Can NOT be null</param>
-            /// <param name="Message">Can be null</param>
-            /// <param name="ReplyMarkup">Can be null</param>
-            /// <param name="Entities">Can be null</param>
-            public MessagesEditMessageRequest(True NoWebpage, InputPeer Peer, int Id, string Message, ReplyMarkup ReplyMarkup, List<MessageEntity> Entities)
-            {
-                this.NoWebpage = NoWebpage;
-                this.Peer = Peer;
-                this.Id = Id;
-                this.Message = Message;
-                this.ReplyMarkup = ReplyMarkup;
-                this.Entities = Entities;
-            }
-
-            public override void OnSend(TBinaryWriter writer)
-            {
-                int flags =
-                    (NoWebpage != null ? 1 << 1 : 0) |
-                    (Message != null ? 1 << 11 : 0) |
-                    (ReplyMarkup != null ? 1 << 2 : 0) |
-                    (Entities != null ? 1 << 3 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
-                if (NoWebpage != null) {
-
-                }
-
-                Peer.Write(writer);
-                writer.Write(Id);
-                if (Message != null) {
-                    writer.Write(Message);
-                }
-
-                if (ReplyMarkup != null) {
-                    ReplyMarkup.Write(writer);
-                }
-
-                if (Entities != null) {
-                    writer.Write(0x1cb5c415); // vector code
-                    writer.Write(Entities.Count);
-                    foreach (MessageEntity EntitiesElement in Entities)
-                        EntitiesElement.Write(writer);
-                }
-
-            }
-
-            public override void OnResponse(TBinaryReader reader)
-            {
-                Result = reader.Read<Updates>();
-            }
-
-            public override void OnException(Exception exception)
-            {
-                throw exception;
-            }
-
-            public override bool Confirmed => true;
-            public override bool Responded { get; }
-
-            public override string ToString()
-            {
-                return string.Format("(MessagesEditMessageRequest NoWebpage:{0} Peer:{1} Id:{2} Message:{3} ReplyMarkup:{4} Entities:{5})", NoWebpage, Peer, Id, Message, ReplyMarkup, Entities);
-            }
-        }
-
-        public class MessagesEditInlineBotMessageRequest : MTProtoRequest
-        {
-            public override uint ConstructorCode => 0x130c2c85;
-
-            public True NoWebpage;
-            public InputBotInlineMessageID Id;
-            public string Message;
-            public ReplyMarkup ReplyMarkup;
-            public List<MessageEntity> Entities;
-
-            public bool Result;
-
-            public MessagesEditInlineBotMessageRequest() { }
-
-            /// <summary>
-            /// The following arguments can be null: NoWebpage, Message, ReplyMarkup, Entities
-            /// </summary>
-            /// <param name="NoWebpage">Can be null</param>
-            /// <param name="Id">Can NOT be null</param>
-            /// <param name="Message">Can be null</param>
-            /// <param name="ReplyMarkup">Can be null</param>
-            /// <param name="Entities">Can be null</param>
-            public MessagesEditInlineBotMessageRequest(True NoWebpage, InputBotInlineMessageID Id, string Message, ReplyMarkup ReplyMarkup, List<MessageEntity> Entities)
-            {
-                this.NoWebpage = NoWebpage;
-                this.Id = Id;
-                this.Message = Message;
-                this.ReplyMarkup = ReplyMarkup;
-                this.Entities = Entities;
-            }
-
-            public override void OnSend(TBinaryWriter writer)
-            {
-                int flags =
-                    (NoWebpage != null ? 1 << 1 : 0) |
-                    (Message != null ? 1 << 11 : 0) |
-                    (ReplyMarkup != null ? 1 << 2 : 0) |
-                    (Entities != null ? 1 << 3 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
-                if (NoWebpage != null) {
-
-                }
-
-                Id.Write(writer);
-                if (Message != null) {
-                    writer.Write(Message);
-                }
-
-                if (ReplyMarkup != null) {
-                    ReplyMarkup.Write(writer);
-                }
-
-                if (Entities != null) {
-                    writer.Write(0x1cb5c415); // vector code
-                    writer.Write(Entities.Count);
-                    foreach (MessageEntity EntitiesElement in Entities)
-                        EntitiesElement.Write(writer);
-                }
-
-            }
-
-            public override void OnResponse(TBinaryReader reader)
-            {
-                Result = reader.ReadBoolean();
-            }
-
-            public override void OnException(Exception exception)
-            {
-                throw exception;
-            }
-
-            public override bool Confirmed => true;
-            public override bool Responded { get; }
-
-            public override string ToString()
-            {
-                return string.Format("(MessagesEditInlineBotMessageRequest NoWebpage:{0} Id:{1} Message:{2} ReplyMarkup:{3} Entities:{4})", NoWebpage, Id, Message, ReplyMarkup, Entities);
-            }
-        }
-
-        public class MessagesGetBotCallbackAnswerRequest : MTProtoRequest
-        {
-            public override uint ConstructorCode => 0xa6e94f04;
-
-            public InputPeer Peer;
-            public int MsgId;
-            public byte[] Data;
-
-            public MessagesBotCallbackAnswer Result;
-
-            public MessagesGetBotCallbackAnswerRequest() { }
-
-            public MessagesGetBotCallbackAnswerRequest(InputPeer Peer, int MsgId, byte[] Data)
-            {
-                this.Peer = Peer;
-                this.MsgId = MsgId;
-                this.Data = Data;
-            }
-
-            public override void OnSend(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                Peer.Write(writer);
-                writer.Write(MsgId);
-                writer.Write(Data);
-            }
-
-            public override void OnResponse(TBinaryReader reader)
-            {
-                Result = reader.Read<MessagesBotCallbackAnswer>();
-            }
-
-            public override void OnException(Exception exception)
-            {
-                throw exception;
-            }
-
-            public override bool Confirmed => true;
-            public override bool Responded { get; }
-
-            public override string ToString()
-            {
-                return string.Format("(MessagesGetBotCallbackAnswerRequest Peer:{0} MsgId:{1} Data:{2})", Peer, MsgId, Data);
-            }
-        }
-
-        public class MessagesSetBotCallbackAnswerRequest : MTProtoRequest
-        {
-            public override uint ConstructorCode => 0x481c591a;
-
-            public True Alert;
-            public long QueryId;
-            public string Message;
-
-            public bool Result;
-
-            public MessagesSetBotCallbackAnswerRequest() { }
-
-            /// <summary>
-            /// The following arguments can be null: Alert, Message
-            /// </summary>
-            /// <param name="Alert">Can be null</param>
-            /// <param name="QueryId">Can NOT be null</param>
-            /// <param name="Message">Can be null</param>
-            public MessagesSetBotCallbackAnswerRequest(True Alert, long QueryId, string Message)
-            {
-                this.Alert = Alert;
-                this.QueryId = QueryId;
-                this.Message = Message;
-            }
-
-            public override void OnSend(TBinaryWriter writer)
-            {
-                int flags =
-                    (Alert != null ? 1 << 1 : 0) |
-                    (Message != null ? 1 << 0 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
-                if (Alert != null) {
-
-                }
-
-                writer.Write(QueryId);
-                if (Message != null) {
-                    writer.Write(Message);
-                }
-
-            }
-
-            public override void OnResponse(TBinaryReader reader)
-            {
-                Result = reader.ReadBoolean();
-            }
-
-            public override void OnException(Exception exception)
-            {
-                throw exception;
-            }
-
-            public override bool Confirmed => true;
-            public override bool Responded { get; }
-
-            public override string ToString()
-            {
-                return string.Format("(MessagesSetBotCallbackAnswerRequest Alert:{0} QueryId:{1} Message:{2})", Alert, QueryId, Message);
-            }
-        }
-
-        public class MessagesGetPeerDialogsRequest : MTProtoRequest
-        {
-            public override uint ConstructorCode => 0x19250887;
-
-            public List<InputPeer> Peer;
-
-            public MessagesPeerDialogs Result;
-
-            public MessagesGetPeerDialogsRequest() { }
-
-            public MessagesGetPeerDialogsRequest(List<InputPeer> Peer)
-            {
-                this.Peer = Peer;
-            }
-
-            public override void OnSend(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                writer.Write(0x1cb5c415); // vector code
-                writer.Write(Peer.Count);
-                foreach (InputPeer PeerElement in Peer)
-                    PeerElement.Write(writer);
-            }
-
-            public override void OnResponse(TBinaryReader reader)
-            {
-                Result = reader.Read<MessagesPeerDialogs>();
-            }
-
-            public override void OnException(Exception exception)
-            {
-                throw exception;
-            }
-
-            public override bool Confirmed => true;
-            public override bool Responded { get; }
-
-            public override string ToString()
-            {
-                return string.Format("(MessagesGetPeerDialogsRequest Peer:{0})", Peer);
-            }
-        }
-
         public class UpdatesGetStateRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xedd4882a;
+            public override Types ConstructorCode => Types.UpdatesGetStateRequest;
 
             public UpdatesState Result;
 
@@ -6986,7 +7003,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -7010,7 +7027,7 @@ namespace TeleTurk.Core.MTProto
 
         public class UpdatesGetDifferenceRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x0a041495;
+            public override Types ConstructorCode => Types.UpdatesGetDifferenceRequest;
 
             public int Pts;
             public int Date;
@@ -7029,7 +7046,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Pts);
                 writer.Write(Date);
                 writer.Write(Qts);
@@ -7056,7 +7073,7 @@ namespace TeleTurk.Core.MTProto
 
         public class UpdatesGetChannelDifferenceRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xbb32d7c0;
+            public override Types ConstructorCode => Types.UpdatesGetChannelDifferenceRequest;
 
             public InputChannel Channel;
             public ChannelMessagesFilter Filter;
@@ -7077,7 +7094,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 Filter.Write(writer);
                 writer.Write(Pts);
@@ -7105,7 +7122,7 @@ namespace TeleTurk.Core.MTProto
 
         public class PhotosUpdateProfilePhotoRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xeef579a0;
+            public override Types ConstructorCode => Types.PhotosUpdateProfilePhotoRequest;
 
             public InputPhoto Id;
             public InputPhotoCrop Crop;
@@ -7122,7 +7139,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Id.Write(writer);
                 Crop.Write(writer);
             }
@@ -7148,7 +7165,7 @@ namespace TeleTurk.Core.MTProto
 
         public class PhotosUploadProfilePhotoRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xd50f9c88;
+            public override Types ConstructorCode => Types.PhotosUploadProfilePhotoRequest;
 
             public InputFile File;
             public string Caption;
@@ -7169,7 +7186,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 File.Write(writer);
                 writer.Write(Caption);
                 GeoPoint.Write(writer);
@@ -7197,7 +7214,7 @@ namespace TeleTurk.Core.MTProto
 
         public class PhotosDeletePhotosRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x87cf7f2f;
+            public override Types ConstructorCode => Types.PhotosDeletePhotosRequest;
 
             public List<InputPhoto> Id;
 
@@ -7212,7 +7229,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Id.Count);
                 foreach (InputPhoto IdElement in Id)
@@ -7240,7 +7257,7 @@ namespace TeleTurk.Core.MTProto
 
         public class PhotosGetUserPhotosRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x91cd32a8;
+            public override Types ConstructorCode => Types.PhotosGetUserPhotosRequest;
 
             public InputUser UserId;
             public int Offset;
@@ -7261,7 +7278,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 UserId.Write(writer);
                 writer.Write(Offset);
                 writer.Write(MaxId);
@@ -7289,7 +7306,7 @@ namespace TeleTurk.Core.MTProto
 
         public class UploadSaveFilePartRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xb304a621;
+            public override Types ConstructorCode => Types.UploadSaveFilePartRequest;
 
             public long FileId;
             public int FilePart;
@@ -7308,7 +7325,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(FileId);
                 writer.Write(FilePart);
                 writer.Write(Bytes);
@@ -7335,7 +7352,7 @@ namespace TeleTurk.Core.MTProto
 
         public class UploadGetFileRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xe3a6cfb5;
+            public override Types ConstructorCode => Types.UploadGetFileRequest;
 
             public InputFileLocation Location;
             public int Offset;
@@ -7354,7 +7371,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Location.Write(writer);
                 writer.Write(Offset);
                 writer.Write(Limit);
@@ -7381,7 +7398,7 @@ namespace TeleTurk.Core.MTProto
 
         public class UploadSaveBigFilePartRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xde7b673d;
+            public override Types ConstructorCode => Types.UploadSaveBigFilePartRequest;
 
             public long FileId;
             public int FilePart;
@@ -7402,7 +7419,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(FileId);
                 writer.Write(FilePart);
                 writer.Write(FileTotalParts);
@@ -7430,7 +7447,7 @@ namespace TeleTurk.Core.MTProto
 
         public class HelpGetConfigRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xc4f9186b;
+            public override Types ConstructorCode => Types.HelpGetConfigRequest;
 
             public Config Result;
 
@@ -7438,7 +7455,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -7462,7 +7479,7 @@ namespace TeleTurk.Core.MTProto
 
         public class HelpGetNearestDcRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x1fb33026;
+            public override Types ConstructorCode => Types.HelpGetNearestDcRequest;
 
             public NearestDc Result;
 
@@ -7470,7 +7487,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -7494,7 +7511,7 @@ namespace TeleTurk.Core.MTProto
 
         public class HelpGetAppUpdateRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xc812ac7e;
+            public override Types ConstructorCode => Types.HelpGetAppUpdateRequest;
 
             public string DeviceModel;
             public string SystemVersion;
@@ -7515,7 +7532,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(DeviceModel);
                 writer.Write(SystemVersion);
                 writer.Write(AppVersion);
@@ -7543,11 +7560,11 @@ namespace TeleTurk.Core.MTProto
 
         public class HelpSaveAppLogRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x6f02f748;
+            public override Types ConstructorCode => Types.HelpSaveAppLogRequest;
 
             public List<InputAppEvent> Events;
 
-            public Bool Result;
+            public bool Result;
 
             public HelpSaveAppLogRequest() { }
 
@@ -7558,7 +7575,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Events.Count);
                 foreach (InputAppEvent EventsElement in Events)
@@ -7567,7 +7584,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnResponse(TBinaryReader reader)
             {
-                Result = reader.Read<Bool>();
+                Result = reader.ReadBoolean();
             }
 
             public override void OnException(Exception exception)
@@ -7586,7 +7603,7 @@ namespace TeleTurk.Core.MTProto
 
         public class HelpGetInviteTextRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xa4a95186;
+            public override Types ConstructorCode => Types.HelpGetInviteTextRequest;
 
             public string LangCode;
 
@@ -7601,7 +7618,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(LangCode);
             }
 
@@ -7626,7 +7643,7 @@ namespace TeleTurk.Core.MTProto
 
         public class HelpGetSupportRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x9cdf08cd;
+            public override Types ConstructorCode => Types.HelpGetSupportRequest;
 
             public HelpSupport Result;
 
@@ -7634,7 +7651,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -7658,7 +7675,7 @@ namespace TeleTurk.Core.MTProto
 
         public class HelpGetAppChangelogRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x5bab7fb2;
+            public override Types ConstructorCode => Types.HelpGetAppChangelogRequest;
 
             public string DeviceModel;
             public string SystemVersion;
@@ -7679,7 +7696,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(DeviceModel);
                 writer.Write(SystemVersion);
                 writer.Write(AppVersion);
@@ -7707,7 +7724,7 @@ namespace TeleTurk.Core.MTProto
 
         public class HelpGetTermsOfServiceRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x37d78f83;
+            public override Types ConstructorCode => Types.HelpGetTermsOfServiceRequest;
 
             public string LangCode;
 
@@ -7722,7 +7739,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(LangCode);
             }
 
@@ -7747,7 +7764,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsGetDialogsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xa9d3d249;
+            public override Types ConstructorCode => Types.ChannelsGetDialogsRequest;
 
             public int Offset;
             public int Limit;
@@ -7764,7 +7781,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Offset);
                 writer.Write(Limit);
             }
@@ -7790,7 +7807,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsGetImportantHistoryRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x8f494bb2;
+            public override Types ConstructorCode => Types.ChannelsGetImportantHistoryRequest;
 
             public InputChannel Channel;
             public int OffsetId;
@@ -7817,7 +7834,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 writer.Write(OffsetId);
                 writer.Write(OffsetDate);
@@ -7848,12 +7865,12 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsReadHistoryRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xcc104937;
+            public override Types ConstructorCode => Types.ChannelsReadHistoryRequest;
 
             public InputChannel Channel;
             public int MaxId;
 
-            public Bool Result;
+            public bool Result;
 
             public ChannelsReadHistoryRequest() { }
 
@@ -7865,14 +7882,14 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 writer.Write(MaxId);
             }
 
             public override void OnResponse(TBinaryReader reader)
             {
-                Result = reader.Read<Bool>();
+                Result = reader.ReadBoolean();
             }
 
             public override void OnException(Exception exception)
@@ -7891,7 +7908,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsDeleteMessagesRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x84c1fd4e;
+            public override Types ConstructorCode => Types.ChannelsDeleteMessagesRequest;
 
             public InputChannel Channel;
             public List<int> Id;
@@ -7908,7 +7925,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Id.Count);
@@ -7937,7 +7954,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsDeleteUserHistoryRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xd10dd71b;
+            public override Types ConstructorCode => Types.ChannelsDeleteUserHistoryRequest;
 
             public InputChannel Channel;
             public InputUser UserId;
@@ -7954,7 +7971,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 UserId.Write(writer);
             }
@@ -7980,13 +7997,13 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsReportSpamRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xfe087810;
+            public override Types ConstructorCode => Types.ChannelsReportSpamRequest;
 
             public InputChannel Channel;
             public InputUser UserId;
             public List<int> Id;
 
-            public Bool Result;
+            public bool Result;
 
             public ChannelsReportSpamRequest() { }
 
@@ -7999,7 +8016,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 UserId.Write(writer);
                 writer.Write(0x1cb5c415); // vector code
@@ -8010,7 +8027,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnResponse(TBinaryReader reader)
             {
-                Result = reader.Read<Bool>();
+                Result = reader.ReadBoolean();
             }
 
             public override void OnException(Exception exception)
@@ -8029,7 +8046,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsGetMessagesRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x93d7b347;
+            public override Types ConstructorCode => Types.ChannelsGetMessagesRequest;
 
             public InputChannel Channel;
             public List<int> Id;
@@ -8046,7 +8063,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Id.Count);
@@ -8075,7 +8092,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsGetParticipantsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x24d98f92;
+            public override Types ConstructorCode => Types.ChannelsGetParticipantsRequest;
 
             public InputChannel Channel;
             public ChannelParticipantsFilter Filter;
@@ -8096,7 +8113,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 Filter.Write(writer);
                 writer.Write(Offset);
@@ -8124,7 +8141,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsGetParticipantRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x546dd7a6;
+            public override Types ConstructorCode => Types.ChannelsGetParticipantRequest;
 
             public InputChannel Channel;
             public InputUser UserId;
@@ -8141,7 +8158,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 UserId.Write(writer);
             }
@@ -8167,7 +8184,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsGetChannelsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x0a7f6bbb;
+            public override Types ConstructorCode => Types.ChannelsGetChannelsRequest;
 
             public List<InputChannel> Id;
 
@@ -8182,7 +8199,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Id.Count);
                 foreach (InputChannel IdElement in Id)
@@ -8210,7 +8227,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsGetFullChannelRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x08736a09;
+            public override Types ConstructorCode => Types.ChannelsGetFullChannelRequest;
 
             public InputChannel Channel;
 
@@ -8225,7 +8242,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
             }
 
@@ -8250,7 +8267,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsCreateChannelRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xf4893d7f;
+            public override Types ConstructorCode => Types.ChannelsCreateChannelRequest;
 
             public True Broadcast;
             public True Megagroup;
@@ -8282,7 +8299,7 @@ namespace TeleTurk.Core.MTProto
                     (Broadcast != null ? 1 << 0 : 0) |
                     (Megagroup != null ? 1 << 1 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Broadcast != null) {
@@ -8318,12 +8335,12 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsEditAboutRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x13e27f1e;
+            public override Types ConstructorCode => Types.ChannelsEditAboutRequest;
 
             public InputChannel Channel;
             public string About;
 
-            public Bool Result;
+            public bool Result;
 
             public ChannelsEditAboutRequest() { }
 
@@ -8335,14 +8352,14 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 writer.Write(About);
             }
 
             public override void OnResponse(TBinaryReader reader)
             {
-                Result = reader.Read<Bool>();
+                Result = reader.ReadBoolean();
             }
 
             public override void OnException(Exception exception)
@@ -8361,7 +8378,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsEditAdminRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xeb7611d0;
+            public override Types ConstructorCode => Types.ChannelsEditAdminRequest;
 
             public InputChannel Channel;
             public InputUser UserId;
@@ -8380,7 +8397,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 UserId.Write(writer);
                 Role.Write(writer);
@@ -8407,7 +8424,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsEditTitleRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x566decd0;
+            public override Types ConstructorCode => Types.ChannelsEditTitleRequest;
 
             public InputChannel Channel;
             public string Title;
@@ -8424,7 +8441,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 writer.Write(Title);
             }
@@ -8450,7 +8467,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsEditPhotoRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xf12e57c9;
+            public override Types ConstructorCode => Types.ChannelsEditPhotoRequest;
 
             public InputChannel Channel;
             public InputChatPhoto Photo;
@@ -8467,7 +8484,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 Photo.Write(writer);
             }
@@ -8493,16 +8510,16 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsToggleCommentsRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xaaa29e88;
+            public override Types ConstructorCode => Types.ChannelsToggleCommentsRequest;
 
             public InputChannel Channel;
-            public Bool Enabled;
+            public bool Enabled;
 
             public Updates Result;
 
             public ChannelsToggleCommentsRequest() { }
 
-            public ChannelsToggleCommentsRequest(InputChannel Channel, Bool Enabled)
+            public ChannelsToggleCommentsRequest(InputChannel Channel, bool Enabled)
             {
                 this.Channel = Channel;
                 this.Enabled = Enabled;
@@ -8510,9 +8527,9 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
-                Enabled.Write(writer);
+                writer.Write(Enabled);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -8536,12 +8553,12 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsCheckUsernameRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x10e6bd2c;
+            public override Types ConstructorCode => Types.ChannelsCheckUsernameRequest;
 
             public InputChannel Channel;
             public string Username;
 
-            public Bool Result;
+            public bool Result;
 
             public ChannelsCheckUsernameRequest() { }
 
@@ -8553,14 +8570,14 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 writer.Write(Username);
             }
 
             public override void OnResponse(TBinaryReader reader)
             {
-                Result = reader.Read<Bool>();
+                Result = reader.ReadBoolean();
             }
 
             public override void OnException(Exception exception)
@@ -8579,12 +8596,12 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsUpdateUsernameRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x3514b3de;
+            public override Types ConstructorCode => Types.ChannelsUpdateUsernameRequest;
 
             public InputChannel Channel;
             public string Username;
 
-            public Bool Result;
+            public bool Result;
 
             public ChannelsUpdateUsernameRequest() { }
 
@@ -8596,14 +8613,14 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 writer.Write(Username);
             }
 
             public override void OnResponse(TBinaryReader reader)
             {
-                Result = reader.Read<Bool>();
+                Result = reader.ReadBoolean();
             }
 
             public override void OnException(Exception exception)
@@ -8622,7 +8639,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsJoinChannelRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x24b524c5;
+            public override Types ConstructorCode => Types.ChannelsJoinChannelRequest;
 
             public InputChannel Channel;
 
@@ -8637,7 +8654,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
             }
 
@@ -8662,7 +8679,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsLeaveChannelRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xf836aa95;
+            public override Types ConstructorCode => Types.ChannelsLeaveChannelRequest;
 
             public InputChannel Channel;
 
@@ -8677,7 +8694,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
             }
 
@@ -8702,7 +8719,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsInviteToChannelRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x199f3a6c;
+            public override Types ConstructorCode => Types.ChannelsInviteToChannelRequest;
 
             public InputChannel Channel;
             public List<InputUser> Users;
@@ -8719,7 +8736,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Users.Count);
@@ -8748,7 +8765,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsKickFromChannelRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xa672de14;
+            public override Types ConstructorCode => Types.ChannelsKickFromChannelRequest;
 
             public InputChannel Channel;
             public InputUser UserId;
@@ -8767,7 +8784,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 UserId.Write(writer);
                 writer.Write(Kicked);
@@ -8794,7 +8811,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsExportInviteRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xc7560885;
+            public override Types ConstructorCode => Types.ChannelsExportInviteRequest;
 
             public InputChannel Channel;
 
@@ -8809,7 +8826,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
             }
 
@@ -8834,7 +8851,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsDeleteChannelRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xc0111fe3;
+            public override Types ConstructorCode => Types.ChannelsDeleteChannelRequest;
 
             public InputChannel Channel;
 
@@ -8849,7 +8866,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
             }
 
@@ -8874,16 +8891,16 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsToggleInvitesRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x49609307;
+            public override Types ConstructorCode => Types.ChannelsToggleInvitesRequest;
 
             public InputChannel Channel;
-            public Bool Enabled;
+            public bool Enabled;
 
             public Updates Result;
 
             public ChannelsToggleInvitesRequest() { }
 
-            public ChannelsToggleInvitesRequest(InputChannel Channel, Bool Enabled)
+            public ChannelsToggleInvitesRequest(InputChannel Channel, bool Enabled)
             {
                 this.Channel = Channel;
                 this.Enabled = Enabled;
@@ -8891,9 +8908,9 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
-                Enabled.Write(writer);
+                writer.Write(Enabled);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -8917,7 +8934,7 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsExportMessageLinkRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xc846d22d;
+            public override Types ConstructorCode => Types.ChannelsExportMessageLinkRequest;
 
             public InputChannel Channel;
             public int Id;
@@ -8934,7 +8951,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
                 writer.Write(Id);
             }
@@ -8960,16 +8977,16 @@ namespace TeleTurk.Core.MTProto
 
         public class ChannelsToggleSignaturesRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0x1f69b606;
+            public override Types ConstructorCode => Types.ChannelsToggleSignaturesRequest;
 
             public InputChannel Channel;
-            public Bool Enabled;
+            public bool Enabled;
 
             public Updates Result;
 
             public ChannelsToggleSignaturesRequest() { }
 
-            public ChannelsToggleSignaturesRequest(InputChannel Channel, Bool Enabled)
+            public ChannelsToggleSignaturesRequest(InputChannel Channel, bool Enabled)
             {
                 this.Channel = Channel;
                 this.Enabled = Enabled;
@@ -8977,9 +8994,9 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Channel.Write(writer);
-                Enabled.Write(writer);
+                writer.Write(Enabled);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -9001,9 +9018,127 @@ namespace TeleTurk.Core.MTProto
             }
         }
 
+        public class ChannelsGetMessageEditDataRequest : MTProtoRequest
+        {
+            public override Types ConstructorCode => Types.ChannelsGetMessageEditDataRequest;
+
+            public InputChannel Channel;
+            public int Id;
+
+            public ChannelsMessageEditData Result;
+
+            public ChannelsGetMessageEditDataRequest() { }
+
+            public ChannelsGetMessageEditDataRequest(InputChannel Channel, int Id)
+            {
+                this.Channel = Channel;
+                this.Id = Id;
+            }
+
+            public override void OnSend(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                Channel.Write(writer);
+                writer.Write(Id);
+            }
+
+            public override void OnResponse(TBinaryReader reader)
+            {
+                Result = reader.Read<ChannelsMessageEditData>();
+            }
+
+            public override void OnException(Exception exception)
+            {
+                throw exception;
+            }
+
+            public override bool Confirmed => true;
+            public override bool Responded { get; }
+
+            public override string ToString()
+            {
+                return string.Format("(ChannelsGetMessageEditDataRequest Channel:{0} Id:{1})", Channel, Id);
+            }
+        }
+
+        public class ChannelsEditMessageRequest : MTProtoRequest
+        {
+            public override Types ConstructorCode => Types.ChannelsEditMessageRequest;
+
+            public True NoWebpage;
+            public InputChannel Channel;
+            public int Id;
+            public string Message;
+            public List<MessageEntity> Entities;
+
+            public Updates Result;
+
+            public ChannelsEditMessageRequest() { }
+
+            /// <summary>
+            /// The following arguments can be null: NoWebpage, Entities
+            /// </summary>
+            /// <param name="NoWebpage">Can be null</param>
+            /// <param name="Channel">Can NOT be null</param>
+            /// <param name="Id">Can NOT be null</param>
+            /// <param name="Message">Can NOT be null</param>
+            /// <param name="Entities">Can be null</param>
+            public ChannelsEditMessageRequest(True NoWebpage, InputChannel Channel, int Id, string Message, List<MessageEntity> Entities)
+            {
+                this.NoWebpage = NoWebpage;
+                this.Channel = Channel;
+                this.Id = Id;
+                this.Message = Message;
+                this.Entities = Entities;
+            }
+
+            public override void OnSend(TBinaryWriter writer)
+            {
+                int flags =
+                    (NoWebpage != null ? 1 << 1 : 0) |
+                    (Entities != null ? 1 << 3 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                if (NoWebpage != null) {
+
+                }
+
+                Channel.Write(writer);
+                writer.Write(Id);
+                writer.Write(Message);
+                if (Entities != null) {
+                    writer.Write(0x1cb5c415); // vector code
+                    writer.Write(Entities.Count);
+                    foreach (MessageEntity EntitiesElement in Entities)
+                        EntitiesElement.Write(writer);
+                }
+
+            }
+
+            public override void OnResponse(TBinaryReader reader)
+            {
+                Result = reader.Read<Updates>();
+            }
+
+            public override void OnException(Exception exception)
+            {
+                throw exception;
+            }
+
+            public override bool Confirmed => true;
+            public override bool Responded { get; }
+
+            public override string ToString()
+            {
+                return string.Format("(ChannelsEditMessageRequest NoWebpage:{0} Channel:{1} Id:{2} Message:{3} Entities:{4})", NoWebpage, Channel, Id, Message, Entities);
+            }
+        }
+
         public class ChannelsUpdatePinnedMessageRequest : MTProtoRequest
         {
-            public override uint ConstructorCode => 0xa72ded52;
+            public override Types ConstructorCode => Types.ChannelsUpdatePinnedMessageRequest;
 
             public True Silent;
             public InputChannel Channel;
@@ -9031,7 +9166,7 @@ namespace TeleTurk.Core.MTProto
                 int flags =
                     (Silent != null ? 1 << 0 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Silent != null) {
@@ -9067,7 +9202,7 @@ namespace TeleTurk.Core.MTProto
 
         public class MsgsAckType : MsgsAck
         {
-            public override uint ConstructorCode => 0x62d6b459;
+            public override Types ConstructorCode => Types.MsgsAckType;
 
             public List<long> MsgIds;
 
@@ -9080,7 +9215,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(MsgIds.Count);
                 foreach (long MsgIdsElement in MsgIds)
@@ -9100,11 +9235,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MsgsAckType MsgIds:{0})", MsgIds);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "MsgIds": return MsgIds;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "MsgIds":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class BadMsgNotificationType : BadMsgNotification
         {
-            public override uint ConstructorCode => 0xa7eff811;
+            public override Types ConstructorCode => Types.BadMsgNotificationType;
 
             public long BadMsgId;
             public int BadMsgSeqno;
@@ -9121,7 +9278,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(BadMsgId);
                 writer.Write(BadMsgSeqno);
                 writer.Write(ErrorCode);
@@ -9138,11 +9295,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(BadMsgNotificationType BadMsgId:{0} BadMsgSeqno:{1} ErrorCode:{2})", BadMsgId, BadMsgSeqno, ErrorCode);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "BadMsgId": return BadMsgId;
+                        case "BadMsgSeqno": return BadMsgSeqno;
+                        case "ErrorCode": return ErrorCode;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "BadMsgId":
+                    case "BadMsgSeqno":
+                    case "ErrorCode":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class BadServerSaltType : BadMsgNotification
         {
-            public override uint ConstructorCode => 0xedab447b;
+            public override Types ConstructorCode => Types.BadServerSaltType;
 
             public long BadMsgId;
             public int BadMsgSeqno;
@@ -9161,7 +9344,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(BadMsgId);
                 writer.Write(BadMsgSeqno);
                 writer.Write(ErrorCode);
@@ -9180,11 +9363,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(BadServerSaltType BadMsgId:{0} BadMsgSeqno:{1} ErrorCode:{2} NewServerSalt:{3})", BadMsgId, BadMsgSeqno, ErrorCode, NewServerSalt);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "BadMsgId": return BadMsgId;
+                        case "BadMsgSeqno": return BadMsgSeqno;
+                        case "ErrorCode": return ErrorCode;
+                        case "NewServerSalt": return NewServerSalt;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "BadMsgId":
+                    case "BadMsgSeqno":
+                    case "ErrorCode":
+                    case "NewServerSalt":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MsgsStateReqType : MsgsStateReq
         {
-            public override uint ConstructorCode => 0xda69fb52;
+            public override Types ConstructorCode => Types.MsgsStateReqType;
 
             public List<long> MsgIds;
 
@@ -9197,7 +9408,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(MsgIds.Count);
                 foreach (long MsgIdsElement in MsgIds)
@@ -9217,11 +9428,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MsgsStateReqType MsgIds:{0})", MsgIds);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "MsgIds": return MsgIds;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "MsgIds":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MsgsStateInfoType : MsgsStateInfo
         {
-            public override uint ConstructorCode => 0x04deb57d;
+            public override Types ConstructorCode => Types.MsgsStateInfoType;
 
             public long ReqMsgId;
             public string Info;
@@ -9236,7 +9469,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ReqMsgId);
                 writer.Write(Info);
             }
@@ -9251,11 +9484,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MsgsStateInfoType ReqMsgId:{0} Info:{1})", ReqMsgId, Info);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ReqMsgId": return ReqMsgId;
+                        case "Info": return Info;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ReqMsgId":
+                    case "Info":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MsgsAllInfoType : MsgsAllInfo
         {
-            public override uint ConstructorCode => 0x8cc0d131;
+            public override Types ConstructorCode => Types.MsgsAllInfoType;
 
             public List<long> MsgIds;
             public string Info;
@@ -9270,7 +9527,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(MsgIds.Count);
                 foreach (long MsgIdsElement in MsgIds)
@@ -9292,11 +9549,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MsgsAllInfoType MsgIds:{0} Info:{1})", MsgIds, Info);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "MsgIds": return MsgIds;
+                        case "Info": return Info;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "MsgIds":
+                    case "Info":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MsgDetailedInfoType : MsgDetailedInfo
         {
-            public override uint ConstructorCode => 0x276d3ec6;
+            public override Types ConstructorCode => Types.MsgDetailedInfoType;
 
             public long MsgId;
             public long AnswerMsgId;
@@ -9315,7 +9596,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(MsgId);
                 writer.Write(AnswerMsgId);
                 writer.Write(Bytes);
@@ -9334,11 +9615,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MsgDetailedInfoType MsgId:{0} AnswerMsgId:{1} Bytes:{2} Status:{3})", MsgId, AnswerMsgId, Bytes, Status);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "MsgId": return MsgId;
+                        case "AnswerMsgId": return AnswerMsgId;
+                        case "Bytes": return Bytes;
+                        case "Status": return Status;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "MsgId":
+                    case "AnswerMsgId":
+                    case "Bytes":
+                    case "Status":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MsgNewDetailedInfoType : MsgDetailedInfo
         {
-            public override uint ConstructorCode => 0x809db6df;
+            public override Types ConstructorCode => Types.MsgNewDetailedInfoType;
 
             public long AnswerMsgId;
             public int Bytes;
@@ -9355,7 +9664,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(AnswerMsgId);
                 writer.Write(Bytes);
                 writer.Write(Status);
@@ -9372,11 +9681,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MsgNewDetailedInfoType AnswerMsgId:{0} Bytes:{1} Status:{2})", AnswerMsgId, Bytes, Status);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "AnswerMsgId": return AnswerMsgId;
+                        case "Bytes": return Bytes;
+                        case "Status": return Status;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "AnswerMsgId":
+                    case "Bytes":
+                    case "Status":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MsgResendReqType : MsgResendReq
         {
-            public override uint ConstructorCode => 0x7d861a08;
+            public override Types ConstructorCode => Types.MsgResendReqType;
 
             public List<long> MsgIds;
 
@@ -9389,7 +9724,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(MsgIds.Count);
                 foreach (long MsgIdsElement in MsgIds)
@@ -9409,11 +9744,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MsgResendReqType MsgIds:{0})", MsgIds);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "MsgIds": return MsgIds;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "MsgIds":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class RpcErrorType : RpcError
         {
-            public override uint ConstructorCode => 0x2144ca19;
+            public override Types ConstructorCode => Types.RpcErrorType;
 
             public int ErrorCode;
             public string ErrorMessage;
@@ -9428,7 +9785,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ErrorCode);
                 writer.Write(ErrorMessage);
             }
@@ -9443,17 +9800,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(RpcErrorType ErrorCode:{0} ErrorMessage:{1})", ErrorCode, ErrorMessage);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ErrorCode": return ErrorCode;
+                        case "ErrorMessage": return ErrorMessage;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ErrorCode":
+                    case "ErrorMessage":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class RpcAnswerUnknownType : RpcDropAnswer
         {
-            public override uint ConstructorCode => 0x5e2ad36e;
+            public override Types ConstructorCode => Types.RpcAnswerUnknownType;
 
             public RpcAnswerUnknownType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -9464,17 +9845,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(RpcAnswerUnknownType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class RpcAnswerDroppedRunningType : RpcDropAnswer
         {
-            public override uint ConstructorCode => 0xcd78e586;
+            public override Types ConstructorCode => Types.RpcAnswerDroppedRunningType;
 
             public RpcAnswerDroppedRunningType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -9485,11 +9879,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(RpcAnswerDroppedRunningType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class RpcAnswerDroppedType : RpcDropAnswer
         {
-            public override uint ConstructorCode => 0xa43ad8b7;
+            public override Types ConstructorCode => Types.RpcAnswerDroppedType;
 
             public long MsgId;
             public int SeqNo;
@@ -9506,7 +9913,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(MsgId);
                 writer.Write(SeqNo);
                 writer.Write(Bytes);
@@ -9523,11 +9930,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(RpcAnswerDroppedType MsgId:{0} SeqNo:{1} Bytes:{2})", MsgId, SeqNo, Bytes);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "MsgId": return MsgId;
+                        case "SeqNo": return SeqNo;
+                        case "Bytes": return Bytes;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "MsgId":
+                    case "SeqNo":
+                    case "Bytes":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class FutureSaltType : FutureSalt
         {
-            public override uint ConstructorCode => 0x0949d9dc;
+            public override Types ConstructorCode => Types.FutureSaltType;
 
             public int ValidSince;
             public int ValidUntil;
@@ -9544,7 +9977,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ValidSince);
                 writer.Write(ValidUntil);
                 writer.Write(Salt);
@@ -9561,11 +9994,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(FutureSaltType ValidSince:{0} ValidUntil:{1} Salt:{2})", ValidSince, ValidUntil, Salt);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ValidSince": return ValidSince;
+                        case "ValidUntil": return ValidUntil;
+                        case "Salt": return Salt;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ValidSince":
+                    case "ValidUntil":
+                    case "Salt":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class FutureSaltsType : FutureSalts
         {
-            public override uint ConstructorCode => 0xae500895;
+            public override Types ConstructorCode => Types.FutureSaltsType;
 
             public long ReqMsgId;
             public int Now;
@@ -9582,7 +10041,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ReqMsgId);
                 writer.Write(Now);
                 writer.Write(0x1cb5c415); // vector code
@@ -9606,11 +10065,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(FutureSaltsType ReqMsgId:{0} Now:{1} Salts:{2})", ReqMsgId, Now, Salts);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ReqMsgId": return ReqMsgId;
+                        case "Now": return Now;
+                        case "Salts": return Salts;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ReqMsgId":
+                    case "Now":
+                    case "Salts":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class PongType : Pong
         {
-            public override uint ConstructorCode => 0x347773c5;
+            public override Types ConstructorCode => Types.PongType;
 
             public long MsgId;
             public long PingId;
@@ -9625,7 +10110,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(MsgId);
                 writer.Write(PingId);
             }
@@ -9640,11 +10125,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(PongType MsgId:{0} PingId:{1})", MsgId, PingId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "MsgId": return MsgId;
+                        case "PingId": return PingId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "MsgId":
+                    case "PingId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class DestroySessionOkType : DestroySessionRes
         {
-            public override uint ConstructorCode => 0xe22045fc;
+            public override Types ConstructorCode => Types.DestroySessionOkType;
 
             public long SessionId;
 
@@ -9657,7 +10166,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(SessionId);
             }
 
@@ -9670,11 +10179,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(DestroySessionOkType SessionId:{0})", SessionId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "SessionId": return SessionId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "SessionId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class DestroySessionNoneType : DestroySessionRes
         {
-            public override uint ConstructorCode => 0x62d350c9;
+            public override Types ConstructorCode => Types.DestroySessionNoneType;
 
             public long SessionId;
 
@@ -9687,7 +10218,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(SessionId);
             }
 
@@ -9700,11 +10231,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(DestroySessionNoneType SessionId:{0})", SessionId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "SessionId": return SessionId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "SessionId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class NewSessionCreatedType : NewSession
         {
-            public override uint ConstructorCode => 0x9ec20908;
+            public override Types ConstructorCode => Types.NewSessionCreatedType;
 
             public long FirstMsgId;
             public long UniqueId;
@@ -9721,7 +10274,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(FirstMsgId);
                 writer.Write(UniqueId);
                 writer.Write(ServerSalt);
@@ -9738,11 +10291,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(NewSessionCreatedType FirstMsgId:{0} UniqueId:{1} ServerSalt:{2})", FirstMsgId, UniqueId, ServerSalt);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "FirstMsgId": return FirstMsgId;
+                        case "UniqueId": return UniqueId;
+                        case "ServerSalt": return ServerSalt;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "FirstMsgId":
+                    case "UniqueId":
+                    case "ServerSalt":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class HttpWaitType : HttpWait
         {
-            public override uint ConstructorCode => 0x9299359f;
+            public override Types ConstructorCode => Types.HttpWaitType;
 
             public int MaxDelay;
             public int WaitAfter;
@@ -9759,7 +10338,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(MaxDelay);
                 writer.Write(WaitAfter);
                 writer.Write(MaxWait);
@@ -9776,17 +10355,43 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(HttpWaitType MaxDelay:{0} WaitAfter:{1} MaxWait:{2})", MaxDelay, WaitAfter, MaxWait);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "MaxDelay": return MaxDelay;
+                        case "WaitAfter": return WaitAfter;
+                        case "MaxWait": return MaxWait;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "MaxDelay":
+                    case "WaitAfter":
+                    case "MaxWait":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class TrueType : True
         {
-            public override uint ConstructorCode => 0x3fedd339;
+            public override Types ConstructorCode => Types.TrueType;
 
             public TrueType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -9797,53 +10402,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(TrueType)";
             }
-        }
 
-        public class BoolFalseType : Bool
-        {
-            public override uint ConstructorCode => 0xbc799737;
-
-            public BoolFalseType() { }
-
-            public override void Write(TBinaryWriter writer)
+            public override object this[string name]
             {
-                writer.Write(ConstructorCode);
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
             }
 
-            public override void Read(TBinaryReader reader)
+            public override bool HasKey(string name)
             {
-            }
-
-            public override string ToString()
-            {
-                return "(BoolFalseType)";
-            }
-        }
-
-        public class BoolTrueType : Bool
-        {
-            public override uint ConstructorCode => 0x997275b5;
-
-            public BoolTrueType() { }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-            }
-
-            public override string ToString()
-            {
-                return "(BoolTrueType)";
+                return false;
             }
         }
 
         public class ErrorType : Error
         {
-            public override uint ConstructorCode => 0xc4b9f9bb;
+            public override Types ConstructorCode => Types.ErrorType;
 
             public int Code;
             public string Text;
@@ -9858,7 +10434,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Code);
                 writer.Write(Text);
             }
@@ -9873,17 +10449,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ErrorType Code:{0} Text:{1})", Code, Text);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Code": return Code;
+                        case "Text": return Text;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Code":
+                    case "Text":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class NullType : Null
         {
-            public override uint ConstructorCode => 0x56730bcc;
+            public override Types ConstructorCode => Types.NullType;
 
             public NullType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -9894,17 +10494,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(NullType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputPeerEmptyType : InputPeer
         {
-            public override uint ConstructorCode => 0x7f3b18ea;
+            public override Types ConstructorCode => Types.InputPeerEmptyType;
 
             public InputPeerEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -9915,17 +10528,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputPeerEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputPeerSelfType : InputPeer
         {
-            public override uint ConstructorCode => 0x7da07ec9;
+            public override Types ConstructorCode => Types.InputPeerSelfType;
 
             public InputPeerSelfType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -9936,11 +10562,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputPeerSelfType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputPeerChatType : InputPeer
         {
-            public override uint ConstructorCode => 0x179be863;
+            public override Types ConstructorCode => Types.InputPeerChatType;
 
             public int ChatId;
 
@@ -9953,7 +10592,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
             }
 
@@ -9966,11 +10605,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputPeerChatType ChatId:{0})", ChatId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChatId": return ChatId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChatId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputPeerUserType : InputPeer
         {
-            public override uint ConstructorCode => 0x7b8e7de6;
+            public override Types ConstructorCode => Types.InputPeerUserType;
 
             public int UserId;
             public long AccessHash;
@@ -9985,7 +10646,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(AccessHash);
             }
@@ -10000,11 +10661,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputPeerUserType UserId:{0} AccessHash:{1})", UserId, AccessHash);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "AccessHash": return AccessHash;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "AccessHash":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputPeerChannelType : InputPeer
         {
-            public override uint ConstructorCode => 0x20adaef8;
+            public override Types ConstructorCode => Types.InputPeerChannelType;
 
             public int ChannelId;
             public long AccessHash;
@@ -10019,7 +10704,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChannelId);
                 writer.Write(AccessHash);
             }
@@ -10034,17 +10719,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputPeerChannelType ChannelId:{0} AccessHash:{1})", ChannelId, AccessHash);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChannelId": return ChannelId;
+                        case "AccessHash": return AccessHash;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChannelId":
+                    case "AccessHash":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputUserEmptyType : InputUser
         {
-            public override uint ConstructorCode => 0xb98886cf;
+            public override Types ConstructorCode => Types.InputUserEmptyType;
 
             public InputUserEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -10055,17 +10764,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputUserEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputUserSelfType : InputUser
         {
-            public override uint ConstructorCode => 0xf7c1b13f;
+            public override Types ConstructorCode => Types.InputUserSelfType;
 
             public InputUserSelfType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -10076,11 +10798,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputUserSelfType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputUserType : InputUser
         {
-            public override uint ConstructorCode => 0xd8292816;
+            public override Types ConstructorCode => Types.InputUserType;
 
             public int UserId;
             public long AccessHash;
@@ -10095,7 +10830,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(AccessHash);
             }
@@ -10110,11 +10845,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputUserType UserId:{0} AccessHash:{1})", UserId, AccessHash);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "AccessHash": return AccessHash;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "AccessHash":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputPhoneContactType : InputContact
         {
-            public override uint ConstructorCode => 0xf392b7f4;
+            public override Types ConstructorCode => Types.InputPhoneContactType;
 
             public long ClientId;
             public string Phone;
@@ -10133,7 +10892,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ClientId);
                 writer.Write(Phone);
                 writer.Write(FirstName);
@@ -10152,11 +10911,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputPhoneContactType ClientId:{0} Phone:{1} FirstName:{2} LastName:{3})", ClientId, Phone, FirstName, LastName);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ClientId": return ClientId;
+                        case "Phone": return Phone;
+                        case "FirstName": return FirstName;
+                        case "LastName": return LastName;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ClientId":
+                    case "Phone":
+                    case "FirstName":
+                    case "LastName":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputFileType : InputFile
         {
-            public override uint ConstructorCode => 0xf52ff27f;
+            public override Types ConstructorCode => Types.InputFileType;
 
             public long Id;
             public int Parts;
@@ -10175,7 +10962,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(Parts);
                 writer.Write(Name);
@@ -10194,11 +10981,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputFileType Id:{0} Parts:{1} Name:{2} Md5Checksum:{3})", Id, Parts, Name, Md5Checksum);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Parts": return Parts;
+                        case "Name": return Name;
+                        case "Md5Checksum": return Md5Checksum;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Parts":
+                    case "Name":
+                    case "Md5Checksum":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputFileBigType : InputFile
         {
-            public override uint ConstructorCode => 0xfa4f0bb5;
+            public override Types ConstructorCode => Types.InputFileBigType;
 
             public long Id;
             public int Parts;
@@ -10215,7 +11030,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(Parts);
                 writer.Write(Name);
@@ -10232,17 +11047,43 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputFileBigType Id:{0} Parts:{1} Name:{2})", Id, Parts, Name);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Parts": return Parts;
+                        case "Name": return Name;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Parts":
+                    case "Name":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputMediaEmptyType : InputMedia
         {
-            public override uint ConstructorCode => 0x9664f57f;
+            public override Types ConstructorCode => Types.InputMediaEmptyType;
 
             public InputMediaEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -10253,11 +11094,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputMediaEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputMediaUploadedPhotoType : InputMedia
         {
-            public override uint ConstructorCode => 0xf7aff1c0;
+            public override Types ConstructorCode => Types.InputMediaUploadedPhotoType;
 
             public InputFile File;
             public string Caption;
@@ -10272,7 +11126,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 File.Write(writer);
                 writer.Write(Caption);
             }
@@ -10287,11 +11141,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputMediaUploadedPhotoType File:{0} Caption:{1})", File, Caption);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "File": return File;
+                        case "Caption": return Caption;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "File":
+                    case "Caption":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputMediaPhotoType : InputMedia
         {
-            public override uint ConstructorCode => 0xe9bfb4f3;
+            public override Types ConstructorCode => Types.InputMediaPhotoType;
 
             public InputPhoto Id;
             public string Caption;
@@ -10306,7 +11184,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Id.Write(writer);
                 writer.Write(Caption);
             }
@@ -10321,11 +11199,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputMediaPhotoType Id:{0} Caption:{1})", Id, Caption);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Caption": return Caption;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Caption":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputMediaGeoPointType : InputMedia
         {
-            public override uint ConstructorCode => 0xf9c44144;
+            public override Types ConstructorCode => Types.InputMediaGeoPointType;
 
             public InputGeoPoint GeoPoint;
 
@@ -10338,7 +11240,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 GeoPoint.Write(writer);
             }
 
@@ -10351,11 +11253,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputMediaGeoPointType GeoPoint:{0})", GeoPoint);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "GeoPoint": return GeoPoint;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "GeoPoint":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputMediaContactType : InputMedia
         {
-            public override uint ConstructorCode => 0xa6e45987;
+            public override Types ConstructorCode => Types.InputMediaContactType;
 
             public string PhoneNumber;
             public string FirstName;
@@ -10372,7 +11296,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(PhoneNumber);
                 writer.Write(FirstName);
                 writer.Write(LastName);
@@ -10389,11 +11313,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputMediaContactType PhoneNumber:{0} FirstName:{1} LastName:{2})", PhoneNumber, FirstName, LastName);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "PhoneNumber": return PhoneNumber;
+                        case "FirstName": return FirstName;
+                        case "LastName": return LastName;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "PhoneNumber":
+                    case "FirstName":
+                    case "LastName":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputMediaUploadedDocumentType : InputMedia
         {
-            public override uint ConstructorCode => 0x1d89306d;
+            public override Types ConstructorCode => Types.InputMediaUploadedDocumentType;
 
             public InputFile File;
             public string MimeType;
@@ -10412,7 +11362,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 File.Write(writer);
                 writer.Write(MimeType);
                 writer.Write(0x1cb5c415); // vector code
@@ -10438,11 +11388,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputMediaUploadedDocumentType File:{0} MimeType:{1} Attributes:{2} Caption:{3})", File, MimeType, Attributes, Caption);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "File": return File;
+                        case "MimeType": return MimeType;
+                        case "Attributes": return Attributes;
+                        case "Caption": return Caption;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "File":
+                    case "MimeType":
+                    case "Attributes":
+                    case "Caption":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputMediaUploadedThumbDocumentType : InputMedia
         {
-            public override uint ConstructorCode => 0xad613491;
+            public override Types ConstructorCode => Types.InputMediaUploadedThumbDocumentType;
 
             public InputFile File;
             public InputFile Thumb;
@@ -10463,7 +11441,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 File.Write(writer);
                 Thumb.Write(writer);
                 writer.Write(MimeType);
@@ -10491,11 +11469,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputMediaUploadedThumbDocumentType File:{0} Thumb:{1} MimeType:{2} Attributes:{3} Caption:{4})", File, Thumb, MimeType, Attributes, Caption);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "File": return File;
+                        case "Thumb": return Thumb;
+                        case "MimeType": return MimeType;
+                        case "Attributes": return Attributes;
+                        case "Caption": return Caption;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "File":
+                    case "Thumb":
+                    case "MimeType":
+                    case "Attributes":
+                    case "Caption":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputMediaDocumentType : InputMedia
         {
-            public override uint ConstructorCode => 0x1a77f29c;
+            public override Types ConstructorCode => Types.InputMediaDocumentType;
 
             public InputDocument Id;
             public string Caption;
@@ -10510,7 +11518,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Id.Write(writer);
                 writer.Write(Caption);
             }
@@ -10525,11 +11533,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputMediaDocumentType Id:{0} Caption:{1})", Id, Caption);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Caption": return Caption;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Caption":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputMediaVenueType : InputMedia
         {
-            public override uint ConstructorCode => 0x2827a81a;
+            public override Types ConstructorCode => Types.InputMediaVenueType;
 
             public InputGeoPoint GeoPoint;
             public string Title;
@@ -10550,7 +11582,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 GeoPoint.Write(writer);
                 writer.Write(Title);
                 writer.Write(Address);
@@ -10571,11 +11603,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputMediaVenueType GeoPoint:{0} Title:{1} Address:{2} Provider:{3} VenueId:{4})", GeoPoint, Title, Address, Provider, VenueId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "GeoPoint": return GeoPoint;
+                        case "Title": return Title;
+                        case "Address": return Address;
+                        case "Provider": return Provider;
+                        case "VenueId": return VenueId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "GeoPoint":
+                    case "Title":
+                    case "Address":
+                    case "Provider":
+                    case "VenueId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputMediaGifExternalType : InputMedia
         {
-            public override uint ConstructorCode => 0x4843b0fd;
+            public override Types ConstructorCode => Types.InputMediaGifExternalType;
 
             public string Url;
             public string Q;
@@ -10590,7 +11652,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Url);
                 writer.Write(Q);
             }
@@ -10605,17 +11667,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputMediaGifExternalType Url:{0} Q:{1})", Url, Q);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Url": return Url;
+                        case "Q": return Q;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Url":
+                    case "Q":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputChatPhotoEmptyType : InputChatPhoto
         {
-            public override uint ConstructorCode => 0x1ca48f57;
+            public override Types ConstructorCode => Types.InputChatPhotoEmptyType;
 
             public InputChatPhotoEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -10626,11 +11712,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputChatPhotoEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputChatUploadedPhotoType : InputChatPhoto
         {
-            public override uint ConstructorCode => 0x94254732;
+            public override Types ConstructorCode => Types.InputChatUploadedPhotoType;
 
             public InputFile File;
             public InputPhotoCrop Crop;
@@ -10645,7 +11744,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 File.Write(writer);
                 Crop.Write(writer);
             }
@@ -10660,11 +11759,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputChatUploadedPhotoType File:{0} Crop:{1})", File, Crop);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "File": return File;
+                        case "Crop": return Crop;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "File":
+                    case "Crop":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputChatPhotoType : InputChatPhoto
         {
-            public override uint ConstructorCode => 0xb2e1bf08;
+            public override Types ConstructorCode => Types.InputChatPhotoType;
 
             public InputPhoto Id;
             public InputPhotoCrop Crop;
@@ -10679,7 +11802,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Id.Write(writer);
                 Crop.Write(writer);
             }
@@ -10694,17 +11817,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputChatPhotoType Id:{0} Crop:{1})", Id, Crop);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Crop": return Crop;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Crop":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputGeoPointEmptyType : InputGeoPoint
         {
-            public override uint ConstructorCode => 0xe4c123d6;
+            public override Types ConstructorCode => Types.InputGeoPointEmptyType;
 
             public InputGeoPointEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -10715,11 +11862,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputGeoPointEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputGeoPointType : InputGeoPoint
         {
-            public override uint ConstructorCode => 0xf3b7acc9;
+            public override Types ConstructorCode => Types.InputGeoPointType;
 
             public double Lat;
             public double Long;
@@ -10734,7 +11894,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Lat);
                 writer.Write(Long);
             }
@@ -10749,17 +11909,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputGeoPointType Lat:{0} Long:{1})", Lat, Long);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Lat": return Lat;
+                        case "Long": return Long;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Lat":
+                    case "Long":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputPhotoEmptyType : InputPhoto
         {
-            public override uint ConstructorCode => 0x1cd7bf0d;
+            public override Types ConstructorCode => Types.InputPhotoEmptyType;
 
             public InputPhotoEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -10770,11 +11954,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputPhotoEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputPhotoType : InputPhoto
         {
-            public override uint ConstructorCode => 0xfb95c6c4;
+            public override Types ConstructorCode => Types.InputPhotoType;
 
             public long Id;
             public long AccessHash;
@@ -10789,7 +11986,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(AccessHash);
             }
@@ -10804,11 +12001,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputPhotoType Id:{0} AccessHash:{1})", Id, AccessHash);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "AccessHash":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputFileLocationType : InputFileLocation
         {
-            public override uint ConstructorCode => 0x14637196;
+            public override Types ConstructorCode => Types.InputFileLocationType;
 
             public long VolumeId;
             public int LocalId;
@@ -10825,7 +12046,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(VolumeId);
                 writer.Write(LocalId);
                 writer.Write(Secret);
@@ -10842,11 +12063,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputFileLocationType VolumeId:{0} LocalId:{1} Secret:{2})", VolumeId, LocalId, Secret);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "VolumeId": return VolumeId;
+                        case "LocalId": return LocalId;
+                        case "Secret": return Secret;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "VolumeId":
+                    case "LocalId":
+                    case "Secret":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputEncryptedFileLocationType : InputFileLocation
         {
-            public override uint ConstructorCode => 0xf5235d55;
+            public override Types ConstructorCode => Types.InputEncryptedFileLocationType;
 
             public long Id;
             public long AccessHash;
@@ -10861,7 +12108,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(AccessHash);
             }
@@ -10876,11 +12123,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputEncryptedFileLocationType Id:{0} AccessHash:{1})", Id, AccessHash);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "AccessHash":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputDocumentFileLocationType : InputFileLocation
         {
-            public override uint ConstructorCode => 0x4e45abe9;
+            public override Types ConstructorCode => Types.InputDocumentFileLocationType;
 
             public long Id;
             public long AccessHash;
@@ -10895,7 +12166,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(AccessHash);
             }
@@ -10910,17 +12181,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputDocumentFileLocationType Id:{0} AccessHash:{1})", Id, AccessHash);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "AccessHash":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputPhotoCropAutoType : InputPhotoCrop
         {
-            public override uint ConstructorCode => 0xade6b004;
+            public override Types ConstructorCode => Types.InputPhotoCropAutoType;
 
             public InputPhotoCropAutoType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -10931,11 +12226,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputPhotoCropAutoType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputPhotoCropType : InputPhotoCrop
         {
-            public override uint ConstructorCode => 0xd9915325;
+            public override Types ConstructorCode => Types.InputPhotoCropType;
 
             public double CropLeft;
             public double CropTop;
@@ -10952,7 +12260,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(CropLeft);
                 writer.Write(CropTop);
                 writer.Write(CropWidth);
@@ -10969,11 +12277,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputPhotoCropType CropLeft:{0} CropTop:{1} CropWidth:{2})", CropLeft, CropTop, CropWidth);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "CropLeft": return CropLeft;
+                        case "CropTop": return CropTop;
+                        case "CropWidth": return CropWidth;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "CropLeft":
+                    case "CropTop":
+                    case "CropWidth":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputAppEventType : InputAppEvent
         {
-            public override uint ConstructorCode => 0x770656a8;
+            public override Types ConstructorCode => Types.InputAppEventType;
 
             public double Time;
             public string Type;
@@ -10992,7 +12326,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Time);
                 writer.Write(Type);
                 writer.Write(Peer);
@@ -11011,11 +12345,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputAppEventType Time:{0} Type:{1} Peer:{2} Data:{3})", Time, Type, Peer, Data);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Time": return Time;
+                        case "Type": return Type;
+                        case "Peer": return Peer;
+                        case "Data": return Data;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Time":
+                    case "Type":
+                    case "Peer":
+                    case "Data":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class PeerUserType : Peer
         {
-            public override uint ConstructorCode => 0x9db1bc6d;
+            public override Types ConstructorCode => Types.PeerUserType;
 
             public int UserId;
 
@@ -11028,7 +12390,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
             }
 
@@ -11041,11 +12403,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(PeerUserType UserId:{0})", UserId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class PeerChatType : Peer
         {
-            public override uint ConstructorCode => 0xbad0e5bb;
+            public override Types ConstructorCode => Types.PeerChatType;
 
             public int ChatId;
 
@@ -11058,7 +12442,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
             }
 
@@ -11071,11 +12455,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(PeerChatType ChatId:{0})", ChatId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChatId": return ChatId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChatId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class PeerChannelType : Peer
         {
-            public override uint ConstructorCode => 0xbddde532;
+            public override Types ConstructorCode => Types.PeerChannelType;
 
             public int ChannelId;
 
@@ -11088,7 +12494,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChannelId);
             }
 
@@ -11101,17 +12507,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(PeerChannelType ChannelId:{0})", ChannelId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChannelId": return ChannelId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChannelId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class StorageFileUnknownType : StorageFileType
         {
-            public override uint ConstructorCode => 0xaa963b05;
+            public override Types ConstructorCode => Types.StorageFileUnknownType;
 
             public StorageFileUnknownType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -11122,17 +12550,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(StorageFileUnknownType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class StorageFileJpegType : StorageFileType
         {
-            public override uint ConstructorCode => 0x007efe0e;
+            public override Types ConstructorCode => Types.StorageFileJpegType;
 
             public StorageFileJpegType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -11143,17 +12584,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(StorageFileJpegType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class StorageFileGifType : StorageFileType
         {
-            public override uint ConstructorCode => 0xcae1aadf;
+            public override Types ConstructorCode => Types.StorageFileGifType;
 
             public StorageFileGifType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -11164,17 +12618,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(StorageFileGifType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class StorageFilePngType : StorageFileType
         {
-            public override uint ConstructorCode => 0x0a4f63c0;
+            public override Types ConstructorCode => Types.StorageFilePngType;
 
             public StorageFilePngType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -11185,17 +12652,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(StorageFilePngType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class StorageFilePdfType : StorageFileType
         {
-            public override uint ConstructorCode => 0xae1e508d;
+            public override Types ConstructorCode => Types.StorageFilePdfType;
 
             public StorageFilePdfType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -11206,17 +12686,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(StorageFilePdfType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class StorageFileMp3Type : StorageFileType
         {
-            public override uint ConstructorCode => 0x528a0677;
+            public override Types ConstructorCode => Types.StorageFileMp3Type;
 
             public StorageFileMp3Type() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -11227,17 +12720,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(StorageFileMp3Type)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class StorageFileMovType : StorageFileType
         {
-            public override uint ConstructorCode => 0x4b09ebbc;
+            public override Types ConstructorCode => Types.StorageFileMovType;
 
             public StorageFileMovType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -11248,17 +12754,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(StorageFileMovType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class StorageFilePartialType : StorageFileType
         {
-            public override uint ConstructorCode => 0x40bc6f52;
+            public override Types ConstructorCode => Types.StorageFilePartialType;
 
             public StorageFilePartialType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -11269,17 +12788,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(StorageFilePartialType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class StorageFileMp4Type : StorageFileType
         {
-            public override uint ConstructorCode => 0xb3cea0e4;
+            public override Types ConstructorCode => Types.StorageFileMp4Type;
 
             public StorageFileMp4Type() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -11290,17 +12822,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(StorageFileMp4Type)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class StorageFileWebpType : StorageFileType
         {
-            public override uint ConstructorCode => 0x1081464c;
+            public override Types ConstructorCode => Types.StorageFileWebpType;
 
             public StorageFileWebpType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -11311,11 +12856,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(StorageFileWebpType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class FileLocationUnavailableType : FileLocation
         {
-            public override uint ConstructorCode => 0x7c596b46;
+            public override Types ConstructorCode => Types.FileLocationUnavailableType;
 
             public long VolumeId;
             public int LocalId;
@@ -11332,7 +12890,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(VolumeId);
                 writer.Write(LocalId);
                 writer.Write(Secret);
@@ -11349,11 +12907,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(FileLocationUnavailableType VolumeId:{0} LocalId:{1} Secret:{2})", VolumeId, LocalId, Secret);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "VolumeId": return VolumeId;
+                        case "LocalId": return LocalId;
+                        case "Secret": return Secret;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "VolumeId":
+                    case "LocalId":
+                    case "Secret":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class FileLocationType : FileLocation
         {
-            public override uint ConstructorCode => 0x53d69076;
+            public override Types ConstructorCode => Types.FileLocationType;
 
             public int DcId;
             public long VolumeId;
@@ -11372,7 +12956,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(DcId);
                 writer.Write(VolumeId);
                 writer.Write(LocalId);
@@ -11391,11 +12975,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(FileLocationType DcId:{0} VolumeId:{1} LocalId:{2} Secret:{3})", DcId, VolumeId, LocalId, Secret);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "DcId": return DcId;
+                        case "VolumeId": return VolumeId;
+                        case "LocalId": return LocalId;
+                        case "Secret": return Secret;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "DcId":
+                    case "VolumeId":
+                    case "LocalId":
+                    case "Secret":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UserEmptyType : User
         {
-            public override uint ConstructorCode => 0x200250ba;
+            public override Types ConstructorCode => Types.UserEmptyType;
 
             public int Id;
 
@@ -11408,7 +13020,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
             }
 
@@ -11421,11 +13033,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UserEmptyType Id:{0})", Id);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UserType : User
         {
-            public override uint ConstructorCode => 0xd10d979a;
+            public override Types ConstructorCode => Types.UserType;
 
             public True Self;
             public True Contact;
@@ -11437,7 +13071,6 @@ namespace TeleTurk.Core.MTProto
             public True Verified;
             public True Restricted;
             public True Min;
-            public True BotInlineGeo;
             public int Id;
             public long? AccessHash;
             public string FirstName;
@@ -11453,7 +13086,7 @@ namespace TeleTurk.Core.MTProto
             public UserType() { }
 
             /// <summary>
-            /// The following arguments can be null: Self, Contact, MutualContact, Deleted, Bot, BotChatHistory, BotNochats, Verified, Restricted, Min, BotInlineGeo, AccessHash, FirstName, LastName, Username, Phone, Photo, Status, BotInfoVersion, RestrictionReason, BotInlinePlaceholder
+            /// The following arguments can be null: Self, Contact, MutualContact, Deleted, Bot, BotChatHistory, BotNochats, Verified, Restricted, Min, AccessHash, FirstName, LastName, Username, Phone, Photo, Status, BotInfoVersion, RestrictionReason, BotInlinePlaceholder
             /// </summary>
             /// <param name="Self">Can be null</param>
             /// <param name="Contact">Can be null</param>
@@ -11465,7 +13098,6 @@ namespace TeleTurk.Core.MTProto
             /// <param name="Verified">Can be null</param>
             /// <param name="Restricted">Can be null</param>
             /// <param name="Min">Can be null</param>
-            /// <param name="BotInlineGeo">Can be null</param>
             /// <param name="Id">Can NOT be null</param>
             /// <param name="AccessHash">Can be null</param>
             /// <param name="FirstName">Can be null</param>
@@ -11477,7 +13109,7 @@ namespace TeleTurk.Core.MTProto
             /// <param name="BotInfoVersion">Can be null</param>
             /// <param name="RestrictionReason">Can be null</param>
             /// <param name="BotInlinePlaceholder">Can be null</param>
-            public UserType(True Self, True Contact, True MutualContact, True Deleted, True Bot, True BotChatHistory, True BotNochats, True Verified, True Restricted, True Min, True BotInlineGeo, int Id, long? AccessHash, string FirstName, string LastName, string Username, string Phone, UserProfilePhoto Photo, UserStatus Status, int? BotInfoVersion, string RestrictionReason, string BotInlinePlaceholder)
+            public UserType(True Self, True Contact, True MutualContact, True Deleted, True Bot, True BotChatHistory, True BotNochats, True Verified, True Restricted, True Min, int Id, long? AccessHash, string FirstName, string LastName, string Username, string Phone, UserProfilePhoto Photo, UserStatus Status, int? BotInfoVersion, string RestrictionReason, string BotInlinePlaceholder)
             {
                 this.Self = Self;
                 this.Contact = Contact;
@@ -11489,7 +13121,6 @@ namespace TeleTurk.Core.MTProto
                 this.Verified = Verified;
                 this.Restricted = Restricted;
                 this.Min = Min;
-                this.BotInlineGeo = BotInlineGeo;
                 this.Id = Id;
                 this.AccessHash = AccessHash;
                 this.FirstName = FirstName;
@@ -11516,7 +13147,6 @@ namespace TeleTurk.Core.MTProto
                     (Verified != null ? 1 << 17 : 0) |
                     (Restricted != null ? 1 << 18 : 0) |
                     (Min != null ? 1 << 20 : 0) |
-                    (BotInlineGeo != null ? 1 << 21 : 0) |
                     (AccessHash != null ? 1 << 0 : 0) |
                     (FirstName != null ? 1 << 1 : 0) |
                     (LastName != null ? 1 << 2 : 0) |
@@ -11528,7 +13158,7 @@ namespace TeleTurk.Core.MTProto
                     (RestrictionReason != null ? 1 << 18 : 0) |
                     (BotInlinePlaceholder != null ? 1 << 19 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Self != null) {
@@ -11568,10 +13198,6 @@ namespace TeleTurk.Core.MTProto
                 }
 
                 if (Min != null) {
-
-                }
-
-                if (BotInlineGeo != null) {
 
                 }
 
@@ -11661,10 +13287,6 @@ namespace TeleTurk.Core.MTProto
                     Min = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 21)) != 0) {
-                    BotInlineGeo = reader.ReadTrue();
-                }
-
                 Id = reader.ReadInt32();
                 if ((flags & (1 << 0)) != 0) {
                     AccessHash = reader.ReadInt64();
@@ -11710,19 +13332,81 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(UserType Self:{0} Contact:{1} MutualContact:{2} Deleted:{3} Bot:{4} BotChatHistory:{5} BotNochats:{6} Verified:{7} Restricted:{8} Min:{9} BotInlineGeo:{10} Id:{11} AccessHash:{12} FirstName:{13} LastName:{14} Username:{15} Phone:{16} Photo:{17} Status:{18} BotInfoVersion:{19} RestrictionReason:{20} BotInlinePlaceholder:{21})", Self, Contact, MutualContact, Deleted, Bot, BotChatHistory, BotNochats, Verified, Restricted, Min, BotInlineGeo, Id, AccessHash, FirstName, LastName, Username, Phone, Photo, Status, BotInfoVersion, RestrictionReason, BotInlinePlaceholder);
+                return string.Format("(UserType Self:{0} Contact:{1} MutualContact:{2} Deleted:{3} Bot:{4} BotChatHistory:{5} BotNochats:{6} Verified:{7} Restricted:{8} Min:{9} Id:{10} AccessHash:{11} FirstName:{12} LastName:{13} Username:{14} Phone:{15} Photo:{16} Status:{17} BotInfoVersion:{18} RestrictionReason:{19} BotInlinePlaceholder:{20})", Self, Contact, MutualContact, Deleted, Bot, BotChatHistory, BotNochats, Verified, Restricted, Min, Id, AccessHash, FirstName, LastName, Username, Phone, Photo, Status, BotInfoVersion, RestrictionReason, BotInlinePlaceholder);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Self": return Self;
+                        case "Contact": return Contact;
+                        case "MutualContact": return MutualContact;
+                        case "Deleted": return Deleted;
+                        case "Bot": return Bot;
+                        case "BotChatHistory": return BotChatHistory;
+                        case "BotNochats": return BotNochats;
+                        case "Verified": return Verified;
+                        case "Restricted": return Restricted;
+                        case "Min": return Min;
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        case "FirstName": return FirstName;
+                        case "LastName": return LastName;
+                        case "Username": return Username;
+                        case "Phone": return Phone;
+                        case "Photo": return Photo;
+                        case "Status": return Status;
+                        case "BotInfoVersion": return BotInfoVersion;
+                        case "RestrictionReason": return RestrictionReason;
+                        case "BotInlinePlaceholder": return BotInlinePlaceholder;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Self":
+                    case "Contact":
+                    case "MutualContact":
+                    case "Deleted":
+                    case "Bot":
+                    case "BotChatHistory":
+                    case "BotNochats":
+                    case "Verified":
+                    case "Restricted":
+                    case "Min":
+                    case "Id":
+                    case "AccessHash":
+                    case "FirstName":
+                    case "LastName":
+                    case "Username":
+                    case "Phone":
+                    case "Photo":
+                    case "Status":
+                    case "BotInfoVersion":
+                    case "RestrictionReason":
+                    case "BotInlinePlaceholder":
+                        return true;
+                    default: return false;
+                }
             }
         }
 
         public class UserProfilePhotoEmptyType : UserProfilePhoto
         {
-            public override uint ConstructorCode => 0x4f11bae1;
+            public override Types ConstructorCode => Types.UserProfilePhotoEmptyType;
 
             public UserProfilePhotoEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -11733,11 +13417,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(UserProfilePhotoEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class UserProfilePhotoType : UserProfilePhoto
         {
-            public override uint ConstructorCode => 0xd559d8c8;
+            public override Types ConstructorCode => Types.UserProfilePhotoType;
 
             public long PhotoId;
             public FileLocation PhotoSmall;
@@ -11754,7 +13451,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(PhotoId);
                 PhotoSmall.Write(writer);
                 PhotoBig.Write(writer);
@@ -11771,17 +13468,43 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UserProfilePhotoType PhotoId:{0} PhotoSmall:{1} PhotoBig:{2})", PhotoId, PhotoSmall, PhotoBig);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "PhotoId": return PhotoId;
+                        case "PhotoSmall": return PhotoSmall;
+                        case "PhotoBig": return PhotoBig;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "PhotoId":
+                    case "PhotoSmall":
+                    case "PhotoBig":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UserStatusEmptyType : UserStatus
         {
-            public override uint ConstructorCode => 0x09d05049;
+            public override Types ConstructorCode => Types.UserStatusEmptyType;
 
             public UserStatusEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -11792,11 +13515,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(UserStatusEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class UserStatusOnlineType : UserStatus
         {
-            public override uint ConstructorCode => 0xedb93949;
+            public override Types ConstructorCode => Types.UserStatusOnlineType;
 
             public int Expires;
 
@@ -11809,7 +13545,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Expires);
             }
 
@@ -11822,11 +13558,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UserStatusOnlineType Expires:{0})", Expires);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Expires": return Expires;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Expires":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UserStatusOfflineType : UserStatus
         {
-            public override uint ConstructorCode => 0x008c703f;
+            public override Types ConstructorCode => Types.UserStatusOfflineType;
 
             public int WasOnline;
 
@@ -11839,7 +13597,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(WasOnline);
             }
 
@@ -11852,17 +13610,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UserStatusOfflineType WasOnline:{0})", WasOnline);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "WasOnline": return WasOnline;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "WasOnline":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UserStatusRecentlyType : UserStatus
         {
-            public override uint ConstructorCode => 0xe26f42f1;
+            public override Types ConstructorCode => Types.UserStatusRecentlyType;
 
             public UserStatusRecentlyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -11873,17 +13653,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(UserStatusRecentlyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class UserStatusLastWeekType : UserStatus
         {
-            public override uint ConstructorCode => 0x07bf09fc;
+            public override Types ConstructorCode => Types.UserStatusLastWeekType;
 
             public UserStatusLastWeekType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -11894,17 +13687,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(UserStatusLastWeekType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class UserStatusLastMonthType : UserStatus
         {
-            public override uint ConstructorCode => 0x77ebc742;
+            public override Types ConstructorCode => Types.UserStatusLastMonthType;
 
             public UserStatusLastMonthType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -11915,11 +13721,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(UserStatusLastMonthType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ChatEmptyType : Chat
         {
-            public override uint ConstructorCode => 0x9ba2d800;
+            public override Types ConstructorCode => Types.ChatEmptyType;
 
             public int Id;
 
@@ -11932,7 +13751,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
             }
 
@@ -11945,11 +13764,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChatEmptyType Id:{0})", Id);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChatType : Chat
         {
-            public override uint ConstructorCode => 0xd91cdd54;
+            public override Types ConstructorCode => Types.ChatType;
 
             public True Creator;
             public True Kicked;
@@ -12011,7 +13852,7 @@ namespace TeleTurk.Core.MTProto
                     (Deactivated != null ? 1 << 5 : 0) |
                     (MigratedTo != null ? 1 << 6 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Creator != null) {
@@ -12093,11 +13934,57 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChatType Creator:{0} Kicked:{1} Left:{2} AdminsEnabled:{3} Admin:{4} Deactivated:{5} Id:{6} Title:{7} Photo:{8} ParticipantsCount:{9} Date:{10} Version:{11} MigratedTo:{12})", Creator, Kicked, Left, AdminsEnabled, Admin, Deactivated, Id, Title, Photo, ParticipantsCount, Date, Version, MigratedTo);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Creator": return Creator;
+                        case "Kicked": return Kicked;
+                        case "Left": return Left;
+                        case "AdminsEnabled": return AdminsEnabled;
+                        case "Admin": return Admin;
+                        case "Deactivated": return Deactivated;
+                        case "Id": return Id;
+                        case "Title": return Title;
+                        case "Photo": return Photo;
+                        case "ParticipantsCount": return ParticipantsCount;
+                        case "Date": return Date;
+                        case "Version": return Version;
+                        case "MigratedTo": return MigratedTo;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Creator":
+                    case "Kicked":
+                    case "Left":
+                    case "AdminsEnabled":
+                    case "Admin":
+                    case "Deactivated":
+                    case "Id":
+                    case "Title":
+                    case "Photo":
+                    case "ParticipantsCount":
+                    case "Date":
+                    case "Version":
+                    case "MigratedTo":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChatForbiddenType : Chat
         {
-            public override uint ConstructorCode => 0x07328bdb;
+            public override Types ConstructorCode => Types.ChatForbiddenType;
 
             public int Id;
             public string Title;
@@ -12112,7 +13999,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(Title);
             }
@@ -12127,11 +14014,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChatForbiddenType Id:{0} Title:{1})", Id, Title);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Title": return Title;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Title":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChannelType : Chat
         {
-            public override uint ConstructorCode => 0xa14dca52;
+            public override Types ConstructorCode => Types.ChannelType;
 
             public True Creator;
             public True Kicked;
@@ -12222,7 +14133,7 @@ namespace TeleTurk.Core.MTProto
                     (Username != null ? 1 << 6 : 0) |
                     (RestrictionReason != null ? 1 << 9 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Creator != null) {
@@ -12366,11 +14277,71 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChannelType Creator:{0} Kicked:{1} Left:{2} Editor:{3} Moderator:{4} Broadcast:{5} Verified:{6} Megagroup:{7} Restricted:{8} Democracy:{9} Signatures:{10} Min:{11} Id:{12} AccessHash:{13} Title:{14} Username:{15} Photo:{16} Date:{17} Version:{18} RestrictionReason:{19})", Creator, Kicked, Left, Editor, Moderator, Broadcast, Verified, Megagroup, Restricted, Democracy, Signatures, Min, Id, AccessHash, Title, Username, Photo, Date, Version, RestrictionReason);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Creator": return Creator;
+                        case "Kicked": return Kicked;
+                        case "Left": return Left;
+                        case "Editor": return Editor;
+                        case "Moderator": return Moderator;
+                        case "Broadcast": return Broadcast;
+                        case "Verified": return Verified;
+                        case "Megagroup": return Megagroup;
+                        case "Restricted": return Restricted;
+                        case "Democracy": return Democracy;
+                        case "Signatures": return Signatures;
+                        case "Min": return Min;
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        case "Title": return Title;
+                        case "Username": return Username;
+                        case "Photo": return Photo;
+                        case "Date": return Date;
+                        case "Version": return Version;
+                        case "RestrictionReason": return RestrictionReason;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Creator":
+                    case "Kicked":
+                    case "Left":
+                    case "Editor":
+                    case "Moderator":
+                    case "Broadcast":
+                    case "Verified":
+                    case "Megagroup":
+                    case "Restricted":
+                    case "Democracy":
+                    case "Signatures":
+                    case "Min":
+                    case "Id":
+                    case "AccessHash":
+                    case "Title":
+                    case "Username":
+                    case "Photo":
+                    case "Date":
+                    case "Version":
+                    case "RestrictionReason":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChannelForbiddenType : Chat
         {
-            public override uint ConstructorCode => 0x2d85832c;
+            public override Types ConstructorCode => Types.ChannelForbiddenType;
 
             public int Id;
             public long AccessHash;
@@ -12387,7 +14358,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(AccessHash);
                 writer.Write(Title);
@@ -12404,11 +14375,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChannelForbiddenType Id:{0} AccessHash:{1} Title:{2})", Id, AccessHash, Title);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        case "Title": return Title;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "AccessHash":
+                    case "Title":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChatFullType : ChatFull
         {
-            public override uint ConstructorCode => 0x2e02a614;
+            public override Types ConstructorCode => Types.ChatFullType;
 
             public int Id;
             public ChatParticipants Participants;
@@ -12431,7 +14428,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 Participants.Write(writer);
                 ChatPhoto.Write(writer);
@@ -12461,11 +14458,43 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChatFullType Id:{0} Participants:{1} ChatPhoto:{2} NotifySettings:{3} ExportedInvite:{4} BotInfo:{5})", Id, Participants, ChatPhoto, NotifySettings, ExportedInvite, BotInfo);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Participants": return Participants;
+                        case "ChatPhoto": return ChatPhoto;
+                        case "NotifySettings": return NotifySettings;
+                        case "ExportedInvite": return ExportedInvite;
+                        case "BotInfo": return BotInfo;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Participants":
+                    case "ChatPhoto":
+                    case "NotifySettings":
+                    case "ExportedInvite":
+                    case "BotInfo":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChannelFullType : ChatFull
         {
-            public override uint ConstructorCode => 0x97bee562;
+            public override Types ConstructorCode => Types.ChannelFullType;
 
             public True CanViewParticipants;
             public True CanSetUsername;
@@ -12540,7 +14569,7 @@ namespace TeleTurk.Core.MTProto
                     (MigratedFromMaxId != null ? 1 << 4 : 0) |
                     (PinnedMsgId != null ? 1 << 5 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (CanViewParticipants != null) {
@@ -12643,11 +14672,65 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChannelFullType CanViewParticipants:{0} CanSetUsername:{1} Id:{2} About:{3} ParticipantsCount:{4} AdminsCount:{5} KickedCount:{6} ReadInboxMaxId:{7} UnreadCount:{8} UnreadImportantCount:{9} ChatPhoto:{10} NotifySettings:{11} ExportedInvite:{12} BotInfo:{13} MigratedFromChatId:{14} MigratedFromMaxId:{15} PinnedMsgId:{16})", CanViewParticipants, CanSetUsername, Id, About, ParticipantsCount, AdminsCount, KickedCount, ReadInboxMaxId, UnreadCount, UnreadImportantCount, ChatPhoto, NotifySettings, ExportedInvite, BotInfo, MigratedFromChatId, MigratedFromMaxId, PinnedMsgId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "CanViewParticipants": return CanViewParticipants;
+                        case "CanSetUsername": return CanSetUsername;
+                        case "Id": return Id;
+                        case "About": return About;
+                        case "ParticipantsCount": return ParticipantsCount;
+                        case "AdminsCount": return AdminsCount;
+                        case "KickedCount": return KickedCount;
+                        case "ReadInboxMaxId": return ReadInboxMaxId;
+                        case "UnreadCount": return UnreadCount;
+                        case "UnreadImportantCount": return UnreadImportantCount;
+                        case "ChatPhoto": return ChatPhoto;
+                        case "NotifySettings": return NotifySettings;
+                        case "ExportedInvite": return ExportedInvite;
+                        case "BotInfo": return BotInfo;
+                        case "MigratedFromChatId": return MigratedFromChatId;
+                        case "MigratedFromMaxId": return MigratedFromMaxId;
+                        case "PinnedMsgId": return PinnedMsgId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "CanViewParticipants":
+                    case "CanSetUsername":
+                    case "Id":
+                    case "About":
+                    case "ParticipantsCount":
+                    case "AdminsCount":
+                    case "KickedCount":
+                    case "ReadInboxMaxId":
+                    case "UnreadCount":
+                    case "UnreadImportantCount":
+                    case "ChatPhoto":
+                    case "NotifySettings":
+                    case "ExportedInvite":
+                    case "BotInfo":
+                    case "MigratedFromChatId":
+                    case "MigratedFromMaxId":
+                    case "PinnedMsgId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChatParticipantType : ChatParticipant
         {
-            public override uint ConstructorCode => 0xc8d7493e;
+            public override Types ConstructorCode => Types.ChatParticipantType;
 
             public int UserId;
             public int InviterId;
@@ -12664,7 +14747,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(InviterId);
                 writer.Write(Date);
@@ -12681,11 +14764,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChatParticipantType UserId:{0} InviterId:{1} Date:{2})", UserId, InviterId, Date);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "InviterId": return InviterId;
+                        case "Date": return Date;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "InviterId":
+                    case "Date":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChatParticipantCreatorType : ChatParticipant
         {
-            public override uint ConstructorCode => 0xda13538a;
+            public override Types ConstructorCode => Types.ChatParticipantCreatorType;
 
             public int UserId;
 
@@ -12698,7 +14807,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
             }
 
@@ -12711,11 +14820,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChatParticipantCreatorType UserId:{0})", UserId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChatParticipantAdminType : ChatParticipant
         {
-            public override uint ConstructorCode => 0xe2d6e436;
+            public override Types ConstructorCode => Types.ChatParticipantAdminType;
 
             public int UserId;
             public int InviterId;
@@ -12732,7 +14863,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(InviterId);
                 writer.Write(Date);
@@ -12749,11 +14880,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChatParticipantAdminType UserId:{0} InviterId:{1} Date:{2})", UserId, InviterId, Date);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "InviterId": return InviterId;
+                        case "Date": return Date;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "InviterId":
+                    case "Date":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChatParticipantsForbiddenType : ChatParticipants
         {
-            public override uint ConstructorCode => 0xfc900c2b;
+            public override Types ConstructorCode => Types.ChatParticipantsForbiddenType;
 
             public int ChatId;
             public ChatParticipant SelfParticipant;
@@ -12776,7 +14933,7 @@ namespace TeleTurk.Core.MTProto
                 int flags =
                     (SelfParticipant != null ? 1 << 0 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 writer.Write(ChatId);
@@ -12800,11 +14957,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChatParticipantsForbiddenType ChatId:{0} SelfParticipant:{1})", ChatId, SelfParticipant);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChatId": return ChatId;
+                        case "SelfParticipant": return SelfParticipant;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChatId":
+                    case "SelfParticipant":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChatParticipantsType : ChatParticipants
         {
-            public override uint ConstructorCode => 0x3f460fed;
+            public override Types ConstructorCode => Types.ChatParticipantsType;
 
             public int ChatId;
             public List<ChatParticipant> Participants;
@@ -12821,7 +15002,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Participants.Count);
@@ -12845,17 +15026,43 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChatParticipantsType ChatId:{0} Participants:{1} Version:{2})", ChatId, Participants, Version);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChatId": return ChatId;
+                        case "Participants": return Participants;
+                        case "Version": return Version;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChatId":
+                    case "Participants":
+                    case "Version":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChatPhotoEmptyType : ChatPhoto
         {
-            public override uint ConstructorCode => 0x37c1011c;
+            public override Types ConstructorCode => Types.ChatPhotoEmptyType;
 
             public ChatPhotoEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -12866,11 +15073,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(ChatPhotoEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ChatPhotoType : ChatPhoto
         {
-            public override uint ConstructorCode => 0x6153276a;
+            public override Types ConstructorCode => Types.ChatPhotoType;
 
             public FileLocation PhotoSmall;
             public FileLocation PhotoBig;
@@ -12885,7 +15105,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 PhotoSmall.Write(writer);
                 PhotoBig.Write(writer);
             }
@@ -12900,11 +15120,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChatPhotoType PhotoSmall:{0} PhotoBig:{1})", PhotoSmall, PhotoBig);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "PhotoSmall": return PhotoSmall;
+                        case "PhotoBig": return PhotoBig;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "PhotoSmall":
+                    case "PhotoBig":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageEmptyType : Message
         {
-            public override uint ConstructorCode => 0x83e5de54;
+            public override Types ConstructorCode => Types.MessageEmptyType;
 
             public int Id;
 
@@ -12917,7 +15161,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
             }
 
@@ -12930,11 +15174,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageEmptyType Id:{0})", Id);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageType : Message
         {
-            public override uint ConstructorCode => 0xc09be45f;
+            public override Types ConstructorCode => Types.MessageType;
 
             public True Unread;
             public True Out;
@@ -13022,7 +15288,7 @@ namespace TeleTurk.Core.MTProto
                     (Views != null ? 1 << 10 : 0) |
                     (EditDate != null ? 1 << 15 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Unread != null) {
@@ -13171,11 +15437,69 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageType Unread:{0} Out:{1} Mentioned:{2} MediaUnread:{3} Silent:{4} Post:{5} Id:{6} FromId:{7} ToId:{8} FwdFrom:{9} ViaBotId:{10} ReplyToMsgId:{11} Date:{12} Message:{13} Media:{14} ReplyMarkup:{15} Entities:{16} Views:{17} EditDate:{18})", Unread, Out, Mentioned, MediaUnread, Silent, Post, Id, FromId, ToId, FwdFrom, ViaBotId, ReplyToMsgId, Date, Message, Media, ReplyMarkup, Entities, Views, EditDate);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Unread": return Unread;
+                        case "Out": return Out;
+                        case "Mentioned": return Mentioned;
+                        case "MediaUnread": return MediaUnread;
+                        case "Silent": return Silent;
+                        case "Post": return Post;
+                        case "Id": return Id;
+                        case "FromId": return FromId;
+                        case "ToId": return ToId;
+                        case "FwdFrom": return FwdFrom;
+                        case "ViaBotId": return ViaBotId;
+                        case "ReplyToMsgId": return ReplyToMsgId;
+                        case "Date": return Date;
+                        case "Message": return Message;
+                        case "Media": return Media;
+                        case "ReplyMarkup": return ReplyMarkup;
+                        case "Entities": return Entities;
+                        case "Views": return Views;
+                        case "EditDate": return EditDate;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Unread":
+                    case "Out":
+                    case "Mentioned":
+                    case "MediaUnread":
+                    case "Silent":
+                    case "Post":
+                    case "Id":
+                    case "FromId":
+                    case "ToId":
+                    case "FwdFrom":
+                    case "ViaBotId":
+                    case "ReplyToMsgId":
+                    case "Date":
+                    case "Message":
+                    case "Media":
+                    case "ReplyMarkup":
+                    case "Entities":
+                    case "Views":
+                    case "EditDate":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageServiceType : Message
         {
-            public override uint ConstructorCode => 0x9e19a1f6;
+            public override Types ConstructorCode => Types.MessageServiceType;
 
             public True Unread;
             public True Out;
@@ -13235,7 +15559,7 @@ namespace TeleTurk.Core.MTProto
                     (FromId != null ? 1 << 8 : 0) |
                     (ReplyToMsgId != null ? 1 << 3 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Unread != null) {
@@ -13321,17 +15645,61 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageServiceType Unread:{0} Out:{1} Mentioned:{2} MediaUnread:{3} Silent:{4} Post:{5} Id:{6} FromId:{7} ToId:{8} ReplyToMsgId:{9} Date:{10} Action:{11})", Unread, Out, Mentioned, MediaUnread, Silent, Post, Id, FromId, ToId, ReplyToMsgId, Date, Action);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Unread": return Unread;
+                        case "Out": return Out;
+                        case "Mentioned": return Mentioned;
+                        case "MediaUnread": return MediaUnread;
+                        case "Silent": return Silent;
+                        case "Post": return Post;
+                        case "Id": return Id;
+                        case "FromId": return FromId;
+                        case "ToId": return ToId;
+                        case "ReplyToMsgId": return ReplyToMsgId;
+                        case "Date": return Date;
+                        case "Action": return Action;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Unread":
+                    case "Out":
+                    case "Mentioned":
+                    case "MediaUnread":
+                    case "Silent":
+                    case "Post":
+                    case "Id":
+                    case "FromId":
+                    case "ToId":
+                    case "ReplyToMsgId":
+                    case "Date":
+                    case "Action":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageMediaEmptyType : MessageMedia
         {
-            public override uint ConstructorCode => 0x3ded6320;
+            public override Types ConstructorCode => Types.MessageMediaEmptyType;
 
             public MessageMediaEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -13342,11 +15710,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(MessageMediaEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class MessageMediaPhotoType : MessageMedia
         {
-            public override uint ConstructorCode => 0x3d8ce53d;
+            public override Types ConstructorCode => Types.MessageMediaPhotoType;
 
             public Photo Photo;
             public string Caption;
@@ -13361,7 +15742,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Photo.Write(writer);
                 writer.Write(Caption);
             }
@@ -13376,11 +15757,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageMediaPhotoType Photo:{0} Caption:{1})", Photo, Caption);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Photo": return Photo;
+                        case "Caption": return Caption;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Photo":
+                    case "Caption":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageMediaGeoType : MessageMedia
         {
-            public override uint ConstructorCode => 0x56e0d474;
+            public override Types ConstructorCode => Types.MessageMediaGeoType;
 
             public GeoPoint Geo;
 
@@ -13393,7 +15798,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Geo.Write(writer);
             }
 
@@ -13406,11 +15811,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageMediaGeoType Geo:{0})", Geo);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Geo": return Geo;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Geo":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageMediaContactType : MessageMedia
         {
-            public override uint ConstructorCode => 0x5e7d2f39;
+            public override Types ConstructorCode => Types.MessageMediaContactType;
 
             public string PhoneNumber;
             public string FirstName;
@@ -13429,7 +15856,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(PhoneNumber);
                 writer.Write(FirstName);
                 writer.Write(LastName);
@@ -13448,17 +15875,45 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageMediaContactType PhoneNumber:{0} FirstName:{1} LastName:{2} UserId:{3})", PhoneNumber, FirstName, LastName, UserId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "PhoneNumber": return PhoneNumber;
+                        case "FirstName": return FirstName;
+                        case "LastName": return LastName;
+                        case "UserId": return UserId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "PhoneNumber":
+                    case "FirstName":
+                    case "LastName":
+                    case "UserId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageMediaUnsupportedType : MessageMedia
         {
-            public override uint ConstructorCode => 0x9f84f49e;
+            public override Types ConstructorCode => Types.MessageMediaUnsupportedType;
 
             public MessageMediaUnsupportedType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -13469,11 +15924,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(MessageMediaUnsupportedType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class MessageMediaDocumentType : MessageMedia
         {
-            public override uint ConstructorCode => 0xf3e02ea8;
+            public override Types ConstructorCode => Types.MessageMediaDocumentType;
 
             public Document Document;
             public string Caption;
@@ -13488,7 +15956,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Document.Write(writer);
                 writer.Write(Caption);
             }
@@ -13503,11 +15971,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageMediaDocumentType Document:{0} Caption:{1})", Document, Caption);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Document": return Document;
+                        case "Caption": return Caption;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Document":
+                    case "Caption":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageMediaWebPageType : MessageMedia
         {
-            public override uint ConstructorCode => 0xa32dd600;
+            public override Types ConstructorCode => Types.MessageMediaWebPageType;
 
             public WebPage Webpage;
 
@@ -13520,7 +16012,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Webpage.Write(writer);
             }
 
@@ -13533,11 +16025,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageMediaWebPageType Webpage:{0})", Webpage);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Webpage": return Webpage;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Webpage":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageMediaVenueType : MessageMedia
         {
-            public override uint ConstructorCode => 0x7912b71f;
+            public override Types ConstructorCode => Types.MessageMediaVenueType;
 
             public GeoPoint Geo;
             public string Title;
@@ -13558,7 +16072,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Geo.Write(writer);
                 writer.Write(Title);
                 writer.Write(Address);
@@ -13579,17 +16093,47 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageMediaVenueType Geo:{0} Title:{1} Address:{2} Provider:{3} VenueId:{4})", Geo, Title, Address, Provider, VenueId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Geo": return Geo;
+                        case "Title": return Title;
+                        case "Address": return Address;
+                        case "Provider": return Provider;
+                        case "VenueId": return VenueId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Geo":
+                    case "Title":
+                    case "Address":
+                    case "Provider":
+                    case "VenueId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageActionEmptyType : MessageAction
         {
-            public override uint ConstructorCode => 0xb6aef7b0;
+            public override Types ConstructorCode => Types.MessageActionEmptyType;
 
             public MessageActionEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -13600,11 +16144,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(MessageActionEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class MessageActionChatCreateType : MessageAction
         {
-            public override uint ConstructorCode => 0xa6638b9a;
+            public override Types ConstructorCode => Types.MessageActionChatCreateType;
 
             public string Title;
             public List<int> Users;
@@ -13619,7 +16176,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Title);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Users.Count);
@@ -13641,11 +16198,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageActionChatCreateType Title:{0} Users:{1})", Title, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Title": return Title;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Title":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageActionChatEditTitleType : MessageAction
         {
-            public override uint ConstructorCode => 0xb5a1ce5a;
+            public override Types ConstructorCode => Types.MessageActionChatEditTitleType;
 
             public string Title;
 
@@ -13658,7 +16239,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Title);
             }
 
@@ -13671,11 +16252,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageActionChatEditTitleType Title:{0})", Title);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Title": return Title;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Title":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageActionChatEditPhotoType : MessageAction
         {
-            public override uint ConstructorCode => 0x7fcb13a8;
+            public override Types ConstructorCode => Types.MessageActionChatEditPhotoType;
 
             public Photo Photo;
 
@@ -13688,7 +16291,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Photo.Write(writer);
             }
 
@@ -13701,17 +16304,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageActionChatEditPhotoType Photo:{0})", Photo);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Photo": return Photo;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Photo":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageActionChatDeletePhotoType : MessageAction
         {
-            public override uint ConstructorCode => 0x95e3fbef;
+            public override Types ConstructorCode => Types.MessageActionChatDeletePhotoType;
 
             public MessageActionChatDeletePhotoType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -13722,11 +16347,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(MessageActionChatDeletePhotoType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class MessageActionChatAddUserType : MessageAction
         {
-            public override uint ConstructorCode => 0x488a7337;
+            public override Types ConstructorCode => Types.MessageActionChatAddUserType;
 
             public List<int> Users;
 
@@ -13739,7 +16377,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Users.Count);
                 foreach (int UsersElement in Users)
@@ -13759,11 +16397,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageActionChatAddUserType Users:{0})", Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageActionChatDeleteUserType : MessageAction
         {
-            public override uint ConstructorCode => 0xb2ae9b0c;
+            public override Types ConstructorCode => Types.MessageActionChatDeleteUserType;
 
             public int UserId;
 
@@ -13776,7 +16436,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
             }
 
@@ -13789,11 +16449,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageActionChatDeleteUserType UserId:{0})", UserId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageActionChatJoinedByLinkType : MessageAction
         {
-            public override uint ConstructorCode => 0xf89cf5e8;
+            public override Types ConstructorCode => Types.MessageActionChatJoinedByLinkType;
 
             public int InviterId;
 
@@ -13806,7 +16488,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(InviterId);
             }
 
@@ -13819,11 +16501,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageActionChatJoinedByLinkType InviterId:{0})", InviterId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "InviterId": return InviterId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "InviterId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageActionChannelCreateType : MessageAction
         {
-            public override uint ConstructorCode => 0x95d2ac92;
+            public override Types ConstructorCode => Types.MessageActionChannelCreateType;
 
             public string Title;
 
@@ -13836,7 +16540,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Title);
             }
 
@@ -13849,11 +16553,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageActionChannelCreateType Title:{0})", Title);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Title": return Title;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Title":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageActionChatMigrateToType : MessageAction
         {
-            public override uint ConstructorCode => 0x51bdb021;
+            public override Types ConstructorCode => Types.MessageActionChatMigrateToType;
 
             public int ChannelId;
 
@@ -13866,7 +16592,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChannelId);
             }
 
@@ -13879,11 +16605,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageActionChatMigrateToType ChannelId:{0})", ChannelId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChannelId": return ChannelId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChannelId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageActionChannelMigrateFromType : MessageAction
         {
-            public override uint ConstructorCode => 0xb055eaee;
+            public override Types ConstructorCode => Types.MessageActionChannelMigrateFromType;
 
             public string Title;
             public int ChatId;
@@ -13898,7 +16646,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Title);
                 writer.Write(ChatId);
             }
@@ -13913,17 +16661,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageActionChannelMigrateFromType Title:{0} ChatId:{1})", Title, ChatId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Title": return Title;
+                        case "ChatId": return ChatId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Title":
+                    case "ChatId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageActionPinMessageType : MessageAction
         {
-            public override uint ConstructorCode => 0x94bd38ed;
+            public override Types ConstructorCode => Types.MessageActionPinMessageType;
 
             public MessageActionPinMessageType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -13934,11 +16706,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(MessageActionPinMessageType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class DialogType : Dialog
         {
-            public override uint ConstructorCode => 0xc1dd804a;
+            public override Types ConstructorCode => Types.DialogType;
 
             public Peer Peer;
             public int TopMessage;
@@ -13959,7 +16744,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 writer.Write(TopMessage);
                 writer.Write(ReadInboxMaxId);
@@ -13980,11 +16765,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(DialogType Peer:{0} TopMessage:{1} ReadInboxMaxId:{2} UnreadCount:{3} NotifySettings:{4})", Peer, TopMessage, ReadInboxMaxId, UnreadCount, NotifySettings);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Peer": return Peer;
+                        case "TopMessage": return TopMessage;
+                        case "ReadInboxMaxId": return ReadInboxMaxId;
+                        case "UnreadCount": return UnreadCount;
+                        case "NotifySettings": return NotifySettings;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Peer":
+                    case "TopMessage":
+                    case "ReadInboxMaxId":
+                    case "UnreadCount":
+                    case "NotifySettings":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class DialogChannelType : Dialog
         {
-            public override uint ConstructorCode => 0x5b8496b2;
+            public override Types ConstructorCode => Types.DialogChannelType;
 
             public Peer Peer;
             public int TopMessage;
@@ -14011,7 +16826,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 writer.Write(TopMessage);
                 writer.Write(TopImportantMessage);
@@ -14038,11 +16853,47 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(DialogChannelType Peer:{0} TopMessage:{1} TopImportantMessage:{2} ReadInboxMaxId:{3} UnreadCount:{4} UnreadImportantCount:{5} NotifySettings:{6} Pts:{7})", Peer, TopMessage, TopImportantMessage, ReadInboxMaxId, UnreadCount, UnreadImportantCount, NotifySettings, Pts);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Peer": return Peer;
+                        case "TopMessage": return TopMessage;
+                        case "TopImportantMessage": return TopImportantMessage;
+                        case "ReadInboxMaxId": return ReadInboxMaxId;
+                        case "UnreadCount": return UnreadCount;
+                        case "UnreadImportantCount": return UnreadImportantCount;
+                        case "NotifySettings": return NotifySettings;
+                        case "Pts": return Pts;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Peer":
+                    case "TopMessage":
+                    case "TopImportantMessage":
+                    case "ReadInboxMaxId":
+                    case "UnreadCount":
+                    case "UnreadImportantCount":
+                    case "NotifySettings":
+                    case "Pts":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class PhotoEmptyType : Photo
         {
-            public override uint ConstructorCode => 0x2331b22d;
+            public override Types ConstructorCode => Types.PhotoEmptyType;
 
             public long Id;
 
@@ -14055,7 +16906,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
             }
 
@@ -14068,11 +16919,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(PhotoEmptyType Id:{0})", Id);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class PhotoType : Photo
         {
-            public override uint ConstructorCode => 0xcded42fe;
+            public override Types ConstructorCode => Types.PhotoType;
 
             public long Id;
             public long AccessHash;
@@ -14091,7 +16964,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(AccessHash);
                 writer.Write(Date);
@@ -14117,11 +16990,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(PhotoType Id:{0} AccessHash:{1} Date:{2} Sizes:{3})", Id, AccessHash, Date, Sizes);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        case "Date": return Date;
+                        case "Sizes": return Sizes;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "AccessHash":
+                    case "Date":
+                    case "Sizes":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class PhotoSizeEmptyType : PhotoSize
         {
-            public override uint ConstructorCode => 0x0e17e23c;
+            public override Types ConstructorCode => Types.PhotoSizeEmptyType;
 
             public string Type;
 
@@ -14134,7 +17035,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Type);
             }
 
@@ -14147,11 +17048,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(PhotoSizeEmptyType Type:{0})", Type);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Type": return Type;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Type":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class PhotoSizeType : PhotoSize
         {
-            public override uint ConstructorCode => 0x77bfb61b;
+            public override Types ConstructorCode => Types.PhotoSizeType;
 
             public string Type;
             public FileLocation Location;
@@ -14172,7 +17095,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Type);
                 Location.Write(writer);
                 writer.Write(W);
@@ -14193,11 +17116,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(PhotoSizeType Type:{0} Location:{1} W:{2} H:{3} Size:{4})", Type, Location, W, H, Size);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Type": return Type;
+                        case "Location": return Location;
+                        case "W": return W;
+                        case "H": return H;
+                        case "Size": return Size;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Type":
+                    case "Location":
+                    case "W":
+                    case "H":
+                    case "Size":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class PhotoCachedSizeType : PhotoSize
         {
-            public override uint ConstructorCode => 0xe9a734fa;
+            public override Types ConstructorCode => Types.PhotoCachedSizeType;
 
             public string Type;
             public FileLocation Location;
@@ -14218,7 +17171,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Type);
                 Location.Write(writer);
                 writer.Write(W);
@@ -14239,17 +17192,47 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(PhotoCachedSizeType Type:{0} Location:{1} W:{2} H:{3} Bytes:{4})", Type, Location, W, H, Bytes);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Type": return Type;
+                        case "Location": return Location;
+                        case "W": return W;
+                        case "H": return H;
+                        case "Bytes": return Bytes;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Type":
+                    case "Location":
+                    case "W":
+                    case "H":
+                    case "Bytes":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class GeoPointEmptyType : GeoPoint
         {
-            public override uint ConstructorCode => 0x1117dd5f;
+            public override Types ConstructorCode => Types.GeoPointEmptyType;
 
             public GeoPointEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -14260,11 +17243,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(GeoPointEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class GeoPointType : GeoPoint
         {
-            public override uint ConstructorCode => 0x2049d70c;
+            public override Types ConstructorCode => Types.GeoPointType;
 
             public double Long;
             public double Lat;
@@ -14279,7 +17275,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Long);
                 writer.Write(Lat);
             }
@@ -14294,11 +17290,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(GeoPointType Long:{0} Lat:{1})", Long, Lat);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Long": return Long;
+                        case "Lat": return Lat;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Long":
+                    case "Lat":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class AuthCheckedPhoneType : AuthCheckedPhone
         {
-            public override uint ConstructorCode => 0x811ea28e;
+            public override Types ConstructorCode => Types.AuthCheckedPhoneType;
 
             public bool PhoneRegistered;
 
@@ -14311,7 +17331,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(PhoneRegistered);
             }
 
@@ -14324,11 +17344,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(AuthCheckedPhoneType PhoneRegistered:{0})", PhoneRegistered);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "PhoneRegistered": return PhoneRegistered;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "PhoneRegistered":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class AuthSentCodeType : AuthSentCode
         {
-            public override uint ConstructorCode => 0x5e002502;
+            public override Types ConstructorCode => Types.AuthSentCodeType;
 
             public True PhoneRegistered;
             public AuthSentCodeType Type;
@@ -14362,7 +17404,7 @@ namespace TeleTurk.Core.MTProto
                     (NextType != null ? 1 << 1 : 0) |
                     (Timeout != null ? 1 << 2 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (PhoneRegistered != null) {
@@ -14404,11 +17446,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(AuthSentCodeType PhoneRegistered:{0} Type:{1} PhoneCodeHash:{2} NextType:{3} Timeout:{4})", PhoneRegistered, Type, PhoneCodeHash, NextType, Timeout);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "PhoneRegistered": return PhoneRegistered;
+                        case "Type": return Type;
+                        case "PhoneCodeHash": return PhoneCodeHash;
+                        case "NextType": return NextType;
+                        case "Timeout": return Timeout;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "PhoneRegistered":
+                    case "Type":
+                    case "PhoneCodeHash":
+                    case "NextType":
+                    case "Timeout":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class AuthAuthorizationType : AuthAuthorization
         {
-            public override uint ConstructorCode => 0xff036af1;
+            public override Types ConstructorCode => Types.AuthAuthorizationType;
 
             public User User;
 
@@ -14421,7 +17493,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 User.Write(writer);
             }
 
@@ -14434,11 +17506,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(AuthAuthorizationType User:{0})", User);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "User": return User;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "User":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class AuthExportedAuthorizationType : AuthExportedAuthorization
         {
-            public override uint ConstructorCode => 0xdf969c2d;
+            public override Types ConstructorCode => Types.AuthExportedAuthorizationType;
 
             public int Id;
             public byte[] Bytes;
@@ -14453,7 +17547,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(Bytes);
             }
@@ -14468,11 +17562,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(AuthExportedAuthorizationType Id:{0} Bytes:{1})", Id, Bytes);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Bytes": return Bytes;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Bytes":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputNotifyPeerType : InputNotifyPeer
         {
-            public override uint ConstructorCode => 0xb8bc5b0c;
+            public override Types ConstructorCode => Types.InputNotifyPeerType;
 
             public InputPeer Peer;
 
@@ -14485,7 +17603,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
             }
 
@@ -14498,17 +17616,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputNotifyPeerType Peer:{0})", Peer);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Peer": return Peer;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Peer":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputNotifyUsersType : InputNotifyPeer
         {
-            public override uint ConstructorCode => 0x193b4417;
+            public override Types ConstructorCode => Types.InputNotifyUsersType;
 
             public InputNotifyUsersType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -14519,17 +17659,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputNotifyUsersType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputNotifyChatsType : InputNotifyPeer
         {
-            public override uint ConstructorCode => 0x4a95e84e;
+            public override Types ConstructorCode => Types.InputNotifyChatsType;
 
             public InputNotifyChatsType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -14540,17 +17693,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputNotifyChatsType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputNotifyAllType : InputNotifyPeer
         {
-            public override uint ConstructorCode => 0xa429b886;
+            public override Types ConstructorCode => Types.InputNotifyAllType;
 
             public InputNotifyAllType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -14561,17 +17727,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputNotifyAllType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputPeerNotifyEventsEmptyType : InputPeerNotifyEvents
         {
-            public override uint ConstructorCode => 0xf03064d8;
+            public override Types ConstructorCode => Types.InputPeerNotifyEventsEmptyType;
 
             public InputPeerNotifyEventsEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -14582,17 +17761,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputPeerNotifyEventsEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputPeerNotifyEventsAllType : InputPeerNotifyEvents
         {
-            public override uint ConstructorCode => 0xe86a2c74;
+            public override Types ConstructorCode => Types.InputPeerNotifyEventsAllType;
 
             public InputPeerNotifyEventsAllType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -14603,11 +17795,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputPeerNotifyEventsAllType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputPeerNotifySettingsType : InputPeerNotifySettings
         {
-            public override uint ConstructorCode => 0x38935eb2;
+            public override Types ConstructorCode => Types.InputPeerNotifySettingsType;
 
             public True ShowPreviews;
             public True Silent;
@@ -14637,7 +17842,7 @@ namespace TeleTurk.Core.MTProto
                     (ShowPreviews != null ? 1 << 0 : 0) |
                     (Silent != null ? 1 << 1 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (ShowPreviews != null) {
@@ -14671,17 +17876,45 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputPeerNotifySettingsType ShowPreviews:{0} Silent:{1} MuteUntil:{2} Sound:{3})", ShowPreviews, Silent, MuteUntil, Sound);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ShowPreviews": return ShowPreviews;
+                        case "Silent": return Silent;
+                        case "MuteUntil": return MuteUntil;
+                        case "Sound": return Sound;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ShowPreviews":
+                    case "Silent":
+                    case "MuteUntil":
+                    case "Sound":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class PeerNotifyEventsEmptyType : PeerNotifyEvents
         {
-            public override uint ConstructorCode => 0xadd53cb3;
+            public override Types ConstructorCode => Types.PeerNotifyEventsEmptyType;
 
             public PeerNotifyEventsEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -14692,17 +17925,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(PeerNotifyEventsEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class PeerNotifyEventsAllType : PeerNotifyEvents
         {
-            public override uint ConstructorCode => 0x6d1ded88;
+            public override Types ConstructorCode => Types.PeerNotifyEventsAllType;
 
             public PeerNotifyEventsAllType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -14713,17 +17959,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(PeerNotifyEventsAllType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class PeerNotifySettingsEmptyType : PeerNotifySettings
         {
-            public override uint ConstructorCode => 0x70a68512;
+            public override Types ConstructorCode => Types.PeerNotifySettingsEmptyType;
 
             public PeerNotifySettingsEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -14734,11 +17993,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(PeerNotifySettingsEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class PeerNotifySettingsType : PeerNotifySettings
         {
-            public override uint ConstructorCode => 0x9acda4c0;
+            public override Types ConstructorCode => Types.PeerNotifySettingsType;
 
             public True ShowPreviews;
             public True Silent;
@@ -14768,7 +18040,7 @@ namespace TeleTurk.Core.MTProto
                     (ShowPreviews != null ? 1 << 0 : 0) |
                     (Silent != null ? 1 << 1 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (ShowPreviews != null) {
@@ -14802,11 +18074,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(PeerNotifySettingsType ShowPreviews:{0} Silent:{1} MuteUntil:{2} Sound:{3})", ShowPreviews, Silent, MuteUntil, Sound);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ShowPreviews": return ShowPreviews;
+                        case "Silent": return Silent;
+                        case "MuteUntil": return MuteUntil;
+                        case "Sound": return Sound;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ShowPreviews":
+                    case "Silent":
+                    case "MuteUntil":
+                    case "Sound":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class PeerSettingsType : PeerSettings
         {
-            public override uint ConstructorCode => 0x818426cd;
+            public override Types ConstructorCode => Types.PeerSettingsType;
 
             public True ReportSpam;
 
@@ -14826,7 +18126,7 @@ namespace TeleTurk.Core.MTProto
                 int flags =
                     (ReportSpam != null ? 1 << 0 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (ReportSpam != null) {
@@ -14848,11 +18148,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(PeerSettingsType ReportSpam:{0})", ReportSpam);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ReportSpam": return ReportSpam;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ReportSpam":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class WallPaperType : WallPaper
         {
-            public override uint ConstructorCode => 0xccb03657;
+            public override Types ConstructorCode => Types.WallPaperType;
 
             public int Id;
             public string Title;
@@ -14871,7 +18193,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(Title);
                 writer.Write(0x1cb5c415); // vector code
@@ -14897,11 +18219,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(WallPaperType Id:{0} Title:{1} Sizes:{2} Color:{3})", Id, Title, Sizes, Color);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Title": return Title;
+                        case "Sizes": return Sizes;
+                        case "Color": return Color;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Title":
+                    case "Sizes":
+                    case "Color":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class WallPaperSolidType : WallPaper
         {
-            public override uint ConstructorCode => 0x63117f24;
+            public override Types ConstructorCode => Types.WallPaperSolidType;
 
             public int Id;
             public string Title;
@@ -14920,7 +18270,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(Title);
                 writer.Write(BgColor);
@@ -14939,17 +18289,45 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(WallPaperSolidType Id:{0} Title:{1} BgColor:{2} Color:{3})", Id, Title, BgColor, Color);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Title": return Title;
+                        case "BgColor": return BgColor;
+                        case "Color": return Color;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Title":
+                    case "BgColor":
+                    case "Color":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputReportReasonSpamType : ReportReason
         {
-            public override uint ConstructorCode => 0x58dbcab8;
+            public override Types ConstructorCode => Types.InputReportReasonSpamType;
 
             public InputReportReasonSpamType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -14960,17 +18338,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputReportReasonSpamType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputReportReasonViolenceType : ReportReason
         {
-            public override uint ConstructorCode => 0x1e22c78d;
+            public override Types ConstructorCode => Types.InputReportReasonViolenceType;
 
             public InputReportReasonViolenceType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -14981,17 +18372,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputReportReasonViolenceType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputReportReasonPornographyType : ReportReason
         {
-            public override uint ConstructorCode => 0x2e59d922;
+            public override Types ConstructorCode => Types.InputReportReasonPornographyType;
 
             public InputReportReasonPornographyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -15002,11 +18406,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputReportReasonPornographyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputReportReasonOtherType : ReportReason
         {
-            public override uint ConstructorCode => 0xe1746d0a;
+            public override Types ConstructorCode => Types.InputReportReasonOtherType;
 
             public string Text;
 
@@ -15019,7 +18436,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Text);
             }
 
@@ -15032,11 +18449,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputReportReasonOtherType Text:{0})", Text);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Text": return Text;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Text":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UserFullType : UserFull
         {
-            public override uint ConstructorCode => 0x5932fc03;
+            public override Types ConstructorCode => Types.UserFullType;
 
             public True Blocked;
             public User User;
@@ -15077,7 +18516,7 @@ namespace TeleTurk.Core.MTProto
                     (ProfilePhoto != null ? 1 << 2 : 0) |
                     (BotInfo != null ? 1 << 3 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Blocked != null) {
@@ -15129,11 +18568,45 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UserFullType Blocked:{0} User:{1} About:{2} Link:{3} ProfilePhoto:{4} NotifySettings:{5} BotInfo:{6})", Blocked, User, About, Link, ProfilePhoto, NotifySettings, BotInfo);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Blocked": return Blocked;
+                        case "User": return User;
+                        case "About": return About;
+                        case "Link": return Link;
+                        case "ProfilePhoto": return ProfilePhoto;
+                        case "NotifySettings": return NotifySettings;
+                        case "BotInfo": return BotInfo;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Blocked":
+                    case "User":
+                    case "About":
+                    case "Link":
+                    case "ProfilePhoto":
+                    case "NotifySettings":
+                    case "BotInfo":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ContactType : Contact
         {
-            public override uint ConstructorCode => 0xf911c994;
+            public override Types ConstructorCode => Types.ContactType;
 
             public int UserId;
             public bool Mutual;
@@ -15148,7 +18621,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(Mutual);
             }
@@ -15163,11 +18636,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ContactType UserId:{0} Mutual:{1})", UserId, Mutual);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "Mutual": return Mutual;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "Mutual":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ImportedContactType : ImportedContact
         {
-            public override uint ConstructorCode => 0xd0028438;
+            public override Types ConstructorCode => Types.ImportedContactType;
 
             public int UserId;
             public long ClientId;
@@ -15182,7 +18679,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(ClientId);
             }
@@ -15197,11 +18694,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ImportedContactType UserId:{0} ClientId:{1})", UserId, ClientId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "ClientId": return ClientId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "ClientId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ContactBlockedType : ContactBlocked
         {
-            public override uint ConstructorCode => 0x561bc879;
+            public override Types ConstructorCode => Types.ContactBlockedType;
 
             public int UserId;
             public int Date;
@@ -15216,7 +18737,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(Date);
             }
@@ -15231,11 +18752,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ContactBlockedType UserId:{0} Date:{1})", UserId, Date);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "Date": return Date;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "Date":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ContactStatusType : ContactStatus
         {
-            public override uint ConstructorCode => 0xd3680c61;
+            public override Types ConstructorCode => Types.ContactStatusType;
 
             public int UserId;
             public UserStatus Status;
@@ -15250,7 +18795,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 Status.Write(writer);
             }
@@ -15265,11 +18810,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ContactStatusType UserId:{0} Status:{1})", UserId, Status);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "Status": return Status;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "Status":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ContactsLinkType : ContactsLink
         {
-            public override uint ConstructorCode => 0x3ace484c;
+            public override Types ConstructorCode => Types.ContactsLinkType;
 
             public ContactLink MyLink;
             public ContactLink ForeignLink;
@@ -15286,7 +18855,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 MyLink.Write(writer);
                 ForeignLink.Write(writer);
                 User.Write(writer);
@@ -15303,17 +18872,43 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ContactsLinkType MyLink:{0} ForeignLink:{1} User:{2})", MyLink, ForeignLink, User);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "MyLink": return MyLink;
+                        case "ForeignLink": return ForeignLink;
+                        case "User": return User;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "MyLink":
+                    case "ForeignLink":
+                    case "User":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ContactsContactsNotModifiedType : ContactsContacts
         {
-            public override uint ConstructorCode => 0xb74ba9d2;
+            public override Types ConstructorCode => Types.ContactsContactsNotModifiedType;
 
             public ContactsContactsNotModifiedType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -15324,11 +18919,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(ContactsContactsNotModifiedType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ContactsContactsType : ContactsContacts
         {
-            public override uint ConstructorCode => 0x6f8b8cb2;
+            public override Types ConstructorCode => Types.ContactsContactsType;
 
             public List<Contact> Contacts;
             public List<User> Users;
@@ -15343,7 +18951,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Contacts.Count);
                 foreach (Contact ContactsElement in Contacts)
@@ -15372,11 +18980,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ContactsContactsType Contacts:{0} Users:{1})", Contacts, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Contacts": return Contacts;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Contacts":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ContactsImportedContactsType : ContactsImportedContacts
         {
-            public override uint ConstructorCode => 0xad524315;
+            public override Types ConstructorCode => Types.ContactsImportedContactsType;
 
             public List<ImportedContact> Imported;
             public List<long> RetryContacts;
@@ -15393,7 +19025,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Imported.Count);
                 foreach (ImportedContact ImportedElement in Imported)
@@ -15431,11 +19063,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ContactsImportedContactsType Imported:{0} RetryContacts:{1} Users:{2})", Imported, RetryContacts, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Imported": return Imported;
+                        case "RetryContacts": return RetryContacts;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Imported":
+                    case "RetryContacts":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ContactsBlockedType : ContactsBlocked
         {
-            public override uint ConstructorCode => 0x1c138d15;
+            public override Types ConstructorCode => Types.ContactsBlockedType;
 
             public List<ContactBlocked> Blocked;
             public List<User> Users;
@@ -15450,7 +19108,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Blocked.Count);
                 foreach (ContactBlocked BlockedElement in Blocked)
@@ -15479,11 +19137,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ContactsBlockedType Blocked:{0} Users:{1})", Blocked, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Blocked": return Blocked;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Blocked":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ContactsBlockedSliceType : ContactsBlocked
         {
-            public override uint ConstructorCode => 0x900802a1;
+            public override Types ConstructorCode => Types.ContactsBlockedSliceType;
 
             public int Count;
             public List<ContactBlocked> Blocked;
@@ -15500,7 +19182,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Count);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Blocked.Count);
@@ -15531,11 +19213,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ContactsBlockedSliceType Count:{0} Blocked:{1} Users:{2})", Count, Blocked, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Count": return Count;
+                        case "Blocked": return Blocked;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Count":
+                    case "Blocked":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesDialogsType : MessagesDialogs
         {
-            public override uint ConstructorCode => 0x15ba6c40;
+            public override Types ConstructorCode => Types.MessagesDialogsType;
 
             public List<Dialog> Dialogs;
             public List<Message> Messages;
@@ -15554,7 +19262,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Dialogs.Count);
                 foreach (Dialog DialogsElement in Dialogs)
@@ -15601,11 +19309,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesDialogsType Dialogs:{0} Messages:{1} Chats:{2} Users:{3})", Dialogs, Messages, Chats, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Dialogs": return Dialogs;
+                        case "Messages": return Messages;
+                        case "Chats": return Chats;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Dialogs":
+                    case "Messages":
+                    case "Chats":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesDialogsSliceType : MessagesDialogs
         {
-            public override uint ConstructorCode => 0x71e094f3;
+            public override Types ConstructorCode => Types.MessagesDialogsSliceType;
 
             public int Count;
             public List<Dialog> Dialogs;
@@ -15626,7 +19362,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Count);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Dialogs.Count);
@@ -15675,11 +19411,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesDialogsSliceType Count:{0} Dialogs:{1} Messages:{2} Chats:{3} Users:{4})", Count, Dialogs, Messages, Chats, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Count": return Count;
+                        case "Dialogs": return Dialogs;
+                        case "Messages": return Messages;
+                        case "Chats": return Chats;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Count":
+                    case "Dialogs":
+                    case "Messages":
+                    case "Chats":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesMessagesType : MessagesMessages
         {
-            public override uint ConstructorCode => 0x8c718e87;
+            public override Types ConstructorCode => Types.MessagesMessagesType;
 
             public List<Message> Messages;
             public List<Chat> Chats;
@@ -15696,7 +19462,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Messages.Count);
                 foreach (Message MessagesElement in Messages)
@@ -15734,11 +19500,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesMessagesType Messages:{0} Chats:{1} Users:{2})", Messages, Chats, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Messages": return Messages;
+                        case "Chats": return Chats;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Messages":
+                    case "Chats":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesMessagesSliceType : MessagesMessages
         {
-            public override uint ConstructorCode => 0x0b446ae3;
+            public override Types ConstructorCode => Types.MessagesMessagesSliceType;
 
             public int Count;
             public List<Message> Messages;
@@ -15757,7 +19549,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Count);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Messages.Count);
@@ -15797,11 +19589,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesMessagesSliceType Count:{0} Messages:{1} Chats:{2} Users:{3})", Count, Messages, Chats, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Count": return Count;
+                        case "Messages": return Messages;
+                        case "Chats": return Chats;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Count":
+                    case "Messages":
+                    case "Chats":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesChannelMessagesType : MessagesMessages
         {
-            public override uint ConstructorCode => 0xbc0f17bc;
+            public override Types ConstructorCode => Types.MessagesChannelMessagesType;
 
             public int Pts;
             public int Count;
@@ -15836,7 +19656,7 @@ namespace TeleTurk.Core.MTProto
                 int flags =
                     (Collapsed != null ? 1 << 0 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 writer.Write(Pts);
@@ -15896,11 +19716,43 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesChannelMessagesType Pts:{0} Count:{1} Messages:{2} Collapsed:{3} Chats:{4} Users:{5})", Pts, Count, Messages, Collapsed, Chats, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Pts": return Pts;
+                        case "Count": return Count;
+                        case "Messages": return Messages;
+                        case "Collapsed": return Collapsed;
+                        case "Chats": return Chats;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Pts":
+                    case "Count":
+                    case "Messages":
+                    case "Collapsed":
+                    case "Chats":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesChatsType : MessagesChats
         {
-            public override uint ConstructorCode => 0x64ff9fd5;
+            public override Types ConstructorCode => Types.MessagesChatsType;
 
             public List<Chat> Chats;
 
@@ -15913,7 +19765,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Chats.Count);
                 foreach (Chat ChatsElement in Chats)
@@ -15933,11 +19785,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesChatsType Chats:{0})", Chats);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Chats": return Chats;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Chats":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesChatFullType : MessagesChatFull
         {
-            public override uint ConstructorCode => 0xe5d7d19c;
+            public override Types ConstructorCode => Types.MessagesChatFullType;
 
             public ChatFull FullChat;
             public List<Chat> Chats;
@@ -15954,7 +19828,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 FullChat.Write(writer);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Chats.Count);
@@ -15985,11 +19859,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesChatFullType FullChat:{0} Chats:{1} Users:{2})", FullChat, Chats, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "FullChat": return FullChat;
+                        case "Chats": return Chats;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "FullChat":
+                    case "Chats":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesAffectedHistoryType : MessagesAffectedHistory
         {
-            public override uint ConstructorCode => 0xb45c69d1;
+            public override Types ConstructorCode => Types.MessagesAffectedHistoryType;
 
             public int Pts;
             public int PtsCount;
@@ -16006,7 +19906,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Pts);
                 writer.Write(PtsCount);
                 writer.Write(Offset);
@@ -16023,17 +19923,43 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesAffectedHistoryType Pts:{0} PtsCount:{1} Offset:{2})", Pts, PtsCount, Offset);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Pts": return Pts;
+                        case "PtsCount": return PtsCount;
+                        case "Offset": return Offset;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Pts":
+                    case "PtsCount":
+                    case "Offset":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputMessagesFilterEmptyType : MessagesFilter
         {
-            public override uint ConstructorCode => 0x57e2f66c;
+            public override Types ConstructorCode => Types.InputMessagesFilterEmptyType;
 
             public InputMessagesFilterEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -16044,17 +19970,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputMessagesFilterEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputMessagesFilterPhotosType : MessagesFilter
         {
-            public override uint ConstructorCode => 0x9609a51c;
+            public override Types ConstructorCode => Types.InputMessagesFilterPhotosType;
 
             public InputMessagesFilterPhotosType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -16065,17 +20004,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputMessagesFilterPhotosType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputMessagesFilterVideoType : MessagesFilter
         {
-            public override uint ConstructorCode => 0x9fc00e65;
+            public override Types ConstructorCode => Types.InputMessagesFilterVideoType;
 
             public InputMessagesFilterVideoType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -16086,17 +20038,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputMessagesFilterVideoType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputMessagesFilterPhotoVideoType : MessagesFilter
         {
-            public override uint ConstructorCode => 0x56e9f0e4;
+            public override Types ConstructorCode => Types.InputMessagesFilterPhotoVideoType;
 
             public InputMessagesFilterPhotoVideoType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -16107,17 +20072,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputMessagesFilterPhotoVideoType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputMessagesFilterPhotoVideoDocumentsType : MessagesFilter
         {
-            public override uint ConstructorCode => 0xd95e73bb;
+            public override Types ConstructorCode => Types.InputMessagesFilterPhotoVideoDocumentsType;
 
             public InputMessagesFilterPhotoVideoDocumentsType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -16128,17 +20106,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputMessagesFilterPhotoVideoDocumentsType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputMessagesFilterDocumentType : MessagesFilter
         {
-            public override uint ConstructorCode => 0x9eddf188;
+            public override Types ConstructorCode => Types.InputMessagesFilterDocumentType;
 
             public InputMessagesFilterDocumentType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -16149,17 +20140,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputMessagesFilterDocumentType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputMessagesFilterUrlType : MessagesFilter
         {
-            public override uint ConstructorCode => 0x7ef0dd87;
+            public override Types ConstructorCode => Types.InputMessagesFilterUrlType;
 
             public InputMessagesFilterUrlType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -16170,17 +20174,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputMessagesFilterUrlType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputMessagesFilterGifType : MessagesFilter
         {
-            public override uint ConstructorCode => 0xffc86587;
+            public override Types ConstructorCode => Types.InputMessagesFilterGifType;
 
             public InputMessagesFilterGifType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -16191,17 +20208,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputMessagesFilterGifType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputMessagesFilterVoiceType : MessagesFilter
         {
-            public override uint ConstructorCode => 0x50f5c392;
+            public override Types ConstructorCode => Types.InputMessagesFilterVoiceType;
 
             public InputMessagesFilterVoiceType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -16212,17 +20242,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputMessagesFilterVoiceType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputMessagesFilterMusicType : MessagesFilter
         {
-            public override uint ConstructorCode => 0x3751b49e;
+            public override Types ConstructorCode => Types.InputMessagesFilterMusicType;
 
             public InputMessagesFilterMusicType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -16233,11 +20276,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputMessagesFilterMusicType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class UpdateNewMessageType : Update
         {
-            public override uint ConstructorCode => 0x1f2b0afd;
+            public override Types ConstructorCode => Types.UpdateNewMessageType;
 
             public Message Message;
             public int Pts;
@@ -16254,7 +20310,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Message.Write(writer);
                 writer.Write(Pts);
                 writer.Write(PtsCount);
@@ -16271,11 +20327,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateNewMessageType Message:{0} Pts:{1} PtsCount:{2})", Message, Pts, PtsCount);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Message": return Message;
+                        case "Pts": return Pts;
+                        case "PtsCount": return PtsCount;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Message":
+                    case "Pts":
+                    case "PtsCount":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateMessageIDType : Update
         {
-            public override uint ConstructorCode => 0x4e90bfd6;
+            public override Types ConstructorCode => Types.UpdateMessageIDType;
 
             public int Id;
             public long RandomId;
@@ -16290,7 +20372,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(RandomId);
             }
@@ -16305,11 +20387,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateMessageIDType Id:{0} RandomId:{1})", Id, RandomId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "RandomId": return RandomId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "RandomId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateDeleteMessagesType : Update
         {
-            public override uint ConstructorCode => 0xa20db0e5;
+            public override Types ConstructorCode => Types.UpdateDeleteMessagesType;
 
             public List<int> Messages;
             public int Pts;
@@ -16326,7 +20432,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Messages.Count);
                 foreach (int MessagesElement in Messages)
@@ -16350,11 +20456,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateDeleteMessagesType Messages:{0} Pts:{1} PtsCount:{2})", Messages, Pts, PtsCount);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Messages": return Messages;
+                        case "Pts": return Pts;
+                        case "PtsCount": return PtsCount;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Messages":
+                    case "Pts":
+                    case "PtsCount":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateUserTypingType : Update
         {
-            public override uint ConstructorCode => 0x5c486927;
+            public override Types ConstructorCode => Types.UpdateUserTypingType;
 
             public int UserId;
             public SendMessageAction Action;
@@ -16369,7 +20501,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 Action.Write(writer);
             }
@@ -16384,11 +20516,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateUserTypingType UserId:{0} Action:{1})", UserId, Action);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "Action": return Action;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "Action":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateChatUserTypingType : Update
         {
-            public override uint ConstructorCode => 0x9a65ea1f;
+            public override Types ConstructorCode => Types.UpdateChatUserTypingType;
 
             public int ChatId;
             public int UserId;
@@ -16405,7 +20561,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
                 writer.Write(UserId);
                 Action.Write(writer);
@@ -16422,11 +20578,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateChatUserTypingType ChatId:{0} UserId:{1} Action:{2})", ChatId, UserId, Action);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChatId": return ChatId;
+                        case "UserId": return UserId;
+                        case "Action": return Action;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChatId":
+                    case "UserId":
+                    case "Action":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateChatParticipantsType : Update
         {
-            public override uint ConstructorCode => 0x07761198;
+            public override Types ConstructorCode => Types.UpdateChatParticipantsType;
 
             public ChatParticipants Participants;
 
@@ -16439,7 +20621,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Participants.Write(writer);
             }
 
@@ -16452,11 +20634,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateChatParticipantsType Participants:{0})", Participants);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Participants": return Participants;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Participants":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateUserStatusType : Update
         {
-            public override uint ConstructorCode => 0x1bfbd823;
+            public override Types ConstructorCode => Types.UpdateUserStatusType;
 
             public int UserId;
             public UserStatus Status;
@@ -16471,7 +20675,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 Status.Write(writer);
             }
@@ -16486,11 +20690,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateUserStatusType UserId:{0} Status:{1})", UserId, Status);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "Status": return Status;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "Status":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateUserNameType : Update
         {
-            public override uint ConstructorCode => 0xa7332b73;
+            public override Types ConstructorCode => Types.UpdateUserNameType;
 
             public int UserId;
             public string FirstName;
@@ -16509,7 +20737,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(FirstName);
                 writer.Write(LastName);
@@ -16528,11 +20756,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateUserNameType UserId:{0} FirstName:{1} LastName:{2} Username:{3})", UserId, FirstName, LastName, Username);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "FirstName": return FirstName;
+                        case "LastName": return LastName;
+                        case "Username": return Username;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "FirstName":
+                    case "LastName":
+                    case "Username":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateUserPhotoType : Update
         {
-            public override uint ConstructorCode => 0x95313b0c;
+            public override Types ConstructorCode => Types.UpdateUserPhotoType;
 
             public int UserId;
             public int Date;
@@ -16551,7 +20807,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(Date);
                 Photo.Write(writer);
@@ -16570,11 +20826,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateUserPhotoType UserId:{0} Date:{1} Photo:{2} Previous:{3})", UserId, Date, Photo, Previous);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "Date": return Date;
+                        case "Photo": return Photo;
+                        case "Previous": return Previous;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "Date":
+                    case "Photo":
+                    case "Previous":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateContactRegisteredType : Update
         {
-            public override uint ConstructorCode => 0x2575bbb9;
+            public override Types ConstructorCode => Types.UpdateContactRegisteredType;
 
             public int UserId;
             public int Date;
@@ -16589,7 +20873,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(Date);
             }
@@ -16604,11 +20888,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateContactRegisteredType UserId:{0} Date:{1})", UserId, Date);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "Date": return Date;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "Date":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateContactLinkType : Update
         {
-            public override uint ConstructorCode => 0x9d2e67c5;
+            public override Types ConstructorCode => Types.UpdateContactLinkType;
 
             public int UserId;
             public ContactLink MyLink;
@@ -16625,7 +20933,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 MyLink.Write(writer);
                 ForeignLink.Write(writer);
@@ -16642,11 +20950,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateContactLinkType UserId:{0} MyLink:{1} ForeignLink:{2})", UserId, MyLink, ForeignLink);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "MyLink": return MyLink;
+                        case "ForeignLink": return ForeignLink;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "MyLink":
+                    case "ForeignLink":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateNewAuthorizationType : Update
         {
-            public override uint ConstructorCode => 0x8f06529a;
+            public override Types ConstructorCode => Types.UpdateNewAuthorizationType;
 
             public long AuthKeyId;
             public int Date;
@@ -16665,7 +20999,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(AuthKeyId);
                 writer.Write(Date);
                 writer.Write(Device);
@@ -16684,11 +21018,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateNewAuthorizationType AuthKeyId:{0} Date:{1} Device:{2} Location:{3})", AuthKeyId, Date, Device, Location);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "AuthKeyId": return AuthKeyId;
+                        case "Date": return Date;
+                        case "Device": return Device;
+                        case "Location": return Location;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "AuthKeyId":
+                    case "Date":
+                    case "Device":
+                    case "Location":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateNewEncryptedMessageType : Update
         {
-            public override uint ConstructorCode => 0x12bcbd9a;
+            public override Types ConstructorCode => Types.UpdateNewEncryptedMessageType;
 
             public EncryptedMessage Message;
             public int Qts;
@@ -16703,7 +21065,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Message.Write(writer);
                 writer.Write(Qts);
             }
@@ -16718,11 +21080,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateNewEncryptedMessageType Message:{0} Qts:{1})", Message, Qts);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Message": return Message;
+                        case "Qts": return Qts;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Message":
+                    case "Qts":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateEncryptedChatTypingType : Update
         {
-            public override uint ConstructorCode => 0x1710f156;
+            public override Types ConstructorCode => Types.UpdateEncryptedChatTypingType;
 
             public int ChatId;
 
@@ -16735,7 +21121,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
             }
 
@@ -16748,11 +21134,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateEncryptedChatTypingType ChatId:{0})", ChatId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChatId": return ChatId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChatId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateEncryptionType : Update
         {
-            public override uint ConstructorCode => 0xb4a2e88d;
+            public override Types ConstructorCode => Types.UpdateEncryptionType;
 
             public EncryptedChat Chat;
             public int Date;
@@ -16767,7 +21175,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Chat.Write(writer);
                 writer.Write(Date);
             }
@@ -16782,11 +21190,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateEncryptionType Chat:{0} Date:{1})", Chat, Date);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Chat": return Chat;
+                        case "Date": return Date;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Chat":
+                    case "Date":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateEncryptedMessagesReadType : Update
         {
-            public override uint ConstructorCode => 0x38fe25b7;
+            public override Types ConstructorCode => Types.UpdateEncryptedMessagesReadType;
 
             public int ChatId;
             public int MaxDate;
@@ -16803,7 +21235,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
                 writer.Write(MaxDate);
                 writer.Write(Date);
@@ -16820,11 +21252,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateEncryptedMessagesReadType ChatId:{0} MaxDate:{1} Date:{2})", ChatId, MaxDate, Date);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChatId": return ChatId;
+                        case "MaxDate": return MaxDate;
+                        case "Date": return Date;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChatId":
+                    case "MaxDate":
+                    case "Date":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateChatParticipantAddType : Update
         {
-            public override uint ConstructorCode => 0xea4b0e5c;
+            public override Types ConstructorCode => Types.UpdateChatParticipantAddType;
 
             public int ChatId;
             public int UserId;
@@ -16845,7 +21303,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
                 writer.Write(UserId);
                 writer.Write(InviterId);
@@ -16866,11 +21324,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateChatParticipantAddType ChatId:{0} UserId:{1} InviterId:{2} Date:{3} Version:{4})", ChatId, UserId, InviterId, Date, Version);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChatId": return ChatId;
+                        case "UserId": return UserId;
+                        case "InviterId": return InviterId;
+                        case "Date": return Date;
+                        case "Version": return Version;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChatId":
+                    case "UserId":
+                    case "InviterId":
+                    case "Date":
+                    case "Version":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateChatParticipantDeleteType : Update
         {
-            public override uint ConstructorCode => 0x6e5f8c22;
+            public override Types ConstructorCode => Types.UpdateChatParticipantDeleteType;
 
             public int ChatId;
             public int UserId;
@@ -16887,7 +21375,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
                 writer.Write(UserId);
                 writer.Write(Version);
@@ -16904,11 +21392,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateChatParticipantDeleteType ChatId:{0} UserId:{1} Version:{2})", ChatId, UserId, Version);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChatId": return ChatId;
+                        case "UserId": return UserId;
+                        case "Version": return Version;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChatId":
+                    case "UserId":
+                    case "Version":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateDcOptionsType : Update
         {
-            public override uint ConstructorCode => 0x8e5e9873;
+            public override Types ConstructorCode => Types.UpdateDcOptionsType;
 
             public List<DcOption> DcOptions;
 
@@ -16921,7 +21435,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(DcOptions.Count);
                 foreach (DcOption DcOptionsElement in DcOptions)
@@ -16941,11 +21455,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateDcOptionsType DcOptions:{0})", DcOptions);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "DcOptions": return DcOptions;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "DcOptions":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateUserBlockedType : Update
         {
-            public override uint ConstructorCode => 0x80ece81a;
+            public override Types ConstructorCode => Types.UpdateUserBlockedType;
 
             public int UserId;
             public bool Blocked;
@@ -16960,7 +21496,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(Blocked);
             }
@@ -16975,11 +21511,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateUserBlockedType UserId:{0} Blocked:{1})", UserId, Blocked);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "Blocked": return Blocked;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "Blocked":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateNotifySettingsType : Update
         {
-            public override uint ConstructorCode => 0xbec268ef;
+            public override Types ConstructorCode => Types.UpdateNotifySettingsType;
 
             public NotifyPeer Peer;
             public PeerNotifySettings NotifySettings;
@@ -16994,7 +21554,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 NotifySettings.Write(writer);
             }
@@ -17009,11 +21569,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateNotifySettingsType Peer:{0} NotifySettings:{1})", Peer, NotifySettings);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Peer": return Peer;
+                        case "NotifySettings": return NotifySettings;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Peer":
+                    case "NotifySettings":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateServiceNotificationType : Update
         {
-            public override uint ConstructorCode => 0x382dd3e4;
+            public override Types ConstructorCode => Types.UpdateServiceNotificationType;
 
             public string Type;
             public string Message;
@@ -17032,7 +21616,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Type);
                 writer.Write(Message);
                 Media.Write(writer);
@@ -17051,11 +21635,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateServiceNotificationType Type:{0} Message:{1} Media:{2} Popup:{3})", Type, Message, Media, Popup);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Type": return Type;
+                        case "Message": return Message;
+                        case "Media": return Media;
+                        case "Popup": return Popup;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Type":
+                    case "Message":
+                    case "Media":
+                    case "Popup":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdatePrivacyType : Update
         {
-            public override uint ConstructorCode => 0xee3b272a;
+            public override Types ConstructorCode => Types.UpdatePrivacyType;
 
             public PrivacyKey Key;
             public List<PrivacyRule> Rules;
@@ -17070,7 +21682,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Key.Write(writer);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Rules.Count);
@@ -17092,11 +21704,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdatePrivacyType Key:{0} Rules:{1})", Key, Rules);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Key": return Key;
+                        case "Rules": return Rules;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Key":
+                    case "Rules":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateUserPhoneType : Update
         {
-            public override uint ConstructorCode => 0x12b9417b;
+            public override Types ConstructorCode => Types.UpdateUserPhoneType;
 
             public int UserId;
             public string Phone;
@@ -17111,7 +21747,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(Phone);
             }
@@ -17126,11 +21762,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateUserPhoneType UserId:{0} Phone:{1})", UserId, Phone);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "Phone": return Phone;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "Phone":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateReadHistoryInboxType : Update
         {
-            public override uint ConstructorCode => 0x9961fd5c;
+            public override Types ConstructorCode => Types.UpdateReadHistoryInboxType;
 
             public Peer Peer;
             public int MaxId;
@@ -17149,7 +21809,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 writer.Write(MaxId);
                 writer.Write(Pts);
@@ -17168,11 +21828,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateReadHistoryInboxType Peer:{0} MaxId:{1} Pts:{2} PtsCount:{3})", Peer, MaxId, Pts, PtsCount);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Peer": return Peer;
+                        case "MaxId": return MaxId;
+                        case "Pts": return Pts;
+                        case "PtsCount": return PtsCount;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Peer":
+                    case "MaxId":
+                    case "Pts":
+                    case "PtsCount":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateReadHistoryOutboxType : Update
         {
-            public override uint ConstructorCode => 0x2f2f21bf;
+            public override Types ConstructorCode => Types.UpdateReadHistoryOutboxType;
 
             public Peer Peer;
             public int MaxId;
@@ -17191,7 +21879,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 writer.Write(MaxId);
                 writer.Write(Pts);
@@ -17210,11 +21898,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateReadHistoryOutboxType Peer:{0} MaxId:{1} Pts:{2} PtsCount:{3})", Peer, MaxId, Pts, PtsCount);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Peer": return Peer;
+                        case "MaxId": return MaxId;
+                        case "Pts": return Pts;
+                        case "PtsCount": return PtsCount;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Peer":
+                    case "MaxId":
+                    case "Pts":
+                    case "PtsCount":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateWebPageType : Update
         {
-            public override uint ConstructorCode => 0x7f891213;
+            public override Types ConstructorCode => Types.UpdateWebPageType;
 
             public WebPage Webpage;
             public int Pts;
@@ -17231,7 +21947,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Webpage.Write(writer);
                 writer.Write(Pts);
                 writer.Write(PtsCount);
@@ -17248,11 +21964,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateWebPageType Webpage:{0} Pts:{1} PtsCount:{2})", Webpage, Pts, PtsCount);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Webpage": return Webpage;
+                        case "Pts": return Pts;
+                        case "PtsCount": return PtsCount;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Webpage":
+                    case "Pts":
+                    case "PtsCount":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateReadMessagesContentsType : Update
         {
-            public override uint ConstructorCode => 0x68c13933;
+            public override Types ConstructorCode => Types.UpdateReadMessagesContentsType;
 
             public List<int> Messages;
             public int Pts;
@@ -17269,7 +22011,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Messages.Count);
                 foreach (int MessagesElement in Messages)
@@ -17293,11 +22035,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateReadMessagesContentsType Messages:{0} Pts:{1} PtsCount:{2})", Messages, Pts, PtsCount);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Messages": return Messages;
+                        case "Pts": return Pts;
+                        case "PtsCount": return PtsCount;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Messages":
+                    case "Pts":
+                    case "PtsCount":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateChannelTooLongType : Update
         {
-            public override uint ConstructorCode => 0xeb0467fb;
+            public override Types ConstructorCode => Types.UpdateChannelTooLongType;
 
             public int ChannelId;
             public int? Pts;
@@ -17320,7 +22088,7 @@ namespace TeleTurk.Core.MTProto
                 int flags =
                     (Pts != null ? 1 << 0 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 writer.Write(ChannelId);
@@ -17344,11 +22112,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateChannelTooLongType ChannelId:{0} Pts:{1})", ChannelId, Pts);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChannelId": return ChannelId;
+                        case "Pts": return Pts;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChannelId":
+                    case "Pts":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateChannelType : Update
         {
-            public override uint ConstructorCode => 0xb6d45656;
+            public override Types ConstructorCode => Types.UpdateChannelType;
 
             public int ChannelId;
 
@@ -17361,7 +22153,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChannelId);
             }
 
@@ -17374,11 +22166,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateChannelType ChannelId:{0})", ChannelId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChannelId": return ChannelId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChannelId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateChannelGroupType : Update
         {
-            public override uint ConstructorCode => 0xc36c1e3c;
+            public override Types ConstructorCode => Types.UpdateChannelGroupType;
 
             public int ChannelId;
             public MessageGroup Group;
@@ -17393,7 +22207,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChannelId);
                 Group.Write(writer);
             }
@@ -17408,11 +22222,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateChannelGroupType ChannelId:{0} Group:{1})", ChannelId, Group);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChannelId": return ChannelId;
+                        case "Group": return Group;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChannelId":
+                    case "Group":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateNewChannelMessageType : Update
         {
-            public override uint ConstructorCode => 0x62ba04d9;
+            public override Types ConstructorCode => Types.UpdateNewChannelMessageType;
 
             public Message Message;
             public int Pts;
@@ -17429,7 +22267,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Message.Write(writer);
                 writer.Write(Pts);
                 writer.Write(PtsCount);
@@ -17446,11 +22284,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateNewChannelMessageType Message:{0} Pts:{1} PtsCount:{2})", Message, Pts, PtsCount);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Message": return Message;
+                        case "Pts": return Pts;
+                        case "PtsCount": return PtsCount;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Message":
+                    case "Pts":
+                    case "PtsCount":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateReadChannelInboxType : Update
         {
-            public override uint ConstructorCode => 0x4214f37f;
+            public override Types ConstructorCode => Types.UpdateReadChannelInboxType;
 
             public int ChannelId;
             public int MaxId;
@@ -17465,7 +22329,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChannelId);
                 writer.Write(MaxId);
             }
@@ -17480,11 +22344,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateReadChannelInboxType ChannelId:{0} MaxId:{1})", ChannelId, MaxId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChannelId": return ChannelId;
+                        case "MaxId": return MaxId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChannelId":
+                    case "MaxId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateDeleteChannelMessagesType : Update
         {
-            public override uint ConstructorCode => 0xc37521c9;
+            public override Types ConstructorCode => Types.UpdateDeleteChannelMessagesType;
 
             public int ChannelId;
             public List<int> Messages;
@@ -17503,7 +22391,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChannelId);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Messages.Count);
@@ -17529,11 +22417,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateDeleteChannelMessagesType ChannelId:{0} Messages:{1} Pts:{2} PtsCount:{3})", ChannelId, Messages, Pts, PtsCount);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChannelId": return ChannelId;
+                        case "Messages": return Messages;
+                        case "Pts": return Pts;
+                        case "PtsCount": return PtsCount;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChannelId":
+                    case "Messages":
+                    case "Pts":
+                    case "PtsCount":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateChannelMessageViewsType : Update
         {
-            public override uint ConstructorCode => 0x98a12b4b;
+            public override Types ConstructorCode => Types.UpdateChannelMessageViewsType;
 
             public int ChannelId;
             public int Id;
@@ -17550,7 +22466,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChannelId);
                 writer.Write(Id);
                 writer.Write(Views);
@@ -17567,11 +22483,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateChannelMessageViewsType ChannelId:{0} Id:{1} Views:{2})", ChannelId, Id, Views);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChannelId": return ChannelId;
+                        case "Id": return Id;
+                        case "Views": return Views;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChannelId":
+                    case "Id":
+                    case "Views":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateChatAdminsType : Update
         {
-            public override uint ConstructorCode => 0x6e947941;
+            public override Types ConstructorCode => Types.UpdateChatAdminsType;
 
             public int ChatId;
             public bool Enabled;
@@ -17588,7 +22530,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
                 writer.Write(Enabled);
                 writer.Write(Version);
@@ -17605,11 +22547,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateChatAdminsType ChatId:{0} Enabled:{1} Version:{2})", ChatId, Enabled, Version);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChatId": return ChatId;
+                        case "Enabled": return Enabled;
+                        case "Version": return Version;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChatId":
+                    case "Enabled":
+                    case "Version":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateChatParticipantAdminType : Update
         {
-            public override uint ConstructorCode => 0xb6901959;
+            public override Types ConstructorCode => Types.UpdateChatParticipantAdminType;
 
             public int ChatId;
             public int UserId;
@@ -17628,7 +22596,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
                 writer.Write(UserId);
                 writer.Write(IsAdmin);
@@ -17647,11 +22615,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateChatParticipantAdminType ChatId:{0} UserId:{1} IsAdmin:{2} Version:{3})", ChatId, UserId, IsAdmin, Version);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChatId": return ChatId;
+                        case "UserId": return UserId;
+                        case "IsAdmin": return IsAdmin;
+                        case "Version": return Version;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChatId":
+                    case "UserId":
+                    case "IsAdmin":
+                    case "Version":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateNewStickerSetType : Update
         {
-            public override uint ConstructorCode => 0x688a30aa;
+            public override Types ConstructorCode => Types.UpdateNewStickerSetType;
 
             public MessagesStickerSet Stickerset;
 
@@ -17664,7 +22660,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Stickerset.Write(writer);
             }
 
@@ -17677,11 +22673,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateNewStickerSetType Stickerset:{0})", Stickerset);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Stickerset": return Stickerset;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Stickerset":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateStickerSetsOrderType : Update
         {
-            public override uint ConstructorCode => 0xf0dfb451;
+            public override Types ConstructorCode => Types.UpdateStickerSetsOrderType;
 
             public List<long> Order;
 
@@ -17694,7 +22712,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Order.Count);
                 foreach (long OrderElement in Order)
@@ -17714,17 +22732,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateStickerSetsOrderType Order:{0})", Order);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Order": return Order;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Order":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateStickerSetsType : Update
         {
-            public override uint ConstructorCode => 0x43ae3dec;
+            public override Types ConstructorCode => Types.UpdateStickerSetsType;
 
             public UpdateStickerSetsType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -17735,17 +22775,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(UpdateStickerSetsType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class UpdateSavedGifsType : Update
         {
-            public override uint ConstructorCode => 0x9375341e;
+            public override Types ConstructorCode => Types.UpdateSavedGifsType;
 
             public UpdateSavedGifsType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -17756,150 +22809,158 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(UpdateSavedGifsType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class UpdateBotInlineQueryType : Update
         {
-            public override uint ConstructorCode => 0x54826690;
+            public override Types ConstructorCode => Types.UpdateBotInlineQueryType;
 
             public long QueryId;
             public int UserId;
             public string Query;
-            public GeoPoint Geo;
             public string Offset;
 
             public UpdateBotInlineQueryType() { }
 
-            /// <summary>
-            /// The following arguments can be null: Geo
-            /// </summary>
-            /// <param name="QueryId">Can NOT be null</param>
-            /// <param name="UserId">Can NOT be null</param>
-            /// <param name="Query">Can NOT be null</param>
-            /// <param name="Geo">Can be null</param>
-            /// <param name="Offset">Can NOT be null</param>
-            public UpdateBotInlineQueryType(long QueryId, int UserId, string Query, GeoPoint Geo, string Offset)
+            public UpdateBotInlineQueryType(long QueryId, int UserId, string Query, string Offset)
             {
                 this.QueryId = QueryId;
                 this.UserId = UserId;
                 this.Query = Query;
-                this.Geo = Geo;
                 this.Offset = Offset;
             }
 
             public override void Write(TBinaryWriter writer)
             {
-                int flags =
-                    (Geo != null ? 1 << 0 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
+                writer.Write((uint)ConstructorCode);
                 writer.Write(QueryId);
                 writer.Write(UserId);
                 writer.Write(Query);
-                if (Geo != null) {
-                    Geo.Write(writer);
-                }
-
                 writer.Write(Offset);
             }
 
             public override void Read(TBinaryReader reader)
             {
-                int flags = reader.ReadInt32();
                 QueryId = reader.ReadInt64();
                 UserId = reader.ReadInt32();
                 Query = reader.ReadString();
-                if ((flags & (1 << 0)) != 0) {
-                    Geo = reader.Read<GeoPoint>();
-                }
-
                 Offset = reader.ReadString();
             }
 
             public override string ToString()
             {
-                return string.Format("(UpdateBotInlineQueryType QueryId:{0} UserId:{1} Query:{2} Geo:{3} Offset:{4})", QueryId, UserId, Query, Geo, Offset);
+                return string.Format("(UpdateBotInlineQueryType QueryId:{0} UserId:{1} Query:{2} Offset:{3})", QueryId, UserId, Query, Offset);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "QueryId": return QueryId;
+                        case "UserId": return UserId;
+                        case "Query": return Query;
+                        case "Offset": return Offset;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "QueryId":
+                    case "UserId":
+                    case "Query":
+                    case "Offset":
+                        return true;
+                    default: return false;
+                }
             }
         }
 
         public class UpdateBotInlineSendType : Update
         {
-            public override uint ConstructorCode => 0x0e48f964;
+            public override Types ConstructorCode => Types.UpdateBotInlineSendType;
 
             public int UserId;
             public string Query;
-            public GeoPoint Geo;
             public string Id;
-            public InputBotInlineMessageID MsgId;
 
             public UpdateBotInlineSendType() { }
 
-            /// <summary>
-            /// The following arguments can be null: Geo, MsgId
-            /// </summary>
-            /// <param name="UserId">Can NOT be null</param>
-            /// <param name="Query">Can NOT be null</param>
-            /// <param name="Geo">Can be null</param>
-            /// <param name="Id">Can NOT be null</param>
-            /// <param name="MsgId">Can be null</param>
-            public UpdateBotInlineSendType(int UserId, string Query, GeoPoint Geo, string Id, InputBotInlineMessageID MsgId)
+            public UpdateBotInlineSendType(int UserId, string Query, string Id)
             {
                 this.UserId = UserId;
                 this.Query = Query;
-                this.Geo = Geo;
                 this.Id = Id;
-                this.MsgId = MsgId;
             }
 
             public override void Write(TBinaryWriter writer)
             {
-                int flags =
-                    (Geo != null ? 1 << 0 : 0) |
-                    (MsgId != null ? 1 << 1 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(Query);
-                if (Geo != null) {
-                    Geo.Write(writer);
-                }
-
                 writer.Write(Id);
-                if (MsgId != null) {
-                    MsgId.Write(writer);
-                }
-
             }
 
             public override void Read(TBinaryReader reader)
             {
-                int flags = reader.ReadInt32();
                 UserId = reader.ReadInt32();
                 Query = reader.ReadString();
-                if ((flags & (1 << 0)) != 0) {
-                    Geo = reader.Read<GeoPoint>();
-                }
-
                 Id = reader.ReadString();
-                if ((flags & (1 << 1)) != 0) {
-                    MsgId = reader.Read<InputBotInlineMessageID>();
-                }
-
             }
 
             public override string ToString()
             {
-                return string.Format("(UpdateBotInlineSendType UserId:{0} Query:{1} Geo:{2} Id:{3} MsgId:{4})", UserId, Query, Geo, Id, MsgId);
+                return string.Format("(UpdateBotInlineSendType UserId:{0} Query:{1} Id:{2})", UserId, Query, Id);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "Query": return Query;
+                        case "Id": return Id;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "Query":
+                    case "Id":
+                        return true;
+                    default: return false;
+                }
             }
         }
 
         public class UpdateEditChannelMessageType : Update
         {
-            public override uint ConstructorCode => 0x1b3f4df7;
+            public override Types ConstructorCode => Types.UpdateEditChannelMessageType;
 
             public Message Message;
             public int Pts;
@@ -17916,7 +22977,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Message.Write(writer);
                 writer.Write(Pts);
                 writer.Write(PtsCount);
@@ -17933,11 +22994,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateEditChannelMessageType Message:{0} Pts:{1} PtsCount:{2})", Message, Pts, PtsCount);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Message": return Message;
+                        case "Pts": return Pts;
+                        case "PtsCount": return PtsCount;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Message":
+                    case "Pts":
+                    case "PtsCount":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateChannelPinnedMessageType : Update
         {
-            public override uint ConstructorCode => 0x98592475;
+            public override Types ConstructorCode => Types.UpdateChannelPinnedMessageType;
 
             public int ChannelId;
             public int Id;
@@ -17952,7 +23039,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChannelId);
                 writer.Write(Id);
             }
@@ -17967,137 +23054,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateChannelPinnedMessageType ChannelId:{0} Id:{1})", ChannelId, Id);
             }
-        }
 
-        public class UpdateBotCallbackQueryType : Update
-        {
-            public override uint ConstructorCode => 0xa68c688c;
-
-            public long QueryId;
-            public int UserId;
-            public Peer Peer;
-            public int MsgId;
-            public byte[] Data;
-
-            public UpdateBotCallbackQueryType() { }
-
-            public UpdateBotCallbackQueryType(long QueryId, int UserId, Peer Peer, int MsgId, byte[] Data)
+            public override object this[string name]
             {
-                this.QueryId = QueryId;
-                this.UserId = UserId;
-                this.Peer = Peer;
-                this.MsgId = MsgId;
-                this.Data = Data;
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChannelId": return ChannelId;
+                        case "Id": return Id;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
             }
 
-            public override void Write(TBinaryWriter writer)
+            public override bool HasKey(string name)
             {
-                writer.Write(ConstructorCode);
-                writer.Write(QueryId);
-                writer.Write(UserId);
-                Peer.Write(writer);
-                writer.Write(MsgId);
-                writer.Write(Data);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                QueryId = reader.ReadInt64();
-                UserId = reader.ReadInt32();
-                Peer = reader.Read<Peer>();
-                MsgId = reader.ReadInt32();
-                Data = reader.ReadBytes();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(UpdateBotCallbackQueryType QueryId:{0} UserId:{1} Peer:{2} MsgId:{3} Data:{4})", QueryId, UserId, Peer, MsgId, Data);
-            }
-        }
-
-        public class UpdateEditMessageType : Update
-        {
-            public override uint ConstructorCode => 0xe40370a3;
-
-            public Message Message;
-            public int Pts;
-            public int PtsCount;
-
-            public UpdateEditMessageType() { }
-
-            public UpdateEditMessageType(Message Message, int Pts, int PtsCount)
-            {
-                this.Message = Message;
-                this.Pts = Pts;
-                this.PtsCount = PtsCount;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                Message.Write(writer);
-                writer.Write(Pts);
-                writer.Write(PtsCount);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Message = reader.Read<Message>();
-                Pts = reader.ReadInt32();
-                PtsCount = reader.ReadInt32();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(UpdateEditMessageType Message:{0} Pts:{1} PtsCount:{2})", Message, Pts, PtsCount);
-            }
-        }
-
-        public class UpdateInlineBotCallbackQueryType : Update
-        {
-            public override uint ConstructorCode => 0x2cbd95af;
-
-            public long QueryId;
-            public int UserId;
-            public InputBotInlineMessageID MsgId;
-            public byte[] Data;
-
-            public UpdateInlineBotCallbackQueryType() { }
-
-            public UpdateInlineBotCallbackQueryType(long QueryId, int UserId, InputBotInlineMessageID MsgId, byte[] Data)
-            {
-                this.QueryId = QueryId;
-                this.UserId = UserId;
-                this.MsgId = MsgId;
-                this.Data = Data;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                writer.Write(QueryId);
-                writer.Write(UserId);
-                MsgId.Write(writer);
-                writer.Write(Data);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                QueryId = reader.ReadInt64();
-                UserId = reader.ReadInt32();
-                MsgId = reader.Read<InputBotInlineMessageID>();
-                Data = reader.ReadBytes();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(UpdateInlineBotCallbackQueryType QueryId:{0} UserId:{1} MsgId:{2} Data:{3})", QueryId, UserId, MsgId, Data);
+                switch (name)
+                {
+                    case "ChannelId":
+                    case "Id":
+                        return true;
+                    default: return false;
+                }
             }
         }
 
         public class UpdatesStateType : UpdatesState
         {
-            public override uint ConstructorCode => 0xa56c2a3e;
+            public override Types ConstructorCode => Types.UpdatesStateType;
 
             public int Pts;
             public int Qts;
@@ -18118,7 +23103,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Pts);
                 writer.Write(Qts);
                 writer.Write(Date);
@@ -18139,11 +23124,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdatesStateType Pts:{0} Qts:{1} Date:{2} Seq:{3} UnreadCount:{4})", Pts, Qts, Date, Seq, UnreadCount);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Pts": return Pts;
+                        case "Qts": return Qts;
+                        case "Date": return Date;
+                        case "Seq": return Seq;
+                        case "UnreadCount": return UnreadCount;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Pts":
+                    case "Qts":
+                    case "Date":
+                    case "Seq":
+                    case "UnreadCount":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdatesDifferenceEmptyType : UpdatesDifference
         {
-            public override uint ConstructorCode => 0x5d75a138;
+            public override Types ConstructorCode => Types.UpdatesDifferenceEmptyType;
 
             public int Date;
             public int Seq;
@@ -18158,7 +23173,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Date);
                 writer.Write(Seq);
             }
@@ -18173,11 +23188,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdatesDifferenceEmptyType Date:{0} Seq:{1})", Date, Seq);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Date": return Date;
+                        case "Seq": return Seq;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Date":
+                    case "Seq":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdatesDifferenceType : UpdatesDifference
         {
-            public override uint ConstructorCode => 0x00f49ca0;
+            public override Types ConstructorCode => Types.UpdatesDifferenceType;
 
             public List<Message> NewMessages;
             public List<EncryptedMessage> NewEncryptedMessages;
@@ -18200,7 +23239,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(NewMessages.Count);
                 foreach (Message NewMessagesElement in NewMessages)
@@ -18258,11 +23297,43 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdatesDifferenceType NewMessages:{0} NewEncryptedMessages:{1} OtherUpdates:{2} Chats:{3} Users:{4} State:{5})", NewMessages, NewEncryptedMessages, OtherUpdates, Chats, Users, State);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "NewMessages": return NewMessages;
+                        case "NewEncryptedMessages": return NewEncryptedMessages;
+                        case "OtherUpdates": return OtherUpdates;
+                        case "Chats": return Chats;
+                        case "Users": return Users;
+                        case "State": return State;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "NewMessages":
+                    case "NewEncryptedMessages":
+                    case "OtherUpdates":
+                    case "Chats":
+                    case "Users":
+                    case "State":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdatesDifferenceSliceType : UpdatesDifference
         {
-            public override uint ConstructorCode => 0xa8fb1981;
+            public override Types ConstructorCode => Types.UpdatesDifferenceSliceType;
 
             public List<Message> NewMessages;
             public List<EncryptedMessage> NewEncryptedMessages;
@@ -18285,7 +23356,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(NewMessages.Count);
                 foreach (Message NewMessagesElement in NewMessages)
@@ -18343,17 +23414,49 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdatesDifferenceSliceType NewMessages:{0} NewEncryptedMessages:{1} OtherUpdates:{2} Chats:{3} Users:{4} IntermediateState:{5})", NewMessages, NewEncryptedMessages, OtherUpdates, Chats, Users, IntermediateState);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "NewMessages": return NewMessages;
+                        case "NewEncryptedMessages": return NewEncryptedMessages;
+                        case "OtherUpdates": return OtherUpdates;
+                        case "Chats": return Chats;
+                        case "Users": return Users;
+                        case "IntermediateState": return IntermediateState;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "NewMessages":
+                    case "NewEncryptedMessages":
+                    case "OtherUpdates":
+                    case "Chats":
+                    case "Users":
+                    case "IntermediateState":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdatesTooLongType : Updates
         {
-            public override uint ConstructorCode => 0xe317af7e;
+            public override Types ConstructorCode => Types.UpdatesTooLongType;
 
             public UpdatesTooLongType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -18364,11 +23467,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(UpdatesTooLongType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class UpdateShortMessageType : Updates
         {
-            public override uint ConstructorCode => 0x914fbf11;
+            public override Types ConstructorCode => Types.UpdateShortMessageType;
 
             public True Unread;
             public True Out;
@@ -18438,7 +23554,7 @@ namespace TeleTurk.Core.MTProto
                     (ReplyToMsgId != null ? 1 << 3 : 0) |
                     (Entities != null ? 1 << 7 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Unread != null) {
@@ -18543,11 +23659,61 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateShortMessageType Unread:{0} Out:{1} Mentioned:{2} MediaUnread:{3} Silent:{4} Id:{5} UserId:{6} Message:{7} Pts:{8} PtsCount:{9} Date:{10} FwdFrom:{11} ViaBotId:{12} ReplyToMsgId:{13} Entities:{14})", Unread, Out, Mentioned, MediaUnread, Silent, Id, UserId, Message, Pts, PtsCount, Date, FwdFrom, ViaBotId, ReplyToMsgId, Entities);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Unread": return Unread;
+                        case "Out": return Out;
+                        case "Mentioned": return Mentioned;
+                        case "MediaUnread": return MediaUnread;
+                        case "Silent": return Silent;
+                        case "Id": return Id;
+                        case "UserId": return UserId;
+                        case "Message": return Message;
+                        case "Pts": return Pts;
+                        case "PtsCount": return PtsCount;
+                        case "Date": return Date;
+                        case "FwdFrom": return FwdFrom;
+                        case "ViaBotId": return ViaBotId;
+                        case "ReplyToMsgId": return ReplyToMsgId;
+                        case "Entities": return Entities;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Unread":
+                    case "Out":
+                    case "Mentioned":
+                    case "MediaUnread":
+                    case "Silent":
+                    case "Id":
+                    case "UserId":
+                    case "Message":
+                    case "Pts":
+                    case "PtsCount":
+                    case "Date":
+                    case "FwdFrom":
+                    case "ViaBotId":
+                    case "ReplyToMsgId":
+                    case "Entities":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateShortChatMessageType : Updates
         {
-            public override uint ConstructorCode => 0x16812688;
+            public override Types ConstructorCode => Types.UpdateShortChatMessageType;
 
             public True Unread;
             public True Out;
@@ -18620,7 +23786,7 @@ namespace TeleTurk.Core.MTProto
                     (ReplyToMsgId != null ? 1 << 3 : 0) |
                     (Entities != null ? 1 << 7 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Unread != null) {
@@ -18727,11 +23893,63 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateShortChatMessageType Unread:{0} Out:{1} Mentioned:{2} MediaUnread:{3} Silent:{4} Id:{5} FromId:{6} ChatId:{7} Message:{8} Pts:{9} PtsCount:{10} Date:{11} FwdFrom:{12} ViaBotId:{13} ReplyToMsgId:{14} Entities:{15})", Unread, Out, Mentioned, MediaUnread, Silent, Id, FromId, ChatId, Message, Pts, PtsCount, Date, FwdFrom, ViaBotId, ReplyToMsgId, Entities);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Unread": return Unread;
+                        case "Out": return Out;
+                        case "Mentioned": return Mentioned;
+                        case "MediaUnread": return MediaUnread;
+                        case "Silent": return Silent;
+                        case "Id": return Id;
+                        case "FromId": return FromId;
+                        case "ChatId": return ChatId;
+                        case "Message": return Message;
+                        case "Pts": return Pts;
+                        case "PtsCount": return PtsCount;
+                        case "Date": return Date;
+                        case "FwdFrom": return FwdFrom;
+                        case "ViaBotId": return ViaBotId;
+                        case "ReplyToMsgId": return ReplyToMsgId;
+                        case "Entities": return Entities;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Unread":
+                    case "Out":
+                    case "Mentioned":
+                    case "MediaUnread":
+                    case "Silent":
+                    case "Id":
+                    case "FromId":
+                    case "ChatId":
+                    case "Message":
+                    case "Pts":
+                    case "PtsCount":
+                    case "Date":
+                    case "FwdFrom":
+                    case "ViaBotId":
+                    case "ReplyToMsgId":
+                    case "Entities":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateShortType : Updates
         {
-            public override uint ConstructorCode => 0x78d4dec1;
+            public override Types ConstructorCode => Types.UpdateShortType;
 
             public Update Update;
             public int Date;
@@ -18746,7 +23964,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Update.Write(writer);
                 writer.Write(Date);
             }
@@ -18761,11 +23979,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateShortType Update:{0} Date:{1})", Update, Date);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Update": return Update;
+                        case "Date": return Date;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Update":
+                    case "Date":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdatesCombinedType : Updates
         {
-            public override uint ConstructorCode => 0x725b04c3;
+            public override Types ConstructorCode => Types.UpdatesCombinedType;
 
             public List<Update> Updates;
             public List<User> Users;
@@ -18788,7 +24030,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Updates.Count);
                 foreach (Update UpdatesElement in Updates)
@@ -18832,11 +24074,43 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdatesCombinedType Updates:{0} Users:{1} Chats:{2} Date:{3} SeqStart:{4} Seq:{5})", Updates, Users, Chats, Date, SeqStart, Seq);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Updates": return Updates;
+                        case "Users": return Users;
+                        case "Chats": return Chats;
+                        case "Date": return Date;
+                        case "SeqStart": return SeqStart;
+                        case "Seq": return Seq;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Updates":
+                    case "Users":
+                    case "Chats":
+                    case "Date":
+                    case "SeqStart":
+                    case "Seq":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdatesType : Updates
         {
-            public override uint ConstructorCode => 0x74ae4240;
+            public override Types ConstructorCode => Types.UpdatesType;
 
             public List<Update> Updates;
             public List<User> Users;
@@ -18857,7 +24131,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Updates.Count);
                 foreach (Update UpdatesElement in Updates)
@@ -18899,11 +24173,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdatesType Updates:{0} Users:{1} Chats:{2} Date:{3} Seq:{4})", Updates, Users, Chats, Date, Seq);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Updates": return Updates;
+                        case "Users": return Users;
+                        case "Chats": return Chats;
+                        case "Date": return Date;
+                        case "Seq": return Seq;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Updates":
+                    case "Users":
+                    case "Chats":
+                    case "Date":
+                    case "Seq":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdateShortSentMessageType : Updates
         {
-            public override uint ConstructorCode => 0x11f1331c;
+            public override Types ConstructorCode => Types.UpdateShortSentMessageType;
 
             public True Unread;
             public True Out;
@@ -18947,7 +24251,7 @@ namespace TeleTurk.Core.MTProto
                     (Media != null ? 1 << 9 : 0) |
                     (Entities != null ? 1 << 7 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Unread != null) {
@@ -19008,11 +24312,47 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdateShortSentMessageType Unread:{0} Out:{1} Id:{2} Pts:{3} PtsCount:{4} Date:{5} Media:{6} Entities:{7})", Unread, Out, Id, Pts, PtsCount, Date, Media, Entities);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Unread": return Unread;
+                        case "Out": return Out;
+                        case "Id": return Id;
+                        case "Pts": return Pts;
+                        case "PtsCount": return PtsCount;
+                        case "Date": return Date;
+                        case "Media": return Media;
+                        case "Entities": return Entities;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Unread":
+                    case "Out":
+                    case "Id":
+                    case "Pts":
+                    case "PtsCount":
+                    case "Date":
+                    case "Media":
+                    case "Entities":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class PhotosPhotosType : PhotosPhotos
         {
-            public override uint ConstructorCode => 0x8dca6aa5;
+            public override Types ConstructorCode => Types.PhotosPhotosType;
 
             public List<Photo> Photos;
             public List<User> Users;
@@ -19027,7 +24367,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Photos.Count);
                 foreach (Photo PhotosElement in Photos)
@@ -19056,11 +24396,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(PhotosPhotosType Photos:{0} Users:{1})", Photos, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Photos": return Photos;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Photos":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class PhotosPhotosSliceType : PhotosPhotos
         {
-            public override uint ConstructorCode => 0x15051f54;
+            public override Types ConstructorCode => Types.PhotosPhotosSliceType;
 
             public int Count;
             public List<Photo> Photos;
@@ -19077,7 +24441,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Count);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Photos.Count);
@@ -19108,11 +24472,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(PhotosPhotosSliceType Count:{0} Photos:{1} Users:{2})", Count, Photos, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Count": return Count;
+                        case "Photos": return Photos;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Count":
+                    case "Photos":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class PhotosPhotoType : PhotosPhoto
         {
-            public override uint ConstructorCode => 0x20212ca8;
+            public override Types ConstructorCode => Types.PhotosPhotoType;
 
             public Photo Photo;
             public List<User> Users;
@@ -19127,7 +24517,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Photo.Write(writer);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Users.Count);
@@ -19149,11 +24539,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(PhotosPhotoType Photo:{0} Users:{1})", Photo, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Photo": return Photo;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Photo":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UploadFileType : UploadFile
         {
-            public override uint ConstructorCode => 0x096a18d5;
+            public override Types ConstructorCode => Types.UploadFileType;
 
             public StorageFileType Type;
             public int Mtime;
@@ -19170,7 +24584,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Type.Write(writer);
                 writer.Write(Mtime);
                 writer.Write(Bytes);
@@ -19187,11 +24601,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UploadFileType Type:{0} Mtime:{1} Bytes:{2})", Type, Mtime, Bytes);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Type": return Type;
+                        case "Mtime": return Mtime;
+                        case "Bytes": return Bytes;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Type":
+                    case "Mtime":
+                    case "Bytes":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class DcOptionType : DcOption
         {
-            public override uint ConstructorCode => 0x05d8c6cc;
+            public override Types ConstructorCode => Types.DcOptionType;
 
             public True Ipv6;
             public True MediaOnly;
@@ -19228,7 +24668,7 @@ namespace TeleTurk.Core.MTProto
                     (MediaOnly != null ? 1 << 1 : 0) |
                     (TcpoOnly != null ? 1 << 2 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Ipv6 != null) {
@@ -19272,11 +24712,43 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(DcOptionType Ipv6:{0} MediaOnly:{1} TcpoOnly:{2} Id:{3} IpAddress:{4} Port:{5})", Ipv6, MediaOnly, TcpoOnly, Id, IpAddress, Port);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Ipv6": return Ipv6;
+                        case "MediaOnly": return MediaOnly;
+                        case "TcpoOnly": return TcpoOnly;
+                        case "Id": return Id;
+                        case "IpAddress": return IpAddress;
+                        case "Port": return Port;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Ipv6":
+                    case "MediaOnly":
+                    case "TcpoOnly":
+                    case "Id":
+                    case "IpAddress":
+                    case "Port":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ConfigType : Config
         {
-            public override uint ConstructorCode => 0xc9411388;
+            public override Types ConstructorCode => Types.ConfigType;
 
             public int Date;
             public int Expires;
@@ -19297,12 +24769,11 @@ namespace TeleTurk.Core.MTProto
             public int PushChatLimit;
             public int SavedGifsLimit;
             public int EditTimeLimit;
-            public int RatingEDecay;
             public List<DisabledFeature> DisabledFeatures;
 
             public ConfigType() { }
 
-            public ConfigType(int Date, int Expires, bool TestMode, int ThisDc, List<DcOption> DcOptions, int ChatSizeMax, int MegagroupSizeMax, int ForwardedCountMax, int OnlineUpdatePeriodMs, int OfflineBlurTimeoutMs, int OfflineIdleTimeoutMs, int OnlineCloudTimeoutMs, int NotifyCloudDelayMs, int NotifyDefaultDelayMs, int ChatBigSize, int PushChatPeriodMs, int PushChatLimit, int SavedGifsLimit, int EditTimeLimit, int RatingEDecay, List<DisabledFeature> DisabledFeatures)
+            public ConfigType(int Date, int Expires, bool TestMode, int ThisDc, List<DcOption> DcOptions, int ChatSizeMax, int MegagroupSizeMax, int ForwardedCountMax, int OnlineUpdatePeriodMs, int OfflineBlurTimeoutMs, int OfflineIdleTimeoutMs, int OnlineCloudTimeoutMs, int NotifyCloudDelayMs, int NotifyDefaultDelayMs, int ChatBigSize, int PushChatPeriodMs, int PushChatLimit, int SavedGifsLimit, int EditTimeLimit, List<DisabledFeature> DisabledFeatures)
             {
                 this.Date = Date;
                 this.Expires = Expires;
@@ -19323,13 +24794,12 @@ namespace TeleTurk.Core.MTProto
                 this.PushChatLimit = PushChatLimit;
                 this.SavedGifsLimit = SavedGifsLimit;
                 this.EditTimeLimit = EditTimeLimit;
-                this.RatingEDecay = RatingEDecay;
                 this.DisabledFeatures = DisabledFeatures;
             }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Date);
                 writer.Write(Expires);
                 writer.Write(TestMode);
@@ -19352,7 +24822,6 @@ namespace TeleTurk.Core.MTProto
                 writer.Write(PushChatLimit);
                 writer.Write(SavedGifsLimit);
                 writer.Write(EditTimeLimit);
-                writer.Write(RatingEDecay);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(DisabledFeatures.Count);
                 foreach (DisabledFeature DisabledFeaturesElement in DisabledFeatures)
@@ -19384,7 +24853,6 @@ namespace TeleTurk.Core.MTProto
                 PushChatLimit = reader.ReadInt32();
                 SavedGifsLimit = reader.ReadInt32();
                 EditTimeLimit = reader.ReadInt32();
-                RatingEDecay = reader.ReadInt32();
                 reader.ReadInt32(); // vector code
                 int DisabledFeaturesLength = reader.ReadInt32();
                 DisabledFeatures = new List<DisabledFeature>(DisabledFeaturesLength);
@@ -19394,13 +24862,73 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(ConfigType Date:{0} Expires:{1} TestMode:{2} ThisDc:{3} DcOptions:{4} ChatSizeMax:{5} MegagroupSizeMax:{6} ForwardedCountMax:{7} OnlineUpdatePeriodMs:{8} OfflineBlurTimeoutMs:{9} OfflineIdleTimeoutMs:{10} OnlineCloudTimeoutMs:{11} NotifyCloudDelayMs:{12} NotifyDefaultDelayMs:{13} ChatBigSize:{14} PushChatPeriodMs:{15} PushChatLimit:{16} SavedGifsLimit:{17} EditTimeLimit:{18} RatingEDecay:{19} DisabledFeatures:{20})", Date, Expires, TestMode, ThisDc, DcOptions, ChatSizeMax, MegagroupSizeMax, ForwardedCountMax, OnlineUpdatePeriodMs, OfflineBlurTimeoutMs, OfflineIdleTimeoutMs, OnlineCloudTimeoutMs, NotifyCloudDelayMs, NotifyDefaultDelayMs, ChatBigSize, PushChatPeriodMs, PushChatLimit, SavedGifsLimit, EditTimeLimit, RatingEDecay, DisabledFeatures);
+                return string.Format("(ConfigType Date:{0} Expires:{1} TestMode:{2} ThisDc:{3} DcOptions:{4} ChatSizeMax:{5} MegagroupSizeMax:{6} ForwardedCountMax:{7} OnlineUpdatePeriodMs:{8} OfflineBlurTimeoutMs:{9} OfflineIdleTimeoutMs:{10} OnlineCloudTimeoutMs:{11} NotifyCloudDelayMs:{12} NotifyDefaultDelayMs:{13} ChatBigSize:{14} PushChatPeriodMs:{15} PushChatLimit:{16} SavedGifsLimit:{17} EditTimeLimit:{18} DisabledFeatures:{19})", Date, Expires, TestMode, ThisDc, DcOptions, ChatSizeMax, MegagroupSizeMax, ForwardedCountMax, OnlineUpdatePeriodMs, OfflineBlurTimeoutMs, OfflineIdleTimeoutMs, OnlineCloudTimeoutMs, NotifyCloudDelayMs, NotifyDefaultDelayMs, ChatBigSize, PushChatPeriodMs, PushChatLimit, SavedGifsLimit, EditTimeLimit, DisabledFeatures);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Date": return Date;
+                        case "Expires": return Expires;
+                        case "TestMode": return TestMode;
+                        case "ThisDc": return ThisDc;
+                        case "DcOptions": return DcOptions;
+                        case "ChatSizeMax": return ChatSizeMax;
+                        case "MegagroupSizeMax": return MegagroupSizeMax;
+                        case "ForwardedCountMax": return ForwardedCountMax;
+                        case "OnlineUpdatePeriodMs": return OnlineUpdatePeriodMs;
+                        case "OfflineBlurTimeoutMs": return OfflineBlurTimeoutMs;
+                        case "OfflineIdleTimeoutMs": return OfflineIdleTimeoutMs;
+                        case "OnlineCloudTimeoutMs": return OnlineCloudTimeoutMs;
+                        case "NotifyCloudDelayMs": return NotifyCloudDelayMs;
+                        case "NotifyDefaultDelayMs": return NotifyDefaultDelayMs;
+                        case "ChatBigSize": return ChatBigSize;
+                        case "PushChatPeriodMs": return PushChatPeriodMs;
+                        case "PushChatLimit": return PushChatLimit;
+                        case "SavedGifsLimit": return SavedGifsLimit;
+                        case "EditTimeLimit": return EditTimeLimit;
+                        case "DisabledFeatures": return DisabledFeatures;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Date":
+                    case "Expires":
+                    case "TestMode":
+                    case "ThisDc":
+                    case "DcOptions":
+                    case "ChatSizeMax":
+                    case "MegagroupSizeMax":
+                    case "ForwardedCountMax":
+                    case "OnlineUpdatePeriodMs":
+                    case "OfflineBlurTimeoutMs":
+                    case "OfflineIdleTimeoutMs":
+                    case "OnlineCloudTimeoutMs":
+                    case "NotifyCloudDelayMs":
+                    case "NotifyDefaultDelayMs":
+                    case "ChatBigSize":
+                    case "PushChatPeriodMs":
+                    case "PushChatLimit":
+                    case "SavedGifsLimit":
+                    case "EditTimeLimit":
+                    case "DisabledFeatures":
+                        return true;
+                    default: return false;
+                }
             }
         }
 
         public class NearestDcType : NearestDc
         {
-            public override uint ConstructorCode => 0x8e1a1775;
+            public override Types ConstructorCode => Types.NearestDcType;
 
             public string Country;
             public int ThisDc;
@@ -19417,7 +24945,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Country);
                 writer.Write(ThisDc);
                 writer.Write(NearestDc);
@@ -19434,11 +24962,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(NearestDcType Country:{0} ThisDc:{1} NearestDc:{2})", Country, ThisDc, NearestDc);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Country": return Country;
+                        case "ThisDc": return ThisDc;
+                        case "NearestDc": return NearestDc;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Country":
+                    case "ThisDc":
+                    case "NearestDc":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class HelpAppUpdateType : HelpAppUpdate
         {
-            public override uint ConstructorCode => 0x8987f311;
+            public override Types ConstructorCode => Types.HelpAppUpdateType;
 
             public int Id;
             public bool Critical;
@@ -19457,7 +25011,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(Critical);
                 writer.Write(Url);
@@ -19476,17 +25030,45 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(HelpAppUpdateType Id:{0} Critical:{1} Url:{2} Text:{3})", Id, Critical, Url, Text);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Critical": return Critical;
+                        case "Url": return Url;
+                        case "Text": return Text;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Critical":
+                    case "Url":
+                    case "Text":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class HelpNoAppUpdateType : HelpAppUpdate
         {
-            public override uint ConstructorCode => 0xc45a6536;
+            public override Types ConstructorCode => Types.HelpNoAppUpdateType;
 
             public HelpNoAppUpdateType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -19497,11 +25079,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(HelpNoAppUpdateType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class HelpInviteTextType : HelpInviteText
         {
-            public override uint ConstructorCode => 0x18cb9f78;
+            public override Types ConstructorCode => Types.HelpInviteTextType;
 
             public string Message;
 
@@ -19514,7 +25109,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Message);
             }
 
@@ -19527,11 +25122,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(HelpInviteTextType Message:{0})", Message);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Message": return Message;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Message":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class EncryptedChatEmptyType : EncryptedChat
         {
-            public override uint ConstructorCode => 0xab7ec0a0;
+            public override Types ConstructorCode => Types.EncryptedChatEmptyType;
 
             public int Id;
 
@@ -19544,7 +25161,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
             }
 
@@ -19557,11 +25174,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(EncryptedChatEmptyType Id:{0})", Id);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class EncryptedChatWaitingType : EncryptedChat
         {
-            public override uint ConstructorCode => 0x3bf703dc;
+            public override Types ConstructorCode => Types.EncryptedChatWaitingType;
 
             public int Id;
             public long AccessHash;
@@ -19582,7 +25221,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(AccessHash);
                 writer.Write(Date);
@@ -19603,11 +25242,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(EncryptedChatWaitingType Id:{0} AccessHash:{1} Date:{2} AdminId:{3} ParticipantId:{4})", Id, AccessHash, Date, AdminId, ParticipantId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        case "Date": return Date;
+                        case "AdminId": return AdminId;
+                        case "ParticipantId": return ParticipantId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "AccessHash":
+                    case "Date":
+                    case "AdminId":
+                    case "ParticipantId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class EncryptedChatRequestedType : EncryptedChat
         {
-            public override uint ConstructorCode => 0xc878527e;
+            public override Types ConstructorCode => Types.EncryptedChatRequestedType;
 
             public int Id;
             public long AccessHash;
@@ -19630,7 +25299,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(AccessHash);
                 writer.Write(Date);
@@ -19653,11 +25322,43 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(EncryptedChatRequestedType Id:{0} AccessHash:{1} Date:{2} AdminId:{3} ParticipantId:{4} GA:{5})", Id, AccessHash, Date, AdminId, ParticipantId, GA);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        case "Date": return Date;
+                        case "AdminId": return AdminId;
+                        case "ParticipantId": return ParticipantId;
+                        case "GA": return GA;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "AccessHash":
+                    case "Date":
+                    case "AdminId":
+                    case "ParticipantId":
+                    case "GA":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class EncryptedChatType : EncryptedChat
         {
-            public override uint ConstructorCode => 0xfa56ce36;
+            public override Types ConstructorCode => Types.EncryptedChatType;
 
             public int Id;
             public long AccessHash;
@@ -19682,7 +25383,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(AccessHash);
                 writer.Write(Date);
@@ -19707,11 +25408,45 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(EncryptedChatType Id:{0} AccessHash:{1} Date:{2} AdminId:{3} ParticipantId:{4} GAOrB:{5} KeyFingerprint:{6})", Id, AccessHash, Date, AdminId, ParticipantId, GAOrB, KeyFingerprint);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        case "Date": return Date;
+                        case "AdminId": return AdminId;
+                        case "ParticipantId": return ParticipantId;
+                        case "GAOrB": return GAOrB;
+                        case "KeyFingerprint": return KeyFingerprint;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "AccessHash":
+                    case "Date":
+                    case "AdminId":
+                    case "ParticipantId":
+                    case "GAOrB":
+                    case "KeyFingerprint":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class EncryptedChatDiscardedType : EncryptedChat
         {
-            public override uint ConstructorCode => 0x13d6dd27;
+            public override Types ConstructorCode => Types.EncryptedChatDiscardedType;
 
             public int Id;
 
@@ -19724,7 +25459,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
             }
 
@@ -19737,11 +25472,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(EncryptedChatDiscardedType Id:{0})", Id);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputEncryptedChatType : InputEncryptedChat
         {
-            public override uint ConstructorCode => 0xf141b5e1;
+            public override Types ConstructorCode => Types.InputEncryptedChatType;
 
             public int ChatId;
             public long AccessHash;
@@ -19756,7 +25513,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChatId);
                 writer.Write(AccessHash);
             }
@@ -19771,17 +25528,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputEncryptedChatType ChatId:{0} AccessHash:{1})", ChatId, AccessHash);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChatId": return ChatId;
+                        case "AccessHash": return AccessHash;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChatId":
+                    case "AccessHash":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class EncryptedFileEmptyType : EncryptedFile
         {
-            public override uint ConstructorCode => 0xc21f497e;
+            public override Types ConstructorCode => Types.EncryptedFileEmptyType;
 
             public EncryptedFileEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -19792,11 +25573,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(EncryptedFileEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class EncryptedFileType : EncryptedFile
         {
-            public override uint ConstructorCode => 0x4a70994c;
+            public override Types ConstructorCode => Types.EncryptedFileType;
 
             public long Id;
             public long AccessHash;
@@ -19817,7 +25611,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(AccessHash);
                 writer.Write(Size);
@@ -19838,17 +25632,47 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(EncryptedFileType Id:{0} AccessHash:{1} Size:{2} DcId:{3} KeyFingerprint:{4})", Id, AccessHash, Size, DcId, KeyFingerprint);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        case "Size": return Size;
+                        case "DcId": return DcId;
+                        case "KeyFingerprint": return KeyFingerprint;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "AccessHash":
+                    case "Size":
+                    case "DcId":
+                    case "KeyFingerprint":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputEncryptedFileEmptyType : InputEncryptedFile
         {
-            public override uint ConstructorCode => 0x1837c364;
+            public override Types ConstructorCode => Types.InputEncryptedFileEmptyType;
 
             public InputEncryptedFileEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -19859,11 +25683,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputEncryptedFileEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputEncryptedFileUploadedType : InputEncryptedFile
         {
-            public override uint ConstructorCode => 0x64bd0306;
+            public override Types ConstructorCode => Types.InputEncryptedFileUploadedType;
 
             public long Id;
             public int Parts;
@@ -19882,7 +25719,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(Parts);
                 writer.Write(Md5Checksum);
@@ -19901,11 +25738,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputEncryptedFileUploadedType Id:{0} Parts:{1} Md5Checksum:{2} KeyFingerprint:{3})", Id, Parts, Md5Checksum, KeyFingerprint);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Parts": return Parts;
+                        case "Md5Checksum": return Md5Checksum;
+                        case "KeyFingerprint": return KeyFingerprint;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Parts":
+                    case "Md5Checksum":
+                    case "KeyFingerprint":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputEncryptedFileType : InputEncryptedFile
         {
-            public override uint ConstructorCode => 0x5a17b5e5;
+            public override Types ConstructorCode => Types.InputEncryptedFileType;
 
             public long Id;
             public long AccessHash;
@@ -19920,7 +25785,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(AccessHash);
             }
@@ -19935,11 +25800,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputEncryptedFileType Id:{0} AccessHash:{1})", Id, AccessHash);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "AccessHash":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputEncryptedFileBigUploadedType : InputEncryptedFile
         {
-            public override uint ConstructorCode => 0x2dc173c8;
+            public override Types ConstructorCode => Types.InputEncryptedFileBigUploadedType;
 
             public long Id;
             public int Parts;
@@ -19956,7 +25845,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(Parts);
                 writer.Write(KeyFingerprint);
@@ -19973,11 +25862,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputEncryptedFileBigUploadedType Id:{0} Parts:{1} KeyFingerprint:{2})", Id, Parts, KeyFingerprint);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Parts": return Parts;
+                        case "KeyFingerprint": return KeyFingerprint;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Parts":
+                    case "KeyFingerprint":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class EncryptedMessageType : EncryptedMessage
         {
-            public override uint ConstructorCode => 0xed18c118;
+            public override Types ConstructorCode => Types.EncryptedMessageType;
 
             public long RandomId;
             public int ChatId;
@@ -19998,7 +25913,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(RandomId);
                 writer.Write(ChatId);
                 writer.Write(Date);
@@ -20019,11 +25934,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(EncryptedMessageType RandomId:{0} ChatId:{1} Date:{2} Bytes:{3} File:{4})", RandomId, ChatId, Date, Bytes, File);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "RandomId": return RandomId;
+                        case "ChatId": return ChatId;
+                        case "Date": return Date;
+                        case "Bytes": return Bytes;
+                        case "File": return File;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "RandomId":
+                    case "ChatId":
+                    case "Date":
+                    case "Bytes":
+                    case "File":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class EncryptedMessageServiceType : EncryptedMessage
         {
-            public override uint ConstructorCode => 0x23734b06;
+            public override Types ConstructorCode => Types.EncryptedMessageServiceType;
 
             public long RandomId;
             public int ChatId;
@@ -20042,7 +25987,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(RandomId);
                 writer.Write(ChatId);
                 writer.Write(Date);
@@ -20061,11 +26006,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(EncryptedMessageServiceType RandomId:{0} ChatId:{1} Date:{2} Bytes:{3})", RandomId, ChatId, Date, Bytes);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "RandomId": return RandomId;
+                        case "ChatId": return ChatId;
+                        case "Date": return Date;
+                        case "Bytes": return Bytes;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "RandomId":
+                    case "ChatId":
+                    case "Date":
+                    case "Bytes":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesDhConfigNotModifiedType : MessagesDhConfig
         {
-            public override uint ConstructorCode => 0xc0e24635;
+            public override Types ConstructorCode => Types.MessagesDhConfigNotModifiedType;
 
             public byte[] Random;
 
@@ -20078,7 +26051,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Random);
             }
 
@@ -20091,11 +26064,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesDhConfigNotModifiedType Random:{0})", Random);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Random": return Random;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Random":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesDhConfigType : MessagesDhConfig
         {
-            public override uint ConstructorCode => 0x2c221edd;
+            public override Types ConstructorCode => Types.MessagesDhConfigType;
 
             public int G;
             public byte[] P;
@@ -20114,7 +26109,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(G);
                 writer.Write(P);
                 writer.Write(Version);
@@ -20133,11 +26128,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesDhConfigType G:{0} P:{1} Version:{2} Random:{3})", G, P, Version, Random);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "G": return G;
+                        case "P": return P;
+                        case "Version": return Version;
+                        case "Random": return Random;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "G":
+                    case "P":
+                    case "Version":
+                    case "Random":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesSentEncryptedMessageType : MessagesSentEncryptedMessage
         {
-            public override uint ConstructorCode => 0x560f8935;
+            public override Types ConstructorCode => Types.MessagesSentEncryptedMessageType;
 
             public int Date;
 
@@ -20150,7 +26173,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Date);
             }
 
@@ -20163,11 +26186,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesSentEncryptedMessageType Date:{0})", Date);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Date": return Date;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Date":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesSentEncryptedFileType : MessagesSentEncryptedMessage
         {
-            public override uint ConstructorCode => 0x9493ff32;
+            public override Types ConstructorCode => Types.MessagesSentEncryptedFileType;
 
             public int Date;
             public EncryptedFile File;
@@ -20182,7 +26227,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Date);
                 File.Write(writer);
             }
@@ -20197,17 +26242,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesSentEncryptedFileType Date:{0} File:{1})", Date, File);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Date": return Date;
+                        case "File": return File;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Date":
+                    case "File":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputDocumentEmptyType : InputDocument
         {
-            public override uint ConstructorCode => 0x72f0eaae;
+            public override Types ConstructorCode => Types.InputDocumentEmptyType;
 
             public InputDocumentEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20218,11 +26287,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputDocumentEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputDocumentType : InputDocument
         {
-            public override uint ConstructorCode => 0x18798952;
+            public override Types ConstructorCode => Types.InputDocumentType;
 
             public long Id;
             public long AccessHash;
@@ -20237,7 +26319,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(AccessHash);
             }
@@ -20252,11 +26334,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputDocumentType Id:{0} AccessHash:{1})", Id, AccessHash);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "AccessHash":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class DocumentEmptyType : Document
         {
-            public override uint ConstructorCode => 0x36f8c871;
+            public override Types ConstructorCode => Types.DocumentEmptyType;
 
             public long Id;
 
@@ -20269,7 +26375,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
             }
 
@@ -20282,11 +26388,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(DocumentEmptyType Id:{0})", Id);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class DocumentType : Document
         {
-            public override uint ConstructorCode => 0xf9a39f4f;
+            public override Types ConstructorCode => Types.DocumentType;
 
             public long Id;
             public long AccessHash;
@@ -20313,7 +26441,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(AccessHash);
                 writer.Write(Date);
@@ -20347,11 +26475,47 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(DocumentType Id:{0} AccessHash:{1} Date:{2} MimeType:{3} Size:{4} Thumb:{5} DcId:{6} Attributes:{7})", Id, AccessHash, Date, MimeType, Size, Thumb, DcId, Attributes);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        case "Date": return Date;
+                        case "MimeType": return MimeType;
+                        case "Size": return Size;
+                        case "Thumb": return Thumb;
+                        case "DcId": return DcId;
+                        case "Attributes": return Attributes;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "AccessHash":
+                    case "Date":
+                    case "MimeType":
+                    case "Size":
+                    case "Thumb":
+                    case "DcId":
+                    case "Attributes":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class HelpSupportType : HelpSupport
         {
-            public override uint ConstructorCode => 0x17c6b5f6;
+            public override Types ConstructorCode => Types.HelpSupportType;
 
             public string PhoneNumber;
             public User User;
@@ -20366,7 +26530,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(PhoneNumber);
                 User.Write(writer);
             }
@@ -20381,11 +26545,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(HelpSupportType PhoneNumber:{0} User:{1})", PhoneNumber, User);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "PhoneNumber": return PhoneNumber;
+                        case "User": return User;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "PhoneNumber":
+                    case "User":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class NotifyPeerType : NotifyPeer
         {
-            public override uint ConstructorCode => 0x9fd40bd8;
+            public override Types ConstructorCode => Types.NotifyPeerType;
 
             public Peer Peer;
 
@@ -20398,7 +26586,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
             }
 
@@ -20411,17 +26599,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(NotifyPeerType Peer:{0})", Peer);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Peer": return Peer;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Peer":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class NotifyUsersType : NotifyPeer
         {
-            public override uint ConstructorCode => 0xb4c83b4c;
+            public override Types ConstructorCode => Types.NotifyUsersType;
 
             public NotifyUsersType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20432,17 +26642,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(NotifyUsersType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class NotifyChatsType : NotifyPeer
         {
-            public override uint ConstructorCode => 0xc007cec3;
+            public override Types ConstructorCode => Types.NotifyChatsType;
 
             public NotifyChatsType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20453,17 +26676,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(NotifyChatsType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class NotifyAllType : NotifyPeer
         {
-            public override uint ConstructorCode => 0x74d07c60;
+            public override Types ConstructorCode => Types.NotifyAllType;
 
             public NotifyAllType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20474,17 +26710,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(NotifyAllType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class SendMessageTypingActionType : SendMessageAction
         {
-            public override uint ConstructorCode => 0x16bf744e;
+            public override Types ConstructorCode => Types.SendMessageTypingActionType;
 
             public SendMessageTypingActionType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20495,17 +26744,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(SendMessageTypingActionType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class SendMessageCancelActionType : SendMessageAction
         {
-            public override uint ConstructorCode => 0xfd5ec8f5;
+            public override Types ConstructorCode => Types.SendMessageCancelActionType;
 
             public SendMessageCancelActionType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20516,17 +26778,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(SendMessageCancelActionType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class SendMessageRecordVideoActionType : SendMessageAction
         {
-            public override uint ConstructorCode => 0xa187d66f;
+            public override Types ConstructorCode => Types.SendMessageRecordVideoActionType;
 
             public SendMessageRecordVideoActionType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20537,11 +26812,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(SendMessageRecordVideoActionType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class SendMessageUploadVideoActionType : SendMessageAction
         {
-            public override uint ConstructorCode => 0xe9763aec;
+            public override Types ConstructorCode => Types.SendMessageUploadVideoActionType;
 
             public int Progress;
 
@@ -20554,7 +26842,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Progress);
             }
 
@@ -20567,17 +26855,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(SendMessageUploadVideoActionType Progress:{0})", Progress);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Progress": return Progress;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Progress":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class SendMessageRecordAudioActionType : SendMessageAction
         {
-            public override uint ConstructorCode => 0xd52f73f7;
+            public override Types ConstructorCode => Types.SendMessageRecordAudioActionType;
 
             public SendMessageRecordAudioActionType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20588,11 +26898,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(SendMessageRecordAudioActionType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class SendMessageUploadAudioActionType : SendMessageAction
         {
-            public override uint ConstructorCode => 0xf351d7ab;
+            public override Types ConstructorCode => Types.SendMessageUploadAudioActionType;
 
             public int Progress;
 
@@ -20605,7 +26928,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Progress);
             }
 
@@ -20618,11 +26941,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(SendMessageUploadAudioActionType Progress:{0})", Progress);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Progress": return Progress;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Progress":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class SendMessageUploadPhotoActionType : SendMessageAction
         {
-            public override uint ConstructorCode => 0xd1d34a26;
+            public override Types ConstructorCode => Types.SendMessageUploadPhotoActionType;
 
             public int Progress;
 
@@ -20635,7 +26980,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Progress);
             }
 
@@ -20648,11 +26993,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(SendMessageUploadPhotoActionType Progress:{0})", Progress);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Progress": return Progress;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Progress":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class SendMessageUploadDocumentActionType : SendMessageAction
         {
-            public override uint ConstructorCode => 0xaa0cd9e4;
+            public override Types ConstructorCode => Types.SendMessageUploadDocumentActionType;
 
             public int Progress;
 
@@ -20665,7 +27032,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Progress);
             }
 
@@ -20678,17 +27045,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(SendMessageUploadDocumentActionType Progress:{0})", Progress);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Progress": return Progress;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Progress":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class SendMessageGeoLocationActionType : SendMessageAction
         {
-            public override uint ConstructorCode => 0x176f8ba1;
+            public override Types ConstructorCode => Types.SendMessageGeoLocationActionType;
 
             public SendMessageGeoLocationActionType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20699,17 +27088,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(SendMessageGeoLocationActionType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class SendMessageChooseContactActionType : SendMessageAction
         {
-            public override uint ConstructorCode => 0x628cbc6f;
+            public override Types ConstructorCode => Types.SendMessageChooseContactActionType;
 
             public SendMessageChooseContactActionType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20720,11 +27122,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(SendMessageChooseContactActionType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ContactsFoundType : ContactsFound
         {
-            public override uint ConstructorCode => 0x1aa1f784;
+            public override Types ConstructorCode => Types.ContactsFoundType;
 
             public List<Peer> Results;
             public List<Chat> Chats;
@@ -20741,7 +27156,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Results.Count);
                 foreach (Peer ResultsElement in Results)
@@ -20779,17 +27194,43 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ContactsFoundType Results:{0} Chats:{1} Users:{2})", Results, Chats, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Results": return Results;
+                        case "Chats": return Chats;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Results":
+                    case "Chats":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputPrivacyKeyStatusTimestampType : InputPrivacyKey
         {
-            public override uint ConstructorCode => 0x4f96cb18;
+            public override Types ConstructorCode => Types.InputPrivacyKeyStatusTimestampType;
 
             public InputPrivacyKeyStatusTimestampType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20800,17 +27241,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputPrivacyKeyStatusTimestampType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputPrivacyKeyChatInviteType : InputPrivacyKey
         {
-            public override uint ConstructorCode => 0xbdfb0426;
+            public override Types ConstructorCode => Types.InputPrivacyKeyChatInviteType;
 
             public InputPrivacyKeyChatInviteType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20821,17 +27275,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputPrivacyKeyChatInviteType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class PrivacyKeyStatusTimestampType : PrivacyKey
         {
-            public override uint ConstructorCode => 0xbc2eab30;
+            public override Types ConstructorCode => Types.PrivacyKeyStatusTimestampType;
 
             public PrivacyKeyStatusTimestampType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20842,17 +27309,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(PrivacyKeyStatusTimestampType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class PrivacyKeyChatInviteType : PrivacyKey
         {
-            public override uint ConstructorCode => 0x500e6dfa;
+            public override Types ConstructorCode => Types.PrivacyKeyChatInviteType;
 
             public PrivacyKeyChatInviteType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20863,17 +27343,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(PrivacyKeyChatInviteType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputPrivacyValueAllowContactsType : InputPrivacyRule
         {
-            public override uint ConstructorCode => 0x0d09e07b;
+            public override Types ConstructorCode => Types.InputPrivacyValueAllowContactsType;
 
             public InputPrivacyValueAllowContactsType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20884,17 +27377,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputPrivacyValueAllowContactsType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputPrivacyValueAllowAllType : InputPrivacyRule
         {
-            public override uint ConstructorCode => 0x184b35ce;
+            public override Types ConstructorCode => Types.InputPrivacyValueAllowAllType;
 
             public InputPrivacyValueAllowAllType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20905,11 +27411,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputPrivacyValueAllowAllType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputPrivacyValueAllowUsersType : InputPrivacyRule
         {
-            public override uint ConstructorCode => 0x131cc67f;
+            public override Types ConstructorCode => Types.InputPrivacyValueAllowUsersType;
 
             public List<InputUser> Users;
 
@@ -20922,7 +27441,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Users.Count);
                 foreach (InputUser UsersElement in Users)
@@ -20942,17 +27461,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputPrivacyValueAllowUsersType Users:{0})", Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputPrivacyValueDisallowContactsType : InputPrivacyRule
         {
-            public override uint ConstructorCode => 0x0ba52007;
+            public override Types ConstructorCode => Types.InputPrivacyValueDisallowContactsType;
 
             public InputPrivacyValueDisallowContactsType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20963,17 +27504,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputPrivacyValueDisallowContactsType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputPrivacyValueDisallowAllType : InputPrivacyRule
         {
-            public override uint ConstructorCode => 0xd66b66c9;
+            public override Types ConstructorCode => Types.InputPrivacyValueDisallowAllType;
 
             public InputPrivacyValueDisallowAllType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -20984,11 +27538,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputPrivacyValueDisallowAllType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputPrivacyValueDisallowUsersType : InputPrivacyRule
         {
-            public override uint ConstructorCode => 0x90110467;
+            public override Types ConstructorCode => Types.InputPrivacyValueDisallowUsersType;
 
             public List<InputUser> Users;
 
@@ -21001,7 +27568,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Users.Count);
                 foreach (InputUser UsersElement in Users)
@@ -21021,17 +27588,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputPrivacyValueDisallowUsersType Users:{0})", Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class PrivacyValueAllowContactsType : PrivacyRule
         {
-            public override uint ConstructorCode => 0xfffe1bac;
+            public override Types ConstructorCode => Types.PrivacyValueAllowContactsType;
 
             public PrivacyValueAllowContactsType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -21042,17 +27631,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(PrivacyValueAllowContactsType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class PrivacyValueAllowAllType : PrivacyRule
         {
-            public override uint ConstructorCode => 0x65427b82;
+            public override Types ConstructorCode => Types.PrivacyValueAllowAllType;
 
             public PrivacyValueAllowAllType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -21063,11 +27665,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(PrivacyValueAllowAllType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class PrivacyValueAllowUsersType : PrivacyRule
         {
-            public override uint ConstructorCode => 0x4d5bbe0c;
+            public override Types ConstructorCode => Types.PrivacyValueAllowUsersType;
 
             public List<int> Users;
 
@@ -21080,7 +27695,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Users.Count);
                 foreach (int UsersElement in Users)
@@ -21100,17 +27715,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(PrivacyValueAllowUsersType Users:{0})", Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class PrivacyValueDisallowContactsType : PrivacyRule
         {
-            public override uint ConstructorCode => 0xf888fa1a;
+            public override Types ConstructorCode => Types.PrivacyValueDisallowContactsType;
 
             public PrivacyValueDisallowContactsType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -21121,17 +27758,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(PrivacyValueDisallowContactsType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class PrivacyValueDisallowAllType : PrivacyRule
         {
-            public override uint ConstructorCode => 0x8b73e763;
+            public override Types ConstructorCode => Types.PrivacyValueDisallowAllType;
 
             public PrivacyValueDisallowAllType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -21142,11 +27792,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(PrivacyValueDisallowAllType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class PrivacyValueDisallowUsersType : PrivacyRule
         {
-            public override uint ConstructorCode => 0x0c7f49b7;
+            public override Types ConstructorCode => Types.PrivacyValueDisallowUsersType;
 
             public List<int> Users;
 
@@ -21159,7 +27822,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Users.Count);
                 foreach (int UsersElement in Users)
@@ -21179,11 +27842,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(PrivacyValueDisallowUsersType Users:{0})", Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class AccountPrivacyRulesType : AccountPrivacyRules
         {
-            public override uint ConstructorCode => 0x554abb6f;
+            public override Types ConstructorCode => Types.AccountPrivacyRulesType;
 
             public List<PrivacyRule> Rules;
             public List<User> Users;
@@ -21198,7 +27883,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Rules.Count);
                 foreach (PrivacyRule RulesElement in Rules)
@@ -21227,11 +27912,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(AccountPrivacyRulesType Rules:{0} Users:{1})", Rules, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Rules": return Rules;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Rules":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class AccountDaysTTLType : AccountDaysTTL
         {
-            public override uint ConstructorCode => 0xb8d0afdf;
+            public override Types ConstructorCode => Types.AccountDaysTTLType;
 
             public int Days;
 
@@ -21244,7 +27953,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Days);
             }
 
@@ -21257,11 +27966,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(AccountDaysTTLType Days:{0})", Days);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Days": return Days;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Days":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class DocumentAttributeImageSizeType : DocumentAttribute
         {
-            public override uint ConstructorCode => 0x6c37c15c;
+            public override Types ConstructorCode => Types.DocumentAttributeImageSizeType;
 
             public int W;
             public int H;
@@ -21276,7 +28007,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(W);
                 writer.Write(H);
             }
@@ -21291,17 +28022,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(DocumentAttributeImageSizeType W:{0} H:{1})", W, H);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "W": return W;
+                        case "H": return H;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "W":
+                    case "H":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class DocumentAttributeAnimatedType : DocumentAttribute
         {
-            public override uint ConstructorCode => 0x11b58939;
+            public override Types ConstructorCode => Types.DocumentAttributeAnimatedType;
 
             public DocumentAttributeAnimatedType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -21312,11 +28067,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(DocumentAttributeAnimatedType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class DocumentAttributeStickerType : DocumentAttribute
         {
-            public override uint ConstructorCode => 0x3a556302;
+            public override Types ConstructorCode => Types.DocumentAttributeStickerType;
 
             public string Alt;
             public InputStickerSet Stickerset;
@@ -21331,7 +28099,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Alt);
                 Stickerset.Write(writer);
             }
@@ -21346,11 +28114,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(DocumentAttributeStickerType Alt:{0} Stickerset:{1})", Alt, Stickerset);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Alt": return Alt;
+                        case "Stickerset": return Stickerset;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Alt":
+                    case "Stickerset":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class DocumentAttributeVideoType : DocumentAttribute
         {
-            public override uint ConstructorCode => 0x5910cccb;
+            public override Types ConstructorCode => Types.DocumentAttributeVideoType;
 
             public int Duration;
             public int W;
@@ -21367,7 +28159,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Duration);
                 writer.Write(W);
                 writer.Write(H);
@@ -21384,11 +28176,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(DocumentAttributeVideoType Duration:{0} W:{1} H:{2})", Duration, W, H);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Duration": return Duration;
+                        case "W": return W;
+                        case "H": return H;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Duration":
+                    case "W":
+                    case "H":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class DocumentAttributeAudioType : DocumentAttribute
         {
-            public override uint ConstructorCode => 0x9852f9c6;
+            public override Types ConstructorCode => Types.DocumentAttributeAudioType;
 
             public True Voice;
             public int Duration;
@@ -21423,7 +28241,7 @@ namespace TeleTurk.Core.MTProto
                     (Performer != null ? 1 << 1 : 0) |
                     (Waveform != null ? 1 << 2 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Voice != null) {
@@ -21471,11 +28289,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(DocumentAttributeAudioType Voice:{0} Duration:{1} Title:{2} Performer:{3} Waveform:{4})", Voice, Duration, Title, Performer, Waveform);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Voice": return Voice;
+                        case "Duration": return Duration;
+                        case "Title": return Title;
+                        case "Performer": return Performer;
+                        case "Waveform": return Waveform;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Voice":
+                    case "Duration":
+                    case "Title":
+                    case "Performer":
+                    case "Waveform":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class DocumentAttributeFilenameType : DocumentAttribute
         {
-            public override uint ConstructorCode => 0x15590068;
+            public override Types ConstructorCode => Types.DocumentAttributeFilenameType;
 
             public string FileName;
 
@@ -21488,7 +28336,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(FileName);
             }
 
@@ -21501,17 +28349,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(DocumentAttributeFilenameType FileName:{0})", FileName);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "FileName": return FileName;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "FileName":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesStickersNotModifiedType : MessagesStickers
         {
-            public override uint ConstructorCode => 0xf1749a22;
+            public override Types ConstructorCode => Types.MessagesStickersNotModifiedType;
 
             public MessagesStickersNotModifiedType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -21522,11 +28392,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(MessagesStickersNotModifiedType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class MessagesStickersType : MessagesStickers
         {
-            public override uint ConstructorCode => 0x8a8ecd32;
+            public override Types ConstructorCode => Types.MessagesStickersType;
 
             public string Hash;
             public List<Document> Stickers;
@@ -21541,7 +28424,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Hash);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Stickers.Count);
@@ -21563,11 +28446,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesStickersType Hash:{0} Stickers:{1})", Hash, Stickers);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Hash": return Hash;
+                        case "Stickers": return Stickers;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Hash":
+                    case "Stickers":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class StickerPackType : StickerPack
         {
-            public override uint ConstructorCode => 0x12b299d4;
+            public override Types ConstructorCode => Types.StickerPackType;
 
             public string Emoticon;
             public List<long> Documents;
@@ -21582,7 +28489,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Emoticon);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Documents.Count);
@@ -21604,17 +28511,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(StickerPackType Emoticon:{0} Documents:{1})", Emoticon, Documents);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Emoticon": return Emoticon;
+                        case "Documents": return Documents;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Emoticon":
+                    case "Documents":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesAllStickersNotModifiedType : MessagesAllStickers
         {
-            public override uint ConstructorCode => 0xe86602c3;
+            public override Types ConstructorCode => Types.MessagesAllStickersNotModifiedType;
 
             public MessagesAllStickersNotModifiedType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -21625,11 +28556,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(MessagesAllStickersNotModifiedType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class MessagesAllStickersType : MessagesAllStickers
         {
-            public override uint ConstructorCode => 0xedfd405f;
+            public override Types ConstructorCode => Types.MessagesAllStickersType;
 
             public int Hash;
             public List<StickerSet> Sets;
@@ -21644,7 +28588,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Hash);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Sets.Count);
@@ -21666,11 +28610,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesAllStickersType Hash:{0} Sets:{1})", Hash, Sets);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Hash": return Hash;
+                        case "Sets": return Sets;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Hash":
+                    case "Sets":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class DisabledFeatureType : DisabledFeature
         {
-            public override uint ConstructorCode => 0xae636f24;
+            public override Types ConstructorCode => Types.DisabledFeatureType;
 
             public string Feature;
             public string Description;
@@ -21685,7 +28653,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Feature);
                 writer.Write(Description);
             }
@@ -21700,11 +28668,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(DisabledFeatureType Feature:{0} Description:{1})", Feature, Description);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Feature": return Feature;
+                        case "Description": return Description;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Feature":
+                    case "Description":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesAffectedMessagesType : MessagesAffectedMessages
         {
-            public override uint ConstructorCode => 0x84d19185;
+            public override Types ConstructorCode => Types.MessagesAffectedMessagesType;
 
             public int Pts;
             public int PtsCount;
@@ -21719,7 +28711,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Pts);
                 writer.Write(PtsCount);
             }
@@ -21734,17 +28726,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesAffectedMessagesType Pts:{0} PtsCount:{1})", Pts, PtsCount);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Pts": return Pts;
+                        case "PtsCount": return PtsCount;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Pts":
+                    case "PtsCount":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ContactLinkUnknownType : ContactLink
         {
-            public override uint ConstructorCode => 0x5f4f9247;
+            public override Types ConstructorCode => Types.ContactLinkUnknownType;
 
             public ContactLinkUnknownType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -21755,17 +28771,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(ContactLinkUnknownType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ContactLinkNoneType : ContactLink
         {
-            public override uint ConstructorCode => 0xfeedd3ad;
+            public override Types ConstructorCode => Types.ContactLinkNoneType;
 
             public ContactLinkNoneType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -21776,17 +28805,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(ContactLinkNoneType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ContactLinkHasPhoneType : ContactLink
         {
-            public override uint ConstructorCode => 0x268f3f59;
+            public override Types ConstructorCode => Types.ContactLinkHasPhoneType;
 
             public ContactLinkHasPhoneType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -21797,17 +28839,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(ContactLinkHasPhoneType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ContactLinkContactType : ContactLink
         {
-            public override uint ConstructorCode => 0xd502c2d0;
+            public override Types ConstructorCode => Types.ContactLinkContactType;
 
             public ContactLinkContactType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -21818,11 +28873,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(ContactLinkContactType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class WebPageEmptyType : WebPage
         {
-            public override uint ConstructorCode => 0xeb1477e8;
+            public override Types ConstructorCode => Types.WebPageEmptyType;
 
             public long Id;
 
@@ -21835,7 +28903,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
             }
 
@@ -21848,11 +28916,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(WebPageEmptyType Id:{0})", Id);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class WebPagePendingType : WebPage
         {
-            public override uint ConstructorCode => 0xc586da1c;
+            public override Types ConstructorCode => Types.WebPagePendingType;
 
             public long Id;
             public int Date;
@@ -21867,7 +28957,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(Date);
             }
@@ -21882,11 +28972,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(WebPagePendingType Id:{0} Date:{1})", Id, Date);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Date": return Date;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Date":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class WebPageType : WebPage
         {
-            public override uint ConstructorCode => 0xca820ed7;
+            public override Types ConstructorCode => Types.WebPageType;
 
             public long Id;
             public string Url;
@@ -21959,7 +29073,7 @@ namespace TeleTurk.Core.MTProto
                     (Author != null ? 1 << 8 : 0) |
                     (Document != null ? 1 << 9 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 writer.Write(Id);
@@ -22075,11 +29189,61 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(WebPageType Id:{0} Url:{1} DisplayUrl:{2} Type:{3} SiteName:{4} Title:{5} Description:{6} Photo:{7} EmbedUrl:{8} EmbedType:{9} EmbedWidth:{10} EmbedHeight:{11} Duration:{12} Author:{13} Document:{14})", Id, Url, DisplayUrl, Type, SiteName, Title, Description, Photo, EmbedUrl, EmbedType, EmbedWidth, EmbedHeight, Duration, Author, Document);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Url": return Url;
+                        case "DisplayUrl": return DisplayUrl;
+                        case "Type": return Type;
+                        case "SiteName": return SiteName;
+                        case "Title": return Title;
+                        case "Description": return Description;
+                        case "Photo": return Photo;
+                        case "EmbedUrl": return EmbedUrl;
+                        case "EmbedType": return EmbedType;
+                        case "EmbedWidth": return EmbedWidth;
+                        case "EmbedHeight": return EmbedHeight;
+                        case "Duration": return Duration;
+                        case "Author": return Author;
+                        case "Document": return Document;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Url":
+                    case "DisplayUrl":
+                    case "Type":
+                    case "SiteName":
+                    case "Title":
+                    case "Description":
+                    case "Photo":
+                    case "EmbedUrl":
+                    case "EmbedType":
+                    case "EmbedWidth":
+                    case "EmbedHeight":
+                    case "Duration":
+                    case "Author":
+                    case "Document":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class AuthorizationType : Authorization
         {
-            public override uint ConstructorCode => 0x7bf2e6f6;
+            public override Types ConstructorCode => Types.AuthorizationType;
 
             public long Hash;
             public int Flags;
@@ -22116,7 +29280,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Hash);
                 writer.Write(Flags);
                 writer.Write(DeviceModel);
@@ -22153,11 +29317,57 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(AuthorizationType Hash:{0} Flags:{1} DeviceModel:{2} Platform:{3} SystemVersion:{4} ApiId:{5} AppName:{6} AppVersion:{7} DateCreated:{8} DateActive:{9} Ip:{10} Country:{11} Region:{12})", Hash, Flags, DeviceModel, Platform, SystemVersion, ApiId, AppName, AppVersion, DateCreated, DateActive, Ip, Country, Region);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Hash": return Hash;
+                        case "Flags": return Flags;
+                        case "DeviceModel": return DeviceModel;
+                        case "Platform": return Platform;
+                        case "SystemVersion": return SystemVersion;
+                        case "ApiId": return ApiId;
+                        case "AppName": return AppName;
+                        case "AppVersion": return AppVersion;
+                        case "DateCreated": return DateCreated;
+                        case "DateActive": return DateActive;
+                        case "Ip": return Ip;
+                        case "Country": return Country;
+                        case "Region": return Region;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Hash":
+                    case "Flags":
+                    case "DeviceModel":
+                    case "Platform":
+                    case "SystemVersion":
+                    case "ApiId":
+                    case "AppName":
+                    case "AppVersion":
+                    case "DateCreated":
+                    case "DateActive":
+                    case "Ip":
+                    case "Country":
+                    case "Region":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class AccountAuthorizationsType : AccountAuthorizations
         {
-            public override uint ConstructorCode => 0x1250abde;
+            public override Types ConstructorCode => Types.AccountAuthorizationsType;
 
             public List<Authorization> Authorizations;
 
@@ -22170,7 +29380,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Authorizations.Count);
                 foreach (Authorization AuthorizationsElement in Authorizations)
@@ -22190,11 +29400,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(AccountAuthorizationsType Authorizations:{0})", Authorizations);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Authorizations": return Authorizations;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Authorizations":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class AccountNoPasswordType : AccountPassword
         {
-            public override uint ConstructorCode => 0x96dabc18;
+            public override Types ConstructorCode => Types.AccountNoPasswordType;
 
             public byte[] NewSalt;
             public string EmailUnconfirmedPattern;
@@ -22209,7 +29441,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(NewSalt);
                 writer.Write(EmailUnconfirmedPattern);
             }
@@ -22224,11 +29456,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(AccountNoPasswordType NewSalt:{0} EmailUnconfirmedPattern:{1})", NewSalt, EmailUnconfirmedPattern);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "NewSalt": return NewSalt;
+                        case "EmailUnconfirmedPattern": return EmailUnconfirmedPattern;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "NewSalt":
+                    case "EmailUnconfirmedPattern":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class AccountPasswordType : AccountPassword
         {
-            public override uint ConstructorCode => 0x7c18141c;
+            public override Types ConstructorCode => Types.AccountPasswordType;
 
             public byte[] CurrentSalt;
             public byte[] NewSalt;
@@ -22249,7 +29505,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(CurrentSalt);
                 writer.Write(NewSalt);
                 writer.Write(Hint);
@@ -22270,11 +29526,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(AccountPasswordType CurrentSalt:{0} NewSalt:{1} Hint:{2} HasRecovery:{3} EmailUnconfirmedPattern:{4})", CurrentSalt, NewSalt, Hint, HasRecovery, EmailUnconfirmedPattern);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "CurrentSalt": return CurrentSalt;
+                        case "NewSalt": return NewSalt;
+                        case "Hint": return Hint;
+                        case "HasRecovery": return HasRecovery;
+                        case "EmailUnconfirmedPattern": return EmailUnconfirmedPattern;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "CurrentSalt":
+                    case "NewSalt":
+                    case "Hint":
+                    case "HasRecovery":
+                    case "EmailUnconfirmedPattern":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class AccountPasswordSettingsType : AccountPasswordSettings
         {
-            public override uint ConstructorCode => 0xb7b72ab3;
+            public override Types ConstructorCode => Types.AccountPasswordSettingsType;
 
             public string Email;
 
@@ -22287,7 +29573,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Email);
             }
 
@@ -22300,11 +29586,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(AccountPasswordSettingsType Email:{0})", Email);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Email": return Email;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Email":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class AccountPasswordInputSettingsType : AccountPasswordInputSettings
         {
-            public override uint ConstructorCode => 0x86916deb;
+            public override Types ConstructorCode => Types.AccountPasswordInputSettingsType;
 
             public byte[] NewSalt;
             public byte[] NewPasswordHash;
@@ -22336,7 +29644,7 @@ namespace TeleTurk.Core.MTProto
                     (Hint != null ? 1 << 0 : 0) |
                     (Email != null ? 1 << 1 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (NewSalt != null) {
@@ -22382,11 +29690,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(AccountPasswordInputSettingsType NewSalt:{0} NewPasswordHash:{1} Hint:{2} Email:{3})", NewSalt, NewPasswordHash, Hint, Email);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "NewSalt": return NewSalt;
+                        case "NewPasswordHash": return NewPasswordHash;
+                        case "Hint": return Hint;
+                        case "Email": return Email;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "NewSalt":
+                    case "NewPasswordHash":
+                    case "Hint":
+                    case "Email":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class AuthPasswordRecoveryType : AuthPasswordRecovery
         {
-            public override uint ConstructorCode => 0x137948a5;
+            public override Types ConstructorCode => Types.AuthPasswordRecoveryType;
 
             public string EmailPattern;
 
@@ -22399,7 +29735,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(EmailPattern);
             }
 
@@ -22412,11 +29748,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(AuthPasswordRecoveryType EmailPattern:{0})", EmailPattern);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "EmailPattern": return EmailPattern;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "EmailPattern":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ReceivedNotifyMessageType : ReceivedNotifyMessage
         {
-            public override uint ConstructorCode => 0xa384b779;
+            public override Types ConstructorCode => Types.ReceivedNotifyMessageType;
 
             public int Id;
             public int Flags;
@@ -22431,7 +29789,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(Flags);
             }
@@ -22446,17 +29804,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ReceivedNotifyMessageType Id:{0} Flags:{1})", Id, Flags);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Flags": return Flags;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Flags":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChatInviteEmptyType : ExportedChatInvite
         {
-            public override uint ConstructorCode => 0x69df3769;
+            public override Types ConstructorCode => Types.ChatInviteEmptyType;
 
             public ChatInviteEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -22467,11 +29849,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(ChatInviteEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ChatInviteExportedType : ExportedChatInvite
         {
-            public override uint ConstructorCode => 0xfc2e05bc;
+            public override Types ConstructorCode => Types.ChatInviteExportedType;
 
             public string Link;
 
@@ -22484,7 +29879,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Link);
             }
 
@@ -22497,11 +29892,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChatInviteExportedType Link:{0})", Link);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Link": return Link;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Link":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChatInviteAlreadyType : ChatInvite
         {
-            public override uint ConstructorCode => 0x5a686d7c;
+            public override Types ConstructorCode => Types.ChatInviteAlreadyType;
 
             public Chat Chat;
 
@@ -22514,7 +29931,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Chat.Write(writer);
             }
 
@@ -22527,11 +29944,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChatInviteAlreadyType Chat:{0})", Chat);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Chat": return Chat;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Chat":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChatInviteType : ChatInvite
         {
-            public override uint ConstructorCode => 0x93e99b60;
+            public override Types ConstructorCode => Types.ChatInviteType;
 
             public True Channel;
             public True Broadcast;
@@ -22566,7 +30005,7 @@ namespace TeleTurk.Core.MTProto
                     (Public != null ? 1 << 2 : 0) |
                     (Megagroup != null ? 1 << 3 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Channel != null) {
@@ -22614,17 +30053,47 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChatInviteType Channel:{0} Broadcast:{1} Public:{2} Megagroup:{3} Title:{4})", Channel, Broadcast, Public, Megagroup, Title);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Channel": return Channel;
+                        case "Broadcast": return Broadcast;
+                        case "Public": return Public;
+                        case "Megagroup": return Megagroup;
+                        case "Title": return Title;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Channel":
+                    case "Broadcast":
+                    case "Public":
+                    case "Megagroup":
+                    case "Title":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputStickerSetEmptyType : InputStickerSet
         {
-            public override uint ConstructorCode => 0xffb62b95;
+            public override Types ConstructorCode => Types.InputStickerSetEmptyType;
 
             public InputStickerSetEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -22635,11 +30104,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputStickerSetEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputStickerSetIDType : InputStickerSet
         {
-            public override uint ConstructorCode => 0x9de7a269;
+            public override Types ConstructorCode => Types.InputStickerSetIDType;
 
             public long Id;
             public long AccessHash;
@@ -22654,7 +30136,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Id);
                 writer.Write(AccessHash);
             }
@@ -22669,11 +30151,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputStickerSetIDType Id:{0} AccessHash:{1})", Id, AccessHash);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "AccessHash":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputStickerSetShortNameType : InputStickerSet
         {
-            public override uint ConstructorCode => 0x861cc8a0;
+            public override Types ConstructorCode => Types.InputStickerSetShortNameType;
 
             public string ShortName;
 
@@ -22686,7 +30192,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ShortName);
             }
 
@@ -22699,11 +30205,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputStickerSetShortNameType ShortName:{0})", ShortName);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ShortName": return ShortName;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ShortName":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class StickerSetType : StickerSet
         {
-            public override uint ConstructorCode => 0xcd303b41;
+            public override Types ConstructorCode => Types.StickerSetType;
 
             public True Installed;
             public True Disabled;
@@ -22749,7 +30277,7 @@ namespace TeleTurk.Core.MTProto
                     (Disabled != null ? 1 << 1 : 0) |
                     (Official != null ? 1 << 2 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Installed != null) {
@@ -22799,11 +30327,49 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(StickerSetType Installed:{0} Disabled:{1} Official:{2} Id:{3} AccessHash:{4} Title:{5} ShortName:{6} Count:{7} Hash:{8})", Installed, Disabled, Official, Id, AccessHash, Title, ShortName, Count, Hash);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Installed": return Installed;
+                        case "Disabled": return Disabled;
+                        case "Official": return Official;
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        case "Title": return Title;
+                        case "ShortName": return ShortName;
+                        case "Count": return Count;
+                        case "Hash": return Hash;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Installed":
+                    case "Disabled":
+                    case "Official":
+                    case "Id":
+                    case "AccessHash":
+                    case "Title":
+                    case "ShortName":
+                    case "Count":
+                    case "Hash":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesStickerSetType : MessagesStickerSet
         {
-            public override uint ConstructorCode => 0xb60a24a6;
+            public override Types ConstructorCode => Types.MessagesStickerSetType;
 
             public StickerSet Set;
             public List<StickerPack> Packs;
@@ -22820,7 +30386,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Set.Write(writer);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Packs.Count);
@@ -22851,11 +30417,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesStickerSetType Set:{0} Packs:{1} Documents:{2})", Set, Packs, Documents);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Set": return Set;
+                        case "Packs": return Packs;
+                        case "Documents": return Documents;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Set":
+                    case "Packs":
+                    case "Documents":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class BotCommandType : BotCommand
         {
-            public override uint ConstructorCode => 0xc27ac8c7;
+            public override Types ConstructorCode => Types.BotCommandType;
 
             public string Command;
             public string Description;
@@ -22870,7 +30462,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Command);
                 writer.Write(Description);
             }
@@ -22885,11 +30477,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(BotCommandType Command:{0} Description:{1})", Command, Description);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Command": return Command;
+                        case "Description": return Description;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Command":
+                    case "Description":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class BotInfoType : BotInfo
         {
-            public override uint ConstructorCode => 0x98e81d3a;
+            public override Types ConstructorCode => Types.BotInfoType;
 
             public int UserId;
             public string Description;
@@ -22906,7 +30522,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(Description);
                 writer.Write(0x1cb5c415); // vector code
@@ -22930,11 +30546,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(BotInfoType UserId:{0} Description:{1} Commands:{2})", UserId, Description, Commands);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "Description": return Description;
+                        case "Commands": return Commands;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "Description":
+                    case "Commands":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class KeyboardButtonType : KeyboardButton
         {
-            public override uint ConstructorCode => 0xa2fa4880;
+            public override Types ConstructorCode => Types.KeyboardButtonType;
 
             public string Text;
 
@@ -22947,7 +30589,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Text);
             }
 
@@ -22960,173 +30602,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(KeyboardButtonType Text:{0})", Text);
             }
-        }
 
-        public class KeyboardButtonUrlType : KeyboardButton
-        {
-            public override uint ConstructorCode => 0x258aff05;
-
-            public string Text;
-            public string Url;
-
-            public KeyboardButtonUrlType() { }
-
-            public KeyboardButtonUrlType(string Text, string Url)
+            public override object this[string name]
             {
-                this.Text = Text;
-                this.Url = Url;
+                get
+                {
+                    switch (name)
+                    {
+                        case "Text": return Text;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
             }
 
-            public override void Write(TBinaryWriter writer)
+            public override bool HasKey(string name)
             {
-                writer.Write(ConstructorCode);
-                writer.Write(Text);
-                writer.Write(Url);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Text = reader.ReadString();
-                Url = reader.ReadString();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(KeyboardButtonUrlType Text:{0} Url:{1})", Text, Url);
-            }
-        }
-
-        public class KeyboardButtonCallbackType : KeyboardButton
-        {
-            public override uint ConstructorCode => 0x683a5e46;
-
-            public string Text;
-            public byte[] Data;
-
-            public KeyboardButtonCallbackType() { }
-
-            public KeyboardButtonCallbackType(string Text, byte[] Data)
-            {
-                this.Text = Text;
-                this.Data = Data;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                writer.Write(Text);
-                writer.Write(Data);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Text = reader.ReadString();
-                Data = reader.ReadBytes();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(KeyboardButtonCallbackType Text:{0} Data:{1})", Text, Data);
-            }
-        }
-
-        public class KeyboardButtonRequestPhoneType : KeyboardButton
-        {
-            public override uint ConstructorCode => 0xb16a6c29;
-
-            public string Text;
-
-            public KeyboardButtonRequestPhoneType() { }
-
-            public KeyboardButtonRequestPhoneType(string Text)
-            {
-                this.Text = Text;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                writer.Write(Text);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Text = reader.ReadString();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(KeyboardButtonRequestPhoneType Text:{0})", Text);
-            }
-        }
-
-        public class KeyboardButtonRequestGeoLocationType : KeyboardButton
-        {
-            public override uint ConstructorCode => 0xfc796b3f;
-
-            public string Text;
-
-            public KeyboardButtonRequestGeoLocationType() { }
-
-            public KeyboardButtonRequestGeoLocationType(string Text)
-            {
-                this.Text = Text;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                writer.Write(Text);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Text = reader.ReadString();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(KeyboardButtonRequestGeoLocationType Text:{0})", Text);
-            }
-        }
-
-        public class KeyboardButtonSwitchInlineType : KeyboardButton
-        {
-            public override uint ConstructorCode => 0xea1b7a14;
-
-            public string Text;
-            public string Query;
-
-            public KeyboardButtonSwitchInlineType() { }
-
-            public KeyboardButtonSwitchInlineType(string Text, string Query)
-            {
-                this.Text = Text;
-                this.Query = Query;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                writer.Write(Text);
-                writer.Write(Query);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Text = reader.ReadString();
-                Query = reader.ReadString();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(KeyboardButtonSwitchInlineType Text:{0} Query:{1})", Text, Query);
+                switch (name)
+                {
+                    case "Text":
+                        return true;
+                    default: return false;
+                }
             }
         }
 
         public class KeyboardButtonRowType : KeyboardButtonRow
         {
-            public override uint ConstructorCode => 0x77608b83;
+            public override Types ConstructorCode => Types.KeyboardButtonRowType;
 
             public List<KeyboardButton> Buttons;
 
@@ -23139,7 +30641,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Buttons.Count);
                 foreach (KeyboardButton ButtonsElement in Buttons)
@@ -23159,11 +30661,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(KeyboardButtonRowType Buttons:{0})", Buttons);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Buttons": return Buttons;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Buttons":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ReplyKeyboardHideType : ReplyMarkup
         {
-            public override uint ConstructorCode => 0xa03e5b85;
+            public override Types ConstructorCode => Types.ReplyKeyboardHideType;
 
             public True Selective;
 
@@ -23183,7 +30707,7 @@ namespace TeleTurk.Core.MTProto
                 int flags =
                     (Selective != null ? 1 << 2 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Selective != null) {
@@ -23205,11 +30729,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ReplyKeyboardHideType Selective:{0})", Selective);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Selective": return Selective;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Selective":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ReplyKeyboardForceReplyType : ReplyMarkup
         {
-            public override uint ConstructorCode => 0xf4108aa0;
+            public override Types ConstructorCode => Types.ReplyKeyboardForceReplyType;
 
             public True SingleUse;
             public True Selective;
@@ -23233,7 +30779,7 @@ namespace TeleTurk.Core.MTProto
                     (SingleUse != null ? 1 << 1 : 0) |
                     (Selective != null ? 1 << 2 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (SingleUse != null) {
@@ -23263,11 +30809,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ReplyKeyboardForceReplyType SingleUse:{0} Selective:{1})", SingleUse, Selective);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "SingleUse": return SingleUse;
+                        case "Selective": return Selective;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "SingleUse":
+                    case "Selective":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ReplyKeyboardMarkupType : ReplyMarkup
         {
-            public override uint ConstructorCode => 0x3502758c;
+            public override Types ConstructorCode => Types.ReplyKeyboardMarkupType;
 
             public True Resize;
             public True SingleUse;
@@ -23298,7 +30868,7 @@ namespace TeleTurk.Core.MTProto
                     (SingleUse != null ? 1 << 1 : 0) |
                     (Selective != null ? 1 << 2 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Resize != null) {
@@ -23345,54 +30915,45 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ReplyKeyboardMarkupType Resize:{0} SingleUse:{1} Selective:{2} Rows:{3})", Resize, SingleUse, Selective, Rows);
             }
-        }
 
-        public class ReplyInlineMarkupType : ReplyMarkup
-        {
-            public override uint ConstructorCode => 0x48a30254;
-
-            public List<KeyboardButtonRow> Rows;
-
-            public ReplyInlineMarkupType() { }
-
-            public ReplyInlineMarkupType(List<KeyboardButtonRow> Rows)
+            public override object this[string name]
             {
-                this.Rows = Rows;
+                get
+                {
+                    switch (name)
+                    {
+                        case "Resize": return Resize;
+                        case "SingleUse": return SingleUse;
+                        case "Selective": return Selective;
+                        case "Rows": return Rows;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
             }
 
-            public override void Write(TBinaryWriter writer)
+            public override bool HasKey(string name)
             {
-                writer.Write(ConstructorCode);
-                writer.Write(0x1cb5c415); // vector code
-                writer.Write(Rows.Count);
-                foreach (KeyboardButtonRow RowsElement in Rows)
-                    RowsElement.Write(writer);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                reader.ReadInt32(); // vector code
-                int RowsLength = reader.ReadInt32();
-                Rows = new List<KeyboardButtonRow>(RowsLength);
-                for (int RowsIndex = 0; RowsIndex < RowsLength; RowsIndex++)
-                    Rows.Add(reader.Read<KeyboardButtonRow>());
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(ReplyInlineMarkupType Rows:{0})", Rows);
+                switch (name)
+                {
+                    case "Resize":
+                    case "SingleUse":
+                    case "Selective":
+                    case "Rows":
+                        return true;
+                    default: return false;
+                }
             }
         }
 
         public class HelpAppChangelogEmptyType : HelpAppChangelog
         {
-            public override uint ConstructorCode => 0xaf7e0394;
+            public override Types ConstructorCode => Types.HelpAppChangelogEmptyType;
 
             public HelpAppChangelogEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -23403,11 +30964,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(HelpAppChangelogEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class HelpAppChangelogType : HelpAppChangelog
         {
-            public override uint ConstructorCode => 0x4668e6bd;
+            public override Types ConstructorCode => Types.HelpAppChangelogType;
 
             public string Text;
 
@@ -23420,7 +30994,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Text);
             }
 
@@ -23433,11 +31007,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(HelpAppChangelogType Text:{0})", Text);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Text": return Text;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Text":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageEntityUnknownType : MessageEntity
         {
-            public override uint ConstructorCode => 0xbb92ba95;
+            public override Types ConstructorCode => Types.MessageEntityUnknownType;
 
             public int Offset;
             public int Length;
@@ -23452,7 +31048,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Offset);
                 writer.Write(Length);
             }
@@ -23467,11 +31063,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageEntityUnknownType Offset:{0} Length:{1})", Offset, Length);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Offset": return Offset;
+                        case "Length": return Length;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Offset":
+                    case "Length":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageEntityMentionType : MessageEntity
         {
-            public override uint ConstructorCode => 0xfa04579d;
+            public override Types ConstructorCode => Types.MessageEntityMentionType;
 
             public int Offset;
             public int Length;
@@ -23486,7 +31106,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Offset);
                 writer.Write(Length);
             }
@@ -23501,11 +31121,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageEntityMentionType Offset:{0} Length:{1})", Offset, Length);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Offset": return Offset;
+                        case "Length": return Length;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Offset":
+                    case "Length":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageEntityHashtagType : MessageEntity
         {
-            public override uint ConstructorCode => 0x6f635b0d;
+            public override Types ConstructorCode => Types.MessageEntityHashtagType;
 
             public int Offset;
             public int Length;
@@ -23520,7 +31164,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Offset);
                 writer.Write(Length);
             }
@@ -23535,11 +31179,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageEntityHashtagType Offset:{0} Length:{1})", Offset, Length);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Offset": return Offset;
+                        case "Length": return Length;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Offset":
+                    case "Length":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageEntityBotCommandType : MessageEntity
         {
-            public override uint ConstructorCode => 0x6cef8ac7;
+            public override Types ConstructorCode => Types.MessageEntityBotCommandType;
 
             public int Offset;
             public int Length;
@@ -23554,7 +31222,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Offset);
                 writer.Write(Length);
             }
@@ -23569,11 +31237,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageEntityBotCommandType Offset:{0} Length:{1})", Offset, Length);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Offset": return Offset;
+                        case "Length": return Length;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Offset":
+                    case "Length":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageEntityUrlType : MessageEntity
         {
-            public override uint ConstructorCode => 0x6ed02538;
+            public override Types ConstructorCode => Types.MessageEntityUrlType;
 
             public int Offset;
             public int Length;
@@ -23588,7 +31280,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Offset);
                 writer.Write(Length);
             }
@@ -23603,11 +31295,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageEntityUrlType Offset:{0} Length:{1})", Offset, Length);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Offset": return Offset;
+                        case "Length": return Length;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Offset":
+                    case "Length":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageEntityEmailType : MessageEntity
         {
-            public override uint ConstructorCode => 0x64e475c2;
+            public override Types ConstructorCode => Types.MessageEntityEmailType;
 
             public int Offset;
             public int Length;
@@ -23622,7 +31338,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Offset);
                 writer.Write(Length);
             }
@@ -23637,11 +31353,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageEntityEmailType Offset:{0} Length:{1})", Offset, Length);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Offset": return Offset;
+                        case "Length": return Length;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Offset":
+                    case "Length":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageEntityBoldType : MessageEntity
         {
-            public override uint ConstructorCode => 0xbd610bc9;
+            public override Types ConstructorCode => Types.MessageEntityBoldType;
 
             public int Offset;
             public int Length;
@@ -23656,7 +31396,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Offset);
                 writer.Write(Length);
             }
@@ -23671,11 +31411,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageEntityBoldType Offset:{0} Length:{1})", Offset, Length);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Offset": return Offset;
+                        case "Length": return Length;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Offset":
+                    case "Length":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageEntityItalicType : MessageEntity
         {
-            public override uint ConstructorCode => 0x826f8b60;
+            public override Types ConstructorCode => Types.MessageEntityItalicType;
 
             public int Offset;
             public int Length;
@@ -23690,7 +31454,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Offset);
                 writer.Write(Length);
             }
@@ -23705,11 +31469,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageEntityItalicType Offset:{0} Length:{1})", Offset, Length);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Offset": return Offset;
+                        case "Length": return Length;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Offset":
+                    case "Length":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageEntityCodeType : MessageEntity
         {
-            public override uint ConstructorCode => 0x28a20571;
+            public override Types ConstructorCode => Types.MessageEntityCodeType;
 
             public int Offset;
             public int Length;
@@ -23724,7 +31512,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Offset);
                 writer.Write(Length);
             }
@@ -23739,11 +31527,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageEntityCodeType Offset:{0} Length:{1})", Offset, Length);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Offset": return Offset;
+                        case "Length": return Length;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Offset":
+                    case "Length":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageEntityPreType : MessageEntity
         {
-            public override uint ConstructorCode => 0x73924be0;
+            public override Types ConstructorCode => Types.MessageEntityPreType;
 
             public int Offset;
             public int Length;
@@ -23760,7 +31572,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Offset);
                 writer.Write(Length);
                 writer.Write(Language);
@@ -23777,11 +31589,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageEntityPreType Offset:{0} Length:{1} Language:{2})", Offset, Length, Language);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Offset": return Offset;
+                        case "Length": return Length;
+                        case "Language": return Language;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Offset":
+                    case "Length":
+                    case "Language":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageEntityTextUrlType : MessageEntity
         {
-            public override uint ConstructorCode => 0x76a6d327;
+            public override Types ConstructorCode => Types.MessageEntityTextUrlType;
 
             public int Offset;
             public int Length;
@@ -23798,7 +31636,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Offset);
                 writer.Write(Length);
                 writer.Write(Url);
@@ -23815,93 +31653,43 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageEntityTextUrlType Offset:{0} Length:{1} Url:{2})", Offset, Length, Url);
             }
-        }
 
-        public class MessageEntityMentionNameType : MessageEntity
-        {
-            public override uint ConstructorCode => 0x352dca58;
-
-            public int Offset;
-            public int Length;
-            public int UserId;
-
-            public MessageEntityMentionNameType() { }
-
-            public MessageEntityMentionNameType(int Offset, int Length, int UserId)
+            public override object this[string name]
             {
-                this.Offset = Offset;
-                this.Length = Length;
-                this.UserId = UserId;
+                get
+                {
+                    switch (name)
+                    {
+                        case "Offset": return Offset;
+                        case "Length": return Length;
+                        case "Url": return Url;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
             }
 
-            public override void Write(TBinaryWriter writer)
+            public override bool HasKey(string name)
             {
-                writer.Write(ConstructorCode);
-                writer.Write(Offset);
-                writer.Write(Length);
-                writer.Write(UserId);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Offset = reader.ReadInt32();
-                Length = reader.ReadInt32();
-                UserId = reader.ReadInt32();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(MessageEntityMentionNameType Offset:{0} Length:{1} UserId:{2})", Offset, Length, UserId);
-            }
-        }
-
-        public class InputMessageEntityMentionNameType : MessageEntity
-        {
-            public override uint ConstructorCode => 0x208e68c9;
-
-            public int Offset;
-            public int Length;
-            public InputUser UserId;
-
-            public InputMessageEntityMentionNameType() { }
-
-            public InputMessageEntityMentionNameType(int Offset, int Length, InputUser UserId)
-            {
-                this.Offset = Offset;
-                this.Length = Length;
-                this.UserId = UserId;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                writer.Write(Offset);
-                writer.Write(Length);
-                UserId.Write(writer);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Offset = reader.ReadInt32();
-                Length = reader.ReadInt32();
-                UserId = reader.Read<InputUser>();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(InputMessageEntityMentionNameType Offset:{0} Length:{1} UserId:{2})", Offset, Length, UserId);
+                switch (name)
+                {
+                    case "Offset":
+                    case "Length":
+                    case "Url":
+                        return true;
+                    default: return false;
+                }
             }
         }
 
         public class InputChannelEmptyType : InputChannel
         {
-            public override uint ConstructorCode => 0xee8c1e86;
+            public override Types ConstructorCode => Types.InputChannelEmptyType;
 
             public InputChannelEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -23912,11 +31700,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(InputChannelEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class InputChannelType : InputChannel
         {
-            public override uint ConstructorCode => 0xafeb712e;
+            public override Types ConstructorCode => Types.InputChannelType;
 
             public int ChannelId;
             public long AccessHash;
@@ -23931,7 +31732,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(ChannelId);
                 writer.Write(AccessHash);
             }
@@ -23946,11 +31747,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputChannelType ChannelId:{0} AccessHash:{1})", ChannelId, AccessHash);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChannelId": return ChannelId;
+                        case "AccessHash": return AccessHash;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChannelId":
+                    case "AccessHash":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ContactsResolvedPeerType : ContactsResolvedPeer
         {
-            public override uint ConstructorCode => 0x7f077ad9;
+            public override Types ConstructorCode => Types.ContactsResolvedPeerType;
 
             public Peer Peer;
             public List<Chat> Chats;
@@ -23967,7 +31792,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Peer.Write(writer);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Chats.Count);
@@ -23998,11 +31823,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ContactsResolvedPeerType Peer:{0} Chats:{1} Users:{2})", Peer, Chats, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Peer": return Peer;
+                        case "Chats": return Chats;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Peer":
+                    case "Chats":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageRangeType : MessageRange
         {
-            public override uint ConstructorCode => 0x0ae30253;
+            public override Types ConstructorCode => Types.MessageRangeType;
 
             public int MinId;
             public int MaxId;
@@ -24017,7 +31868,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(MinId);
                 writer.Write(MaxId);
             }
@@ -24032,11 +31883,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageRangeType MinId:{0} MaxId:{1})", MinId, MaxId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "MinId": return MinId;
+                        case "MaxId": return MaxId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "MinId":
+                    case "MaxId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageGroupType : MessageGroup
         {
-            public override uint ConstructorCode => 0xe8346f53;
+            public override Types ConstructorCode => Types.MessageGroupType;
 
             public int MinId;
             public int MaxId;
@@ -24055,7 +31930,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(MinId);
                 writer.Write(MaxId);
                 writer.Write(Count);
@@ -24074,11 +31949,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageGroupType MinId:{0} MaxId:{1} Count:{2} Date:{3})", MinId, MaxId, Count, Date);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "MinId": return MinId;
+                        case "MaxId": return MaxId;
+                        case "Count": return Count;
+                        case "Date": return Date;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "MinId":
+                    case "MaxId":
+                    case "Count":
+                    case "Date":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdatesChannelDifferenceEmptyType : UpdatesChannelDifference
         {
-            public override uint ConstructorCode => 0x3e11affb;
+            public override Types ConstructorCode => Types.UpdatesChannelDifferenceEmptyType;
 
             public True Final;
             public int Pts;
@@ -24105,7 +32008,7 @@ namespace TeleTurk.Core.MTProto
                     (Final != null ? 1 << 0 : 0) |
                     (Timeout != null ? 1 << 1 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Final != null) {
@@ -24137,11 +32040,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdatesChannelDifferenceEmptyType Final:{0} Pts:{1} Timeout:{2})", Final, Pts, Timeout);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Final": return Final;
+                        case "Pts": return Pts;
+                        case "Timeout": return Timeout;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Final":
+                    case "Pts":
+                    case "Timeout":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdatesChannelDifferenceTooLongType : UpdatesChannelDifference
         {
-            public override uint ConstructorCode => 0x5e167646;
+            public override Types ConstructorCode => Types.UpdatesChannelDifferenceTooLongType;
 
             public True Final;
             public int Pts;
@@ -24192,7 +32121,7 @@ namespace TeleTurk.Core.MTProto
                     (Final != null ? 1 << 0 : 0) |
                     (Timeout != null ? 1 << 1 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Final != null) {
@@ -24261,11 +32190,53 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdatesChannelDifferenceTooLongType Final:{0} Pts:{1} Timeout:{2} TopMessage:{3} TopImportantMessage:{4} ReadInboxMaxId:{5} UnreadCount:{6} UnreadImportantCount:{7} Messages:{8} Chats:{9} Users:{10})", Final, Pts, Timeout, TopMessage, TopImportantMessage, ReadInboxMaxId, UnreadCount, UnreadImportantCount, Messages, Chats, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Final": return Final;
+                        case "Pts": return Pts;
+                        case "Timeout": return Timeout;
+                        case "TopMessage": return TopMessage;
+                        case "TopImportantMessage": return TopImportantMessage;
+                        case "ReadInboxMaxId": return ReadInboxMaxId;
+                        case "UnreadCount": return UnreadCount;
+                        case "UnreadImportantCount": return UnreadImportantCount;
+                        case "Messages": return Messages;
+                        case "Chats": return Chats;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Final":
+                    case "Pts":
+                    case "Timeout":
+                    case "TopMessage":
+                    case "TopImportantMessage":
+                    case "ReadInboxMaxId":
+                    case "UnreadCount":
+                    case "UnreadImportantCount":
+                    case "Messages":
+                    case "Chats":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class UpdatesChannelDifferenceType : UpdatesChannelDifference
         {
-            public override uint ConstructorCode => 0x2064674e;
+            public override Types ConstructorCode => Types.UpdatesChannelDifferenceType;
 
             public True Final;
             public int Pts;
@@ -24304,7 +32275,7 @@ namespace TeleTurk.Core.MTProto
                     (Final != null ? 1 << 0 : 0) |
                     (Timeout != null ? 1 << 1 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Final != null) {
@@ -24372,17 +32343,51 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(UpdatesChannelDifferenceType Final:{0} Pts:{1} Timeout:{2} NewMessages:{3} OtherUpdates:{4} Chats:{5} Users:{6})", Final, Pts, Timeout, NewMessages, OtherUpdates, Chats, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Final": return Final;
+                        case "Pts": return Pts;
+                        case "Timeout": return Timeout;
+                        case "NewMessages": return NewMessages;
+                        case "OtherUpdates": return OtherUpdates;
+                        case "Chats": return Chats;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Final":
+                    case "Pts":
+                    case "Timeout":
+                    case "NewMessages":
+                    case "OtherUpdates":
+                    case "Chats":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChannelMessagesFilterEmptyType : ChannelMessagesFilter
         {
-            public override uint ConstructorCode => 0x94d42ee7;
+            public override Types ConstructorCode => Types.ChannelMessagesFilterEmptyType;
 
             public ChannelMessagesFilterEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -24393,11 +32398,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(ChannelMessagesFilterEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ChannelMessagesFilterType : ChannelMessagesFilter
         {
-            public override uint ConstructorCode => 0xcd77d957;
+            public override Types ConstructorCode => Types.ChannelMessagesFilterType;
 
             public True ImportantOnly;
             public True ExcludeNewMessages;
@@ -24424,7 +32442,7 @@ namespace TeleTurk.Core.MTProto
                     (ImportantOnly != null ? 1 << 0 : 0) |
                     (ExcludeNewMessages != null ? 1 << 1 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (ImportantOnly != null) {
@@ -24463,17 +32481,43 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChannelMessagesFilterType ImportantOnly:{0} ExcludeNewMessages:{1} Ranges:{2})", ImportantOnly, ExcludeNewMessages, Ranges);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ImportantOnly": return ImportantOnly;
+                        case "ExcludeNewMessages": return ExcludeNewMessages;
+                        case "Ranges": return Ranges;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ImportantOnly":
+                    case "ExcludeNewMessages":
+                    case "Ranges":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChannelMessagesFilterCollapsedType : ChannelMessagesFilter
         {
-            public override uint ConstructorCode => 0xfa01232e;
+            public override Types ConstructorCode => Types.ChannelMessagesFilterCollapsedType;
 
             public ChannelMessagesFilterCollapsedType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -24484,11 +32528,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(ChannelMessagesFilterCollapsedType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ChannelParticipantType : ChannelParticipant
         {
-            public override uint ConstructorCode => 0x15ebac1d;
+            public override Types ConstructorCode => Types.ChannelParticipantType;
 
             public int UserId;
             public int Date;
@@ -24503,7 +32560,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(Date);
             }
@@ -24518,11 +32575,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChannelParticipantType UserId:{0} Date:{1})", UserId, Date);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "Date": return Date;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "Date":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChannelParticipantSelfType : ChannelParticipant
         {
-            public override uint ConstructorCode => 0xa3289a6d;
+            public override Types ConstructorCode => Types.ChannelParticipantSelfType;
 
             public int UserId;
             public int InviterId;
@@ -24539,7 +32620,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(InviterId);
                 writer.Write(Date);
@@ -24556,11 +32637,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChannelParticipantSelfType UserId:{0} InviterId:{1} Date:{2})", UserId, InviterId, Date);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "InviterId": return InviterId;
+                        case "Date": return Date;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "InviterId":
+                    case "Date":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChannelParticipantModeratorType : ChannelParticipant
         {
-            public override uint ConstructorCode => 0x91057fef;
+            public override Types ConstructorCode => Types.ChannelParticipantModeratorType;
 
             public int UserId;
             public int InviterId;
@@ -24577,7 +32684,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(InviterId);
                 writer.Write(Date);
@@ -24594,11 +32701,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChannelParticipantModeratorType UserId:{0} InviterId:{1} Date:{2})", UserId, InviterId, Date);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "InviterId": return InviterId;
+                        case "Date": return Date;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "InviterId":
+                    case "Date":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChannelParticipantEditorType : ChannelParticipant
         {
-            public override uint ConstructorCode => 0x98192d61;
+            public override Types ConstructorCode => Types.ChannelParticipantEditorType;
 
             public int UserId;
             public int InviterId;
@@ -24615,7 +32748,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(InviterId);
                 writer.Write(Date);
@@ -24632,11 +32765,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChannelParticipantEditorType UserId:{0} InviterId:{1} Date:{2})", UserId, InviterId, Date);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "InviterId": return InviterId;
+                        case "Date": return Date;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "InviterId":
+                    case "Date":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChannelParticipantKickedType : ChannelParticipant
         {
-            public override uint ConstructorCode => 0x8cc5e69a;
+            public override Types ConstructorCode => Types.ChannelParticipantKickedType;
 
             public int UserId;
             public int KickedBy;
@@ -24653,7 +32812,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
                 writer.Write(KickedBy);
                 writer.Write(Date);
@@ -24670,11 +32829,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChannelParticipantKickedType UserId:{0} KickedBy:{1} Date:{2})", UserId, KickedBy, Date);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        case "KickedBy": return KickedBy;
+                        case "Date": return Date;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                    case "KickedBy":
+                    case "Date":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChannelParticipantCreatorType : ChannelParticipant
         {
-            public override uint ConstructorCode => 0xe3e2e1f9;
+            public override Types ConstructorCode => Types.ChannelParticipantCreatorType;
 
             public int UserId;
 
@@ -24687,7 +32872,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(UserId);
             }
 
@@ -24700,17 +32885,39 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChannelParticipantCreatorType UserId:{0})", UserId);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "UserId": return UserId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "UserId":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChannelParticipantsRecentType : ChannelParticipantsFilter
         {
-            public override uint ConstructorCode => 0xde3f3c79;
+            public override Types ConstructorCode => Types.ChannelParticipantsRecentType;
 
             public ChannelParticipantsRecentType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -24721,17 +32928,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(ChannelParticipantsRecentType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ChannelParticipantsAdminsType : ChannelParticipantsFilter
         {
-            public override uint ConstructorCode => 0xb4608969;
+            public override Types ConstructorCode => Types.ChannelParticipantsAdminsType;
 
             public ChannelParticipantsAdminsType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -24742,17 +32962,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(ChannelParticipantsAdminsType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ChannelParticipantsKickedType : ChannelParticipantsFilter
         {
-            public override uint ConstructorCode => 0x3c37bb7a;
+            public override Types ConstructorCode => Types.ChannelParticipantsKickedType;
 
             public ChannelParticipantsKickedType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -24763,17 +32996,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(ChannelParticipantsKickedType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ChannelParticipantsBotsType : ChannelParticipantsFilter
         {
-            public override uint ConstructorCode => 0xb0d1865b;
+            public override Types ConstructorCode => Types.ChannelParticipantsBotsType;
 
             public ChannelParticipantsBotsType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -24784,17 +33030,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(ChannelParticipantsBotsType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ChannelRoleEmptyType : ChannelParticipantRole
         {
-            public override uint ConstructorCode => 0xb285a0c6;
+            public override Types ConstructorCode => Types.ChannelRoleEmptyType;
 
             public ChannelRoleEmptyType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -24805,17 +33064,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(ChannelRoleEmptyType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ChannelRoleModeratorType : ChannelParticipantRole
         {
-            public override uint ConstructorCode => 0x9618d975;
+            public override Types ConstructorCode => Types.ChannelRoleModeratorType;
 
             public ChannelRoleModeratorType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -24826,17 +33098,30 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(ChannelRoleModeratorType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ChannelRoleEditorType : ChannelParticipantRole
         {
-            public override uint ConstructorCode => 0x820bfe8c;
+            public override Types ConstructorCode => Types.ChannelRoleEditorType;
 
             public ChannelRoleEditorType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -24847,11 +33132,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(ChannelRoleEditorType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class ChannelsChannelParticipantsType : ChannelsChannelParticipants
         {
-            public override uint ConstructorCode => 0xf56ee2a8;
+            public override Types ConstructorCode => Types.ChannelsChannelParticipantsType;
 
             public int Count;
             public List<ChannelParticipant> Participants;
@@ -24868,7 +33166,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Count);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Participants.Count);
@@ -24899,11 +33197,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChannelsChannelParticipantsType Count:{0} Participants:{1} Users:{2})", Count, Participants, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Count": return Count;
+                        case "Participants": return Participants;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Count":
+                    case "Participants":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class ChannelsChannelParticipantType : ChannelsChannelParticipant
         {
-            public override uint ConstructorCode => 0xd0d9b163;
+            public override Types ConstructorCode => Types.ChannelsChannelParticipantType;
 
             public ChannelParticipant Participant;
             public List<User> Users;
@@ -24918,7 +33242,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 Participant.Write(writer);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Users.Count);
@@ -24940,11 +33264,35 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ChannelsChannelParticipantType Participant:{0} Users:{1})", Participant, Users);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Participant": return Participant;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Participant":
+                    case "Users":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class HelpTermsOfServiceType : HelpTermsOfService
         {
-            public override uint ConstructorCode => 0xf1ee3e90;
+            public override Types ConstructorCode => Types.HelpTermsOfServiceType;
 
             public string Text;
 
@@ -24957,7 +33305,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Text);
             }
 
@@ -24970,11 +33318,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(HelpTermsOfServiceType Text:{0})", Text);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Text": return Text;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Text":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class FoundGifType : FoundGif
         {
-            public override uint ConstructorCode => 0x162ecc1f;
+            public override Types ConstructorCode => Types.FoundGifType;
 
             public string Url;
             public string ThumbUrl;
@@ -24997,7 +33367,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Url);
                 writer.Write(ThumbUrl);
                 writer.Write(ContentUrl);
@@ -25020,11 +33390,43 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(FoundGifType Url:{0} ThumbUrl:{1} ContentUrl:{2} ContentType:{3} W:{4} H:{5})", Url, ThumbUrl, ContentUrl, ContentType, W, H);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Url": return Url;
+                        case "ThumbUrl": return ThumbUrl;
+                        case "ContentUrl": return ContentUrl;
+                        case "ContentType": return ContentType;
+                        case "W": return W;
+                        case "H": return H;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Url":
+                    case "ThumbUrl":
+                    case "ContentUrl":
+                    case "ContentType":
+                    case "W":
+                    case "H":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class FoundGifCachedType : FoundGif
         {
-            public override uint ConstructorCode => 0x9c750409;
+            public override Types ConstructorCode => Types.FoundGifCachedType;
 
             public string Url;
             public Photo Photo;
@@ -25041,7 +33443,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Url);
                 Photo.Write(writer);
                 Document.Write(writer);
@@ -25058,11 +33460,37 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(FoundGifCachedType Url:{0} Photo:{1} Document:{2})", Url, Photo, Document);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Url": return Url;
+                        case "Photo": return Photo;
+                        case "Document": return Document;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Url":
+                    case "Photo":
+                    case "Document":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesFoundGifsType : MessagesFoundGifs
         {
-            public override uint ConstructorCode => 0x450a1c0a;
+            public override Types ConstructorCode => Types.MessagesFoundGifsType;
 
             public int NextOffset;
             public List<FoundGif> Results;
@@ -25077,7 +33505,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(NextOffset);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Results.Count);
@@ -25099,17 +33527,41 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesFoundGifsType NextOffset:{0} Results:{1})", NextOffset, Results);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "NextOffset": return NextOffset;
+                        case "Results": return Results;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "NextOffset":
+                    case "Results":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessagesSavedGifsNotModifiedType : MessagesSavedGifs
         {
-            public override uint ConstructorCode => 0xe8025ca2;
+            public override Types ConstructorCode => Types.MessagesSavedGifsNotModifiedType;
 
             public MessagesSavedGifsNotModifiedType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -25120,11 +33572,24 @@ namespace TeleTurk.Core.MTProto
             {
                 return "(MessagesSavedGifsNotModifiedType)";
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
+            }
         }
 
         public class MessagesSavedGifsType : MessagesSavedGifs
         {
-            public override uint ConstructorCode => 0x2e0709a5;
+            public override Types ConstructorCode => Types.MessagesSavedGifsType;
 
             public int Hash;
             public List<Document> Gifs;
@@ -25139,7 +33604,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Hash);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Gifs.Count);
@@ -25161,93 +33626,114 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessagesSavedGifsType Hash:{0} Gifs:{1})", Hash, Gifs);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Hash": return Hash;
+                        case "Gifs": return Gifs;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Hash":
+                    case "Gifs":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class InputBotInlineMessageMediaAutoType : InputBotInlineMessage
         {
-            public override uint ConstructorCode => 0x292fed13;
+            public override Types ConstructorCode => Types.InputBotInlineMessageMediaAutoType;
 
             public string Caption;
-            public ReplyMarkup ReplyMarkup;
 
             public InputBotInlineMessageMediaAutoType() { }
 
-            /// <summary>
-            /// The following arguments can be null: ReplyMarkup
-            /// </summary>
-            /// <param name="Caption">Can NOT be null</param>
-            /// <param name="ReplyMarkup">Can be null</param>
-            public InputBotInlineMessageMediaAutoType(string Caption, ReplyMarkup ReplyMarkup)
+            public InputBotInlineMessageMediaAutoType(string Caption)
             {
                 this.Caption = Caption;
-                this.ReplyMarkup = ReplyMarkup;
             }
 
             public override void Write(TBinaryWriter writer)
             {
-                int flags =
-                    (ReplyMarkup != null ? 1 << 2 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Caption);
-                if (ReplyMarkup != null) {
-                    ReplyMarkup.Write(writer);
-                }
-
             }
 
             public override void Read(TBinaryReader reader)
             {
-                int flags = reader.ReadInt32();
                 Caption = reader.ReadString();
-                if ((flags & (1 << 2)) != 0) {
-                    ReplyMarkup = reader.Read<ReplyMarkup>();
-                }
-
             }
 
             public override string ToString()
             {
-                return string.Format("(InputBotInlineMessageMediaAutoType Caption:{0} ReplyMarkup:{1})", Caption, ReplyMarkup);
+                return string.Format("(InputBotInlineMessageMediaAutoType Caption:{0})", Caption);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Caption": return Caption;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Caption":
+                        return true;
+                    default: return false;
+                }
             }
         }
 
         public class InputBotInlineMessageTextType : InputBotInlineMessage
         {
-            public override uint ConstructorCode => 0x3dcd7a87;
+            public override Types ConstructorCode => Types.InputBotInlineMessageTextType;
 
             public True NoWebpage;
             public string Message;
             public List<MessageEntity> Entities;
-            public ReplyMarkup ReplyMarkup;
 
             public InputBotInlineMessageTextType() { }
 
             /// <summary>
-            /// The following arguments can be null: NoWebpage, Entities, ReplyMarkup
+            /// The following arguments can be null: NoWebpage, Entities
             /// </summary>
             /// <param name="NoWebpage">Can be null</param>
             /// <param name="Message">Can NOT be null</param>
             /// <param name="Entities">Can be null</param>
-            /// <param name="ReplyMarkup">Can be null</param>
-            public InputBotInlineMessageTextType(True NoWebpage, string Message, List<MessageEntity> Entities, ReplyMarkup ReplyMarkup)
+            public InputBotInlineMessageTextType(True NoWebpage, string Message, List<MessageEntity> Entities)
             {
                 this.NoWebpage = NoWebpage;
                 this.Message = Message;
                 this.Entities = Entities;
-                this.ReplyMarkup = ReplyMarkup;
             }
 
             public override void Write(TBinaryWriter writer)
             {
                 int flags =
                     (NoWebpage != null ? 1 << 0 : 0) |
-                    (Entities != null ? 1 << 1 : 0) |
-                    (ReplyMarkup != null ? 1 << 2 : 0);
+                    (Entities != null ? 1 << 1 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (NoWebpage != null) {
@@ -25260,10 +33746,6 @@ namespace TeleTurk.Core.MTProto
                     writer.Write(Entities.Count);
                     foreach (MessageEntity EntitiesElement in Entities)
                         EntitiesElement.Write(writer);
-                }
-
-                if (ReplyMarkup != null) {
-                    ReplyMarkup.Write(writer);
                 }
 
             }
@@ -25284,204 +33766,43 @@ namespace TeleTurk.Core.MTProto
                         Entities.Add(reader.Read<MessageEntity>());
                     }
 
-                if ((flags & (1 << 2)) != 0) {
-                    ReplyMarkup = reader.Read<ReplyMarkup>();
-                }
-
             }
 
             public override string ToString()
             {
-                return string.Format("(InputBotInlineMessageTextType NoWebpage:{0} Message:{1} Entities:{2} ReplyMarkup:{3})", NoWebpage, Message, Entities, ReplyMarkup);
-            }
-        }
-
-        public class InputBotInlineMessageMediaGeoType : InputBotInlineMessage
-        {
-            public override uint ConstructorCode => 0xf4a59de1;
-
-            public InputGeoPoint GeoPoint;
-            public ReplyMarkup ReplyMarkup;
-
-            public InputBotInlineMessageMediaGeoType() { }
-
-            /// <summary>
-            /// The following arguments can be null: ReplyMarkup
-            /// </summary>
-            /// <param name="GeoPoint">Can NOT be null</param>
-            /// <param name="ReplyMarkup">Can be null</param>
-            public InputBotInlineMessageMediaGeoType(InputGeoPoint GeoPoint, ReplyMarkup ReplyMarkup)
-            {
-                this.GeoPoint = GeoPoint;
-                this.ReplyMarkup = ReplyMarkup;
+                return string.Format("(InputBotInlineMessageTextType NoWebpage:{0} Message:{1} Entities:{2})", NoWebpage, Message, Entities);
             }
 
-            public override void Write(TBinaryWriter writer)
+            public override object this[string name]
             {
-                int flags =
-                    (ReplyMarkup != null ? 1 << 2 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
-                GeoPoint.Write(writer);
-                if (ReplyMarkup != null) {
-                    ReplyMarkup.Write(writer);
+                get
+                {
+                    switch (name)
+                    {
+                        case "NoWebpage": return NoWebpage;
+                        case "Message": return Message;
+                        case "Entities": return Entities;
+                        default: throw new KeyNotFoundException();
+                    }
                 }
-
             }
 
-            public override void Read(TBinaryReader reader)
+            public override bool HasKey(string name)
             {
-                int flags = reader.ReadInt32();
-                GeoPoint = reader.Read<InputGeoPoint>();
-                if ((flags & (1 << 2)) != 0) {
-                    ReplyMarkup = reader.Read<ReplyMarkup>();
+                switch (name)
+                {
+                    case "NoWebpage":
+                    case "Message":
+                    case "Entities":
+                        return true;
+                    default: return false;
                 }
-
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(InputBotInlineMessageMediaGeoType GeoPoint:{0} ReplyMarkup:{1})", GeoPoint, ReplyMarkup);
-            }
-        }
-
-        public class InputBotInlineMessageMediaVenueType : InputBotInlineMessage
-        {
-            public override uint ConstructorCode => 0xaaafadc8;
-
-            public InputGeoPoint GeoPoint;
-            public string Title;
-            public string Address;
-            public string Provider;
-            public string VenueId;
-            public ReplyMarkup ReplyMarkup;
-
-            public InputBotInlineMessageMediaVenueType() { }
-
-            /// <summary>
-            /// The following arguments can be null: ReplyMarkup
-            /// </summary>
-            /// <param name="GeoPoint">Can NOT be null</param>
-            /// <param name="Title">Can NOT be null</param>
-            /// <param name="Address">Can NOT be null</param>
-            /// <param name="Provider">Can NOT be null</param>
-            /// <param name="VenueId">Can NOT be null</param>
-            /// <param name="ReplyMarkup">Can be null</param>
-            public InputBotInlineMessageMediaVenueType(InputGeoPoint GeoPoint, string Title, string Address, string Provider, string VenueId, ReplyMarkup ReplyMarkup)
-            {
-                this.GeoPoint = GeoPoint;
-                this.Title = Title;
-                this.Address = Address;
-                this.Provider = Provider;
-                this.VenueId = VenueId;
-                this.ReplyMarkup = ReplyMarkup;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                int flags =
-                    (ReplyMarkup != null ? 1 << 2 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
-                GeoPoint.Write(writer);
-                writer.Write(Title);
-                writer.Write(Address);
-                writer.Write(Provider);
-                writer.Write(VenueId);
-                if (ReplyMarkup != null) {
-                    ReplyMarkup.Write(writer);
-                }
-
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                int flags = reader.ReadInt32();
-                GeoPoint = reader.Read<InputGeoPoint>();
-                Title = reader.ReadString();
-                Address = reader.ReadString();
-                Provider = reader.ReadString();
-                VenueId = reader.ReadString();
-                if ((flags & (1 << 2)) != 0) {
-                    ReplyMarkup = reader.Read<ReplyMarkup>();
-                }
-
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(InputBotInlineMessageMediaVenueType GeoPoint:{0} Title:{1} Address:{2} Provider:{3} VenueId:{4} ReplyMarkup:{5})", GeoPoint, Title, Address, Provider, VenueId, ReplyMarkup);
-            }
-        }
-
-        public class InputBotInlineMessageMediaContactType : InputBotInlineMessage
-        {
-            public override uint ConstructorCode => 0x2daf01a7;
-
-            public string PhoneNumber;
-            public string FirstName;
-            public string LastName;
-            public ReplyMarkup ReplyMarkup;
-
-            public InputBotInlineMessageMediaContactType() { }
-
-            /// <summary>
-            /// The following arguments can be null: ReplyMarkup
-            /// </summary>
-            /// <param name="PhoneNumber">Can NOT be null</param>
-            /// <param name="FirstName">Can NOT be null</param>
-            /// <param name="LastName">Can NOT be null</param>
-            /// <param name="ReplyMarkup">Can be null</param>
-            public InputBotInlineMessageMediaContactType(string PhoneNumber, string FirstName, string LastName, ReplyMarkup ReplyMarkup)
-            {
-                this.PhoneNumber = PhoneNumber;
-                this.FirstName = FirstName;
-                this.LastName = LastName;
-                this.ReplyMarkup = ReplyMarkup;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                int flags =
-                    (ReplyMarkup != null ? 1 << 2 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
-                writer.Write(PhoneNumber);
-                writer.Write(FirstName);
-                writer.Write(LastName);
-                if (ReplyMarkup != null) {
-                    ReplyMarkup.Write(writer);
-                }
-
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                int flags = reader.ReadInt32();
-                PhoneNumber = reader.ReadString();
-                FirstName = reader.ReadString();
-                LastName = reader.ReadString();
-                if ((flags & (1 << 2)) != 0) {
-                    ReplyMarkup = reader.Read<ReplyMarkup>();
-                }
-
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(InputBotInlineMessageMediaContactType PhoneNumber:{0} FirstName:{1} LastName:{2} ReplyMarkup:{3})", PhoneNumber, FirstName, LastName, ReplyMarkup);
             }
         }
 
         public class InputBotInlineResultType : InputBotInlineResult
         {
-            public override uint ConstructorCode => 0x2cbbe15a;
+            public override Types ConstructorCode => Types.InputBotInlineResultType;
 
             public string Id;
             public string Type;
@@ -25542,7 +33863,7 @@ namespace TeleTurk.Core.MTProto
                     (H != null ? 1 << 6 : 0) |
                     (Duration != null ? 1 << 7 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 writer.Write(Id);
@@ -25634,213 +33955,134 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(InputBotInlineResultType Id:{0} Type:{1} Title:{2} Description:{3} Url:{4} ThumbUrl:{5} ContentUrl:{6} ContentType:{7} W:{8} H:{9} Duration:{10} SendMessage:{11})", Id, Type, Title, Description, Url, ThumbUrl, ContentUrl, ContentType, W, H, Duration, SendMessage);
             }
-        }
 
-        public class InputBotInlineResultPhotoType : InputBotInlineResult
-        {
-            public override uint ConstructorCode => 0xa8d864a7;
-
-            public string Id;
-            public string Type;
-            public InputPhoto Photo;
-            public InputBotInlineMessage SendMessage;
-
-            public InputBotInlineResultPhotoType() { }
-
-            public InputBotInlineResultPhotoType(string Id, string Type, InputPhoto Photo, InputBotInlineMessage SendMessage)
+            public override object this[string name]
             {
-                this.Id = Id;
-                this.Type = Type;
-                this.Photo = Photo;
-                this.SendMessage = SendMessage;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                writer.Write(Id);
-                writer.Write(Type);
-                Photo.Write(writer);
-                SendMessage.Write(writer);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Id = reader.ReadString();
-                Type = reader.ReadString();
-                Photo = reader.Read<InputPhoto>();
-                SendMessage = reader.Read<InputBotInlineMessage>();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(InputBotInlineResultPhotoType Id:{0} Type:{1} Photo:{2} SendMessage:{3})", Id, Type, Photo, SendMessage);
-            }
-        }
-
-        public class InputBotInlineResultDocumentType : InputBotInlineResult
-        {
-            public override uint ConstructorCode => 0xfff8fdc4;
-
-            public string Id;
-            public string Type;
-            public string Title;
-            public string Description;
-            public InputDocument Document;
-            public InputBotInlineMessage SendMessage;
-
-            public InputBotInlineResultDocumentType() { }
-
-            /// <summary>
-            /// The following arguments can be null: Title, Description
-            /// </summary>
-            /// <param name="Id">Can NOT be null</param>
-            /// <param name="Type">Can NOT be null</param>
-            /// <param name="Title">Can be null</param>
-            /// <param name="Description">Can be null</param>
-            /// <param name="Document">Can NOT be null</param>
-            /// <param name="SendMessage">Can NOT be null</param>
-            public InputBotInlineResultDocumentType(string Id, string Type, string Title, string Description, InputDocument Document, InputBotInlineMessage SendMessage)
-            {
-                this.Id = Id;
-                this.Type = Type;
-                this.Title = Title;
-                this.Description = Description;
-                this.Document = Document;
-                this.SendMessage = SendMessage;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                int flags =
-                    (Title != null ? 1 << 1 : 0) |
-                    (Description != null ? 1 << 2 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
-                writer.Write(Id);
-                writer.Write(Type);
-                if (Title != null) {
-                    writer.Write(Title);
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Type": return Type;
+                        case "Title": return Title;
+                        case "Description": return Description;
+                        case "Url": return Url;
+                        case "ThumbUrl": return ThumbUrl;
+                        case "ContentUrl": return ContentUrl;
+                        case "ContentType": return ContentType;
+                        case "W": return W;
+                        case "H": return H;
+                        case "Duration": return Duration;
+                        case "SendMessage": return SendMessage;
+                        default: throw new KeyNotFoundException();
+                    }
                 }
-
-                if (Description != null) {
-                    writer.Write(Description);
-                }
-
-                Document.Write(writer);
-                SendMessage.Write(writer);
             }
 
-            public override void Read(TBinaryReader reader)
+            public override bool HasKey(string name)
             {
-                int flags = reader.ReadInt32();
-                Id = reader.ReadString();
-                Type = reader.ReadString();
-                if ((flags & (1 << 1)) != 0) {
-                    Title = reader.ReadString();
+                switch (name)
+                {
+                    case "Id":
+                    case "Type":
+                    case "Title":
+                    case "Description":
+                    case "Url":
+                    case "ThumbUrl":
+                    case "ContentUrl":
+                    case "ContentType":
+                    case "W":
+                    case "H":
+                    case "Duration":
+                    case "SendMessage":
+                        return true;
+                    default: return false;
                 }
-
-                if ((flags & (1 << 2)) != 0) {
-                    Description = reader.ReadString();
-                }
-
-                Document = reader.Read<InputDocument>();
-                SendMessage = reader.Read<InputBotInlineMessage>();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(InputBotInlineResultDocumentType Id:{0} Type:{1} Title:{2} Description:{3} Document:{4} SendMessage:{5})", Id, Type, Title, Description, Document, SendMessage);
             }
         }
 
         public class BotInlineMessageMediaAutoType : BotInlineMessage
         {
-            public override uint ConstructorCode => 0x0a74b15b;
+            public override Types ConstructorCode => Types.BotInlineMessageMediaAutoType;
 
             public string Caption;
-            public ReplyMarkup ReplyMarkup;
 
             public BotInlineMessageMediaAutoType() { }
 
-            /// <summary>
-            /// The following arguments can be null: ReplyMarkup
-            /// </summary>
-            /// <param name="Caption">Can NOT be null</param>
-            /// <param name="ReplyMarkup">Can be null</param>
-            public BotInlineMessageMediaAutoType(string Caption, ReplyMarkup ReplyMarkup)
+            public BotInlineMessageMediaAutoType(string Caption)
             {
                 this.Caption = Caption;
-                this.ReplyMarkup = ReplyMarkup;
             }
 
             public override void Write(TBinaryWriter writer)
             {
-                int flags =
-                    (ReplyMarkup != null ? 1 << 2 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Caption);
-                if (ReplyMarkup != null) {
-                    ReplyMarkup.Write(writer);
-                }
-
             }
 
             public override void Read(TBinaryReader reader)
             {
-                int flags = reader.ReadInt32();
                 Caption = reader.ReadString();
-                if ((flags & (1 << 2)) != 0) {
-                    ReplyMarkup = reader.Read<ReplyMarkup>();
-                }
-
             }
 
             public override string ToString()
             {
-                return string.Format("(BotInlineMessageMediaAutoType Caption:{0} ReplyMarkup:{1})", Caption, ReplyMarkup);
+                return string.Format("(BotInlineMessageMediaAutoType Caption:{0})", Caption);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Caption": return Caption;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Caption":
+                        return true;
+                    default: return false;
+                }
             }
         }
 
         public class BotInlineMessageTextType : BotInlineMessage
         {
-            public override uint ConstructorCode => 0x8c7f65e2;
+            public override Types ConstructorCode => Types.BotInlineMessageTextType;
 
             public True NoWebpage;
             public string Message;
             public List<MessageEntity> Entities;
-            public ReplyMarkup ReplyMarkup;
 
             public BotInlineMessageTextType() { }
 
             /// <summary>
-            /// The following arguments can be null: NoWebpage, Entities, ReplyMarkup
+            /// The following arguments can be null: NoWebpage, Entities
             /// </summary>
             /// <param name="NoWebpage">Can be null</param>
             /// <param name="Message">Can NOT be null</param>
             /// <param name="Entities">Can be null</param>
-            /// <param name="ReplyMarkup">Can be null</param>
-            public BotInlineMessageTextType(True NoWebpage, string Message, List<MessageEntity> Entities, ReplyMarkup ReplyMarkup)
+            public BotInlineMessageTextType(True NoWebpage, string Message, List<MessageEntity> Entities)
             {
                 this.NoWebpage = NoWebpage;
                 this.Message = Message;
                 this.Entities = Entities;
-                this.ReplyMarkup = ReplyMarkup;
             }
 
             public override void Write(TBinaryWriter writer)
             {
                 int flags =
                     (NoWebpage != null ? 1 << 0 : 0) |
-                    (Entities != null ? 1 << 1 : 0) |
-                    (ReplyMarkup != null ? 1 << 2 : 0);
+                    (Entities != null ? 1 << 1 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (NoWebpage != null) {
@@ -25853,10 +34095,6 @@ namespace TeleTurk.Core.MTProto
                     writer.Write(Entities.Count);
                     foreach (MessageEntity EntitiesElement in Entities)
                         EntitiesElement.Write(writer);
-                }
-
-                if (ReplyMarkup != null) {
-                    ReplyMarkup.Write(writer);
                 }
 
             }
@@ -25877,204 +34115,183 @@ namespace TeleTurk.Core.MTProto
                         Entities.Add(reader.Read<MessageEntity>());
                     }
 
-                if ((flags & (1 << 2)) != 0) {
-                    ReplyMarkup = reader.Read<ReplyMarkup>();
-                }
-
             }
 
             public override string ToString()
             {
-                return string.Format("(BotInlineMessageTextType NoWebpage:{0} Message:{1} Entities:{2} ReplyMarkup:{3})", NoWebpage, Message, Entities, ReplyMarkup);
+                return string.Format("(BotInlineMessageTextType NoWebpage:{0} Message:{1} Entities:{2})", NoWebpage, Message, Entities);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "NoWebpage": return NoWebpage;
+                        case "Message": return Message;
+                        case "Entities": return Entities;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "NoWebpage":
+                    case "Message":
+                    case "Entities":
+                        return true;
+                    default: return false;
+                }
             }
         }
 
-        public class BotInlineMessageMediaGeoType : BotInlineMessage
+        public class BotInlineMediaResultDocumentType : BotInlineResult
         {
-            public override uint ConstructorCode => 0x3a8fd8b8;
+            public override Types ConstructorCode => Types.BotInlineMediaResultDocumentType;
 
-            public GeoPoint Geo;
-            public ReplyMarkup ReplyMarkup;
+            public string Id;
+            public string Type;
+            public Document Document;
+            public BotInlineMessage SendMessage;
 
-            public BotInlineMessageMediaGeoType() { }
+            public BotInlineMediaResultDocumentType() { }
 
-            /// <summary>
-            /// The following arguments can be null: ReplyMarkup
-            /// </summary>
-            /// <param name="Geo">Can NOT be null</param>
-            /// <param name="ReplyMarkup">Can be null</param>
-            public BotInlineMessageMediaGeoType(GeoPoint Geo, ReplyMarkup ReplyMarkup)
+            public BotInlineMediaResultDocumentType(string Id, string Type, Document Document, BotInlineMessage SendMessage)
             {
-                this.Geo = Geo;
-                this.ReplyMarkup = ReplyMarkup;
+                this.Id = Id;
+                this.Type = Type;
+                this.Document = Document;
+                this.SendMessage = SendMessage;
             }
 
             public override void Write(TBinaryWriter writer)
             {
-                int flags =
-                    (ReplyMarkup != null ? 1 << 2 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
-                Geo.Write(writer);
-                if (ReplyMarkup != null) {
-                    ReplyMarkup.Write(writer);
-                }
-
+                writer.Write((uint)ConstructorCode);
+                writer.Write(Id);
+                writer.Write(Type);
+                Document.Write(writer);
+                SendMessage.Write(writer);
             }
 
             public override void Read(TBinaryReader reader)
             {
-                int flags = reader.ReadInt32();
-                Geo = reader.Read<GeoPoint>();
-                if ((flags & (1 << 2)) != 0) {
-                    ReplyMarkup = reader.Read<ReplyMarkup>();
-                }
-
+                Id = reader.ReadString();
+                Type = reader.ReadString();
+                Document = reader.Read<Document>();
+                SendMessage = reader.Read<BotInlineMessage>();
             }
 
             public override string ToString()
             {
-                return string.Format("(BotInlineMessageMediaGeoType Geo:{0} ReplyMarkup:{1})", Geo, ReplyMarkup);
+                return string.Format("(BotInlineMediaResultDocumentType Id:{0} Type:{1} Document:{2} SendMessage:{3})", Id, Type, Document, SendMessage);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Type": return Type;
+                        case "Document": return Document;
+                        case "SendMessage": return SendMessage;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Type":
+                    case "Document":
+                    case "SendMessage":
+                        return true;
+                    default: return false;
+                }
             }
         }
 
-        public class BotInlineMessageMediaVenueType : BotInlineMessage
+        public class BotInlineMediaResultPhotoType : BotInlineResult
         {
-            public override uint ConstructorCode => 0x4366232e;
+            public override Types ConstructorCode => Types.BotInlineMediaResultPhotoType;
 
-            public GeoPoint Geo;
-            public string Title;
-            public string Address;
-            public string Provider;
-            public string VenueId;
-            public ReplyMarkup ReplyMarkup;
+            public string Id;
+            public string Type;
+            public Photo Photo;
+            public BotInlineMessage SendMessage;
 
-            public BotInlineMessageMediaVenueType() { }
+            public BotInlineMediaResultPhotoType() { }
 
-            /// <summary>
-            /// The following arguments can be null: ReplyMarkup
-            /// </summary>
-            /// <param name="Geo">Can NOT be null</param>
-            /// <param name="Title">Can NOT be null</param>
-            /// <param name="Address">Can NOT be null</param>
-            /// <param name="Provider">Can NOT be null</param>
-            /// <param name="VenueId">Can NOT be null</param>
-            /// <param name="ReplyMarkup">Can be null</param>
-            public BotInlineMessageMediaVenueType(GeoPoint Geo, string Title, string Address, string Provider, string VenueId, ReplyMarkup ReplyMarkup)
+            public BotInlineMediaResultPhotoType(string Id, string Type, Photo Photo, BotInlineMessage SendMessage)
             {
-                this.Geo = Geo;
-                this.Title = Title;
-                this.Address = Address;
-                this.Provider = Provider;
-                this.VenueId = VenueId;
-                this.ReplyMarkup = ReplyMarkup;
+                this.Id = Id;
+                this.Type = Type;
+                this.Photo = Photo;
+                this.SendMessage = SendMessage;
             }
 
             public override void Write(TBinaryWriter writer)
             {
-                int flags =
-                    (ReplyMarkup != null ? 1 << 2 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
-                Geo.Write(writer);
-                writer.Write(Title);
-                writer.Write(Address);
-                writer.Write(Provider);
-                writer.Write(VenueId);
-                if (ReplyMarkup != null) {
-                    ReplyMarkup.Write(writer);
-                }
-
+                writer.Write((uint)ConstructorCode);
+                writer.Write(Id);
+                writer.Write(Type);
+                Photo.Write(writer);
+                SendMessage.Write(writer);
             }
 
             public override void Read(TBinaryReader reader)
             {
-                int flags = reader.ReadInt32();
-                Geo = reader.Read<GeoPoint>();
-                Title = reader.ReadString();
-                Address = reader.ReadString();
-                Provider = reader.ReadString();
-                VenueId = reader.ReadString();
-                if ((flags & (1 << 2)) != 0) {
-                    ReplyMarkup = reader.Read<ReplyMarkup>();
-                }
-
+                Id = reader.ReadString();
+                Type = reader.ReadString();
+                Photo = reader.Read<Photo>();
+                SendMessage = reader.Read<BotInlineMessage>();
             }
 
             public override string ToString()
             {
-                return string.Format("(BotInlineMessageMediaVenueType Geo:{0} Title:{1} Address:{2} Provider:{3} VenueId:{4} ReplyMarkup:{5})", Geo, Title, Address, Provider, VenueId, ReplyMarkup);
-            }
-        }
-
-        public class BotInlineMessageMediaContactType : BotInlineMessage
-        {
-            public override uint ConstructorCode => 0x35edb4d4;
-
-            public string PhoneNumber;
-            public string FirstName;
-            public string LastName;
-            public ReplyMarkup ReplyMarkup;
-
-            public BotInlineMessageMediaContactType() { }
-
-            /// <summary>
-            /// The following arguments can be null: ReplyMarkup
-            /// </summary>
-            /// <param name="PhoneNumber">Can NOT be null</param>
-            /// <param name="FirstName">Can NOT be null</param>
-            /// <param name="LastName">Can NOT be null</param>
-            /// <param name="ReplyMarkup">Can be null</param>
-            public BotInlineMessageMediaContactType(string PhoneNumber, string FirstName, string LastName, ReplyMarkup ReplyMarkup)
-            {
-                this.PhoneNumber = PhoneNumber;
-                this.FirstName = FirstName;
-                this.LastName = LastName;
-                this.ReplyMarkup = ReplyMarkup;
+                return string.Format("(BotInlineMediaResultPhotoType Id:{0} Type:{1} Photo:{2} SendMessage:{3})", Id, Type, Photo, SendMessage);
             }
 
-            public override void Write(TBinaryWriter writer)
+            public override object this[string name]
             {
-                int flags =
-                    (ReplyMarkup != null ? 1 << 2 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
-                writer.Write(PhoneNumber);
-                writer.Write(FirstName);
-                writer.Write(LastName);
-                if (ReplyMarkup != null) {
-                    ReplyMarkup.Write(writer);
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Type": return Type;
+                        case "Photo": return Photo;
+                        case "SendMessage": return SendMessage;
+                        default: throw new KeyNotFoundException();
+                    }
                 }
-
             }
 
-            public override void Read(TBinaryReader reader)
+            public override bool HasKey(string name)
             {
-                int flags = reader.ReadInt32();
-                PhoneNumber = reader.ReadString();
-                FirstName = reader.ReadString();
-                LastName = reader.ReadString();
-                if ((flags & (1 << 2)) != 0) {
-                    ReplyMarkup = reader.Read<ReplyMarkup>();
+                switch (name)
+                {
+                    case "Id":
+                    case "Type":
+                    case "Photo":
+                    case "SendMessage":
+                        return true;
+                    default: return false;
                 }
-
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(BotInlineMessageMediaContactType PhoneNumber:{0} FirstName:{1} LastName:{2} ReplyMarkup:{3})", PhoneNumber, FirstName, LastName, ReplyMarkup);
             }
         }
 
         public class BotInlineResultType : BotInlineResult
         {
-            public override uint ConstructorCode => 0x9bebaeb9;
+            public override Types ConstructorCode => Types.BotInlineResultType;
 
             public string Id;
             public string Type;
@@ -26135,7 +34352,7 @@ namespace TeleTurk.Core.MTProto
                     (H != null ? 1 << 6 : 0) |
                     (Duration != null ? 1 << 7 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 writer.Write(Id);
@@ -26227,131 +34444,75 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(BotInlineResultType Id:{0} Type:{1} Title:{2} Description:{3} Url:{4} ThumbUrl:{5} ContentUrl:{6} ContentType:{7} W:{8} H:{9} Duration:{10} SendMessage:{11})", Id, Type, Title, Description, Url, ThumbUrl, ContentUrl, ContentType, W, H, Duration, SendMessage);
             }
-        }
 
-        public class BotInlineMediaResultType : BotInlineResult
-        {
-            public override uint ConstructorCode => 0x17db940b;
-
-            public string Id;
-            public string Type;
-            public Photo Photo;
-            public Document Document;
-            public string Title;
-            public string Description;
-            public BotInlineMessage SendMessage;
-
-            public BotInlineMediaResultType() { }
-
-            /// <summary>
-            /// The following arguments can be null: Photo, Document, Title, Description
-            /// </summary>
-            /// <param name="Id">Can NOT be null</param>
-            /// <param name="Type">Can NOT be null</param>
-            /// <param name="Photo">Can be null</param>
-            /// <param name="Document">Can be null</param>
-            /// <param name="Title">Can be null</param>
-            /// <param name="Description">Can be null</param>
-            /// <param name="SendMessage">Can NOT be null</param>
-            public BotInlineMediaResultType(string Id, string Type, Photo Photo, Document Document, string Title, string Description, BotInlineMessage SendMessage)
+            public override object this[string name]
             {
-                this.Id = Id;
-                this.Type = Type;
-                this.Photo = Photo;
-                this.Document = Document;
-                this.Title = Title;
-                this.Description = Description;
-                this.SendMessage = SendMessage;
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Type": return Type;
+                        case "Title": return Title;
+                        case "Description": return Description;
+                        case "Url": return Url;
+                        case "ThumbUrl": return ThumbUrl;
+                        case "ContentUrl": return ContentUrl;
+                        case "ContentType": return ContentType;
+                        case "W": return W;
+                        case "H": return H;
+                        case "Duration": return Duration;
+                        case "SendMessage": return SendMessage;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
             }
 
-            public override void Write(TBinaryWriter writer)
+            public override bool HasKey(string name)
             {
-                int flags =
-                    (Photo != null ? 1 << 0 : 0) |
-                    (Document != null ? 1 << 1 : 0) |
-                    (Title != null ? 1 << 2 : 0) |
-                    (Description != null ? 1 << 3 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
-                writer.Write(Id);
-                writer.Write(Type);
-                if (Photo != null) {
-                    Photo.Write(writer);
+                switch (name)
+                {
+                    case "Id":
+                    case "Type":
+                    case "Title":
+                    case "Description":
+                    case "Url":
+                    case "ThumbUrl":
+                    case "ContentUrl":
+                    case "ContentType":
+                    case "W":
+                    case "H":
+                    case "Duration":
+                    case "SendMessage":
+                        return true;
+                    default: return false;
                 }
-
-                if (Document != null) {
-                    Document.Write(writer);
-                }
-
-                if (Title != null) {
-                    writer.Write(Title);
-                }
-
-                if (Description != null) {
-                    writer.Write(Description);
-                }
-
-                SendMessage.Write(writer);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                int flags = reader.ReadInt32();
-                Id = reader.ReadString();
-                Type = reader.ReadString();
-                if ((flags & (1 << 0)) != 0) {
-                    Photo = reader.Read<Photo>();
-                }
-
-                if ((flags & (1 << 1)) != 0) {
-                    Document = reader.Read<Document>();
-                }
-
-                if ((flags & (1 << 2)) != 0) {
-                    Title = reader.ReadString();
-                }
-
-                if ((flags & (1 << 3)) != 0) {
-                    Description = reader.ReadString();
-                }
-
-                SendMessage = reader.Read<BotInlineMessage>();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(BotInlineMediaResultType Id:{0} Type:{1} Photo:{2} Document:{3} Title:{4} Description:{5} SendMessage:{6})", Id, Type, Photo, Document, Title, Description, SendMessage);
             }
         }
 
         public class MessagesBotResultsType : MessagesBotResults
         {
-            public override uint ConstructorCode => 0x256709a6;
+            public override Types ConstructorCode => Types.MessagesBotResultsType;
 
             public True Gallery;
             public long QueryId;
             public string NextOffset;
-            public InlineBotSwitchPM SwitchPm;
             public List<BotInlineResult> Results;
 
             public MessagesBotResultsType() { }
 
             /// <summary>
-            /// The following arguments can be null: Gallery, NextOffset, SwitchPm
+            /// The following arguments can be null: Gallery, NextOffset
             /// </summary>
             /// <param name="Gallery">Can be null</param>
             /// <param name="QueryId">Can NOT be null</param>
             /// <param name="NextOffset">Can be null</param>
-            /// <param name="SwitchPm">Can be null</param>
             /// <param name="Results">Can NOT be null</param>
-            public MessagesBotResultsType(True Gallery, long QueryId, string NextOffset, InlineBotSwitchPM SwitchPm, List<BotInlineResult> Results)
+            public MessagesBotResultsType(True Gallery, long QueryId, string NextOffset, List<BotInlineResult> Results)
             {
                 this.Gallery = Gallery;
                 this.QueryId = QueryId;
                 this.NextOffset = NextOffset;
-                this.SwitchPm = SwitchPm;
                 this.Results = Results;
             }
 
@@ -26359,10 +34520,9 @@ namespace TeleTurk.Core.MTProto
             {
                 int flags =
                     (Gallery != null ? 1 << 0 : 0) |
-                    (NextOffset != null ? 1 << 1 : 0) |
-                    (SwitchPm != null ? 1 << 2 : 0);
+                    (NextOffset != null ? 1 << 1 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Gallery != null) {
@@ -26372,10 +34532,6 @@ namespace TeleTurk.Core.MTProto
                 writer.Write(QueryId);
                 if (NextOffset != null) {
                     writer.Write(NextOffset);
-                }
-
-                if (SwitchPm != null) {
-                    SwitchPm.Write(writer);
                 }
 
                 writer.Write(0x1cb5c415); // vector code
@@ -26396,10 +34552,6 @@ namespace TeleTurk.Core.MTProto
                     NextOffset = reader.ReadString();
                 }
 
-                if ((flags & (1 << 2)) != 0) {
-                    SwitchPm = reader.Read<InlineBotSwitchPM>();
-                }
-
                 reader.ReadInt32(); // vector code
                 int ResultsLength = reader.ReadInt32();
                 Results = new List<BotInlineResult>(ResultsLength);
@@ -26409,13 +34561,41 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(MessagesBotResultsType Gallery:{0} QueryId:{1} NextOffset:{2} SwitchPm:{3} Results:{4})", Gallery, QueryId, NextOffset, SwitchPm, Results);
+                return string.Format("(MessagesBotResultsType Gallery:{0} QueryId:{1} NextOffset:{2} Results:{3})", Gallery, QueryId, NextOffset, Results);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Gallery": return Gallery;
+                        case "QueryId": return QueryId;
+                        case "NextOffset": return NextOffset;
+                        case "Results": return Results;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Gallery":
+                    case "QueryId":
+                    case "NextOffset":
+                    case "Results":
+                        return true;
+                    default: return false;
+                }
             }
         }
 
         public class ExportedMessageLinkType : ExportedMessageLink
         {
-            public override uint ConstructorCode => 0x1f486803;
+            public override Types ConstructorCode => Types.ExportedMessageLinkType;
 
             public string Link;
 
@@ -26428,7 +34608,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(Link);
             }
 
@@ -26441,11 +34621,33 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(ExportedMessageLinkType Link:{0})", Link);
             }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Link": return Link;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Link":
+                        return true;
+                    default: return false;
+                }
+            }
         }
 
         public class MessageFwdHeaderType : MessageFwdHeader
         {
-            public override uint ConstructorCode => 0xc786ddcb;
+            public override Types ConstructorCode => Types.MessageFwdHeaderType;
 
             public int? FromId;
             public int Date;
@@ -26476,7 +34678,7 @@ namespace TeleTurk.Core.MTProto
                     (ChannelId != null ? 1 << 1 : 0) |
                     (ChannelPost != null ? 1 << 2 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (FromId != null) {
@@ -26516,262 +34718,49 @@ namespace TeleTurk.Core.MTProto
             {
                 return string.Format("(MessageFwdHeaderType FromId:{0} Date:{1} ChannelId:{2} ChannelPost:{3})", FromId, Date, ChannelId, ChannelPost);
             }
-        }
 
-        public class AuthCodeTypeSmsType : AuthCodeType
-        {
-            public override uint ConstructorCode => 0x72a3158c;
-
-            public AuthCodeTypeSmsType() { }
-
-            public override void Write(TBinaryWriter writer)
+            public override object this[string name]
             {
-                writer.Write(ConstructorCode);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-            }
-
-            public override string ToString()
-            {
-                return "(AuthCodeTypeSmsType)";
-            }
-        }
-
-        public class AuthCodeTypeCallType : AuthCodeType
-        {
-            public override uint ConstructorCode => 0x741cd3e3;
-
-            public AuthCodeTypeCallType() { }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-            }
-
-            public override string ToString()
-            {
-                return "(AuthCodeTypeCallType)";
-            }
-        }
-
-        public class AuthCodeTypeFlashCallType : AuthCodeType
-        {
-            public override uint ConstructorCode => 0x226ccefb;
-
-            public AuthCodeTypeFlashCallType() { }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-            }
-
-            public override string ToString()
-            {
-                return "(AuthCodeTypeFlashCallType)";
-            }
-        }
-
-        public class AuthSentCodeTypeAppType : AuthSentCodeType
-        {
-            public override uint ConstructorCode => 0x3dbb5986;
-
-            public int Length;
-
-            public AuthSentCodeTypeAppType() { }
-
-            public AuthSentCodeTypeAppType(int Length)
-            {
-                this.Length = Length;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                writer.Write(Length);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Length = reader.ReadInt32();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(AuthSentCodeTypeAppType Length:{0})", Length);
-            }
-        }
-
-        public class AuthSentCodeTypeSmsType : AuthSentCodeType
-        {
-            public override uint ConstructorCode => 0xc000bba2;
-
-            public int Length;
-
-            public AuthSentCodeTypeSmsType() { }
-
-            public AuthSentCodeTypeSmsType(int Length)
-            {
-                this.Length = Length;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                writer.Write(Length);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Length = reader.ReadInt32();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(AuthSentCodeTypeSmsType Length:{0})", Length);
-            }
-        }
-
-        public class AuthSentCodeTypeCallType : AuthSentCodeType
-        {
-            public override uint ConstructorCode => 0x5353e5a7;
-
-            public int Length;
-
-            public AuthSentCodeTypeCallType() { }
-
-            public AuthSentCodeTypeCallType(int Length)
-            {
-                this.Length = Length;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                writer.Write(Length);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Length = reader.ReadInt32();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(AuthSentCodeTypeCallType Length:{0})", Length);
-            }
-        }
-
-        public class AuthSentCodeTypeFlashCallType : AuthSentCodeType
-        {
-            public override uint ConstructorCode => 0xab03c6d9;
-
-            public string Pattern;
-
-            public AuthSentCodeTypeFlashCallType() { }
-
-            public AuthSentCodeTypeFlashCallType(string Pattern)
-            {
-                this.Pattern = Pattern;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                writer.Write(Pattern);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Pattern = reader.ReadString();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(AuthSentCodeTypeFlashCallType Pattern:{0})", Pattern);
-            }
-        }
-
-        public class MessagesBotCallbackAnswerType : MessagesBotCallbackAnswer
-        {
-            public override uint ConstructorCode => 0x1264f1c6;
-
-            public True Alert;
-            public string Message;
-
-            public MessagesBotCallbackAnswerType() { }
-
-            /// <summary>
-            /// The following arguments can be null: Alert, Message
-            /// </summary>
-            /// <param name="Alert">Can be null</param>
-            /// <param name="Message">Can be null</param>
-            public MessagesBotCallbackAnswerType(True Alert, string Message)
-            {
-                this.Alert = Alert;
-                this.Message = Message;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                int flags =
-                    (Alert != null ? 1 << 1 : 0) |
-                    (Message != null ? 1 << 0 : 0);
-
-                writer.Write(ConstructorCode);
-                writer.Write(flags);
-
-                if (Alert != null) {
-
+                get
+                {
+                    switch (name)
+                    {
+                        case "FromId": return FromId;
+                        case "Date": return Date;
+                        case "ChannelId": return ChannelId;
+                        case "ChannelPost": return ChannelPost;
+                        default: throw new KeyNotFoundException();
+                    }
                 }
-
-                if (Message != null) {
-                    writer.Write(Message);
-                }
-
             }
 
-            public override void Read(TBinaryReader reader)
+            public override bool HasKey(string name)
             {
-                int flags = reader.ReadInt32();
-                if ((flags & (1 << 1)) != 0) {
-                    Alert = reader.ReadTrue();
+                switch (name)
+                {
+                    case "FromId":
+                    case "Date":
+                    case "ChannelId":
+                    case "ChannelPost":
+                        return true;
+                    default: return false;
                 }
-
-                if ((flags & (1 << 0)) != 0) {
-                    Message = reader.ReadString();
-                }
-
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(MessagesBotCallbackAnswerType Alert:{0} Message:{1})", Alert, Message);
             }
         }
 
-        public class MessagesMessageEditDataType : MessagesMessageEditData
+        public class ChannelsMessageEditDataType : ChannelsMessageEditData
         {
-            public override uint ConstructorCode => 0x26b5dde6;
+            public override Types ConstructorCode => Types.ChannelsMessageEditDataType;
 
             public True Caption;
 
-            public MessagesMessageEditDataType() { }
+            public ChannelsMessageEditDataType() { }
 
             /// <summary>
             /// The following arguments can be null: Caption
             /// </summary>
             /// <param name="Caption">Can be null</param>
-            public MessagesMessageEditDataType(True Caption)
+            public ChannelsMessageEditDataType(True Caption)
             {
                 this.Caption = Caption;
             }
@@ -26781,7 +34770,7 @@ namespace TeleTurk.Core.MTProto
                 int flags =
                     (Caption != null ? 1 << 0 : 0);
 
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
                 if (Caption != null) {
@@ -26801,199 +34790,41 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(MessagesMessageEditDataType Caption:{0})", Caption);
+                return string.Format("(ChannelsMessageEditDataType Caption:{0})", Caption);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Caption": return Caption;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Caption":
+                        return true;
+                    default: return false;
+                }
             }
         }
 
-        public class InputBotInlineMessageIDType : InputBotInlineMessageID
+        public class AuthCodeTypeSmsType : AuthCodeType
         {
-            public override uint ConstructorCode => 0x890c3d89;
+            public override Types ConstructorCode => Types.AuthCodeTypeSmsType;
 
-            public int DcId;
-            public long Id;
-            public long AccessHash;
-
-            public InputBotInlineMessageIDType() { }
-
-            public InputBotInlineMessageIDType(int DcId, long Id, long AccessHash)
-            {
-                this.DcId = DcId;
-                this.Id = Id;
-                this.AccessHash = AccessHash;
-            }
+            public AuthCodeTypeSmsType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
-                writer.Write(DcId);
-                writer.Write(Id);
-                writer.Write(AccessHash);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                DcId = reader.ReadInt32();
-                Id = reader.ReadInt64();
-                AccessHash = reader.ReadInt64();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(InputBotInlineMessageIDType DcId:{0} Id:{1} AccessHash:{2})", DcId, Id, AccessHash);
-            }
-        }
-
-        public class InlineBotSwitchPMType : InlineBotSwitchPM
-        {
-            public override uint ConstructorCode => 0x3c20629f;
-
-            public string Text;
-            public string StartParam;
-
-            public InlineBotSwitchPMType() { }
-
-            public InlineBotSwitchPMType(string Text, string StartParam)
-            {
-                this.Text = Text;
-                this.StartParam = StartParam;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                writer.Write(Text);
-                writer.Write(StartParam);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Text = reader.ReadString();
-                StartParam = reader.ReadString();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(InlineBotSwitchPMType Text:{0} StartParam:{1})", Text, StartParam);
-            }
-        }
-
-        public class MessagesPeerDialogsType : MessagesPeerDialogs
-        {
-            public override uint ConstructorCode => 0x3371c354;
-
-            public List<Dialog> Dialogs;
-            public List<Message> Messages;
-            public List<Chat> Chats;
-            public List<User> Users;
-            public UpdatesState State;
-
-            public MessagesPeerDialogsType() { }
-
-            public MessagesPeerDialogsType(List<Dialog> Dialogs, List<Message> Messages, List<Chat> Chats, List<User> Users, UpdatesState State)
-            {
-                this.Dialogs = Dialogs;
-                this.Messages = Messages;
-                this.Chats = Chats;
-                this.Users = Users;
-                this.State = State;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                writer.Write(0x1cb5c415); // vector code
-                writer.Write(Dialogs.Count);
-                foreach (Dialog DialogsElement in Dialogs)
-                    DialogsElement.Write(writer);
-                writer.Write(0x1cb5c415); // vector code
-                writer.Write(Messages.Count);
-                foreach (Message MessagesElement in Messages)
-                    MessagesElement.Write(writer);
-                writer.Write(0x1cb5c415); // vector code
-                writer.Write(Chats.Count);
-                foreach (Chat ChatsElement in Chats)
-                    ChatsElement.Write(writer);
-                writer.Write(0x1cb5c415); // vector code
-                writer.Write(Users.Count);
-                foreach (User UsersElement in Users)
-                    UsersElement.Write(writer);
-                State.Write(writer);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                reader.ReadInt32(); // vector code
-                int DialogsLength = reader.ReadInt32();
-                Dialogs = new List<Dialog>(DialogsLength);
-                for (int DialogsIndex = 0; DialogsIndex < DialogsLength; DialogsIndex++)
-                    Dialogs.Add(reader.Read<Dialog>());
-                reader.ReadInt32(); // vector code
-                int MessagesLength = reader.ReadInt32();
-                Messages = new List<Message>(MessagesLength);
-                for (int MessagesIndex = 0; MessagesIndex < MessagesLength; MessagesIndex++)
-                    Messages.Add(reader.Read<Message>());
-                reader.ReadInt32(); // vector code
-                int ChatsLength = reader.ReadInt32();
-                Chats = new List<Chat>(ChatsLength);
-                for (int ChatsIndex = 0; ChatsIndex < ChatsLength; ChatsIndex++)
-                    Chats.Add(reader.Read<Chat>());
-                reader.ReadInt32(); // vector code
-                int UsersLength = reader.ReadInt32();
-                Users = new List<User>(UsersLength);
-                for (int UsersIndex = 0; UsersIndex < UsersLength; UsersIndex++)
-                    Users.Add(reader.Read<User>());
-                State = reader.Read<UpdatesState>();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(MessagesPeerDialogsType Dialogs:{0} Messages:{1} Chats:{2} Users:{3} State:{4})", Dialogs, Messages, Chats, Users, State);
-            }
-        }
-
-        public class TopPeerType : TopPeer
-        {
-            public override uint ConstructorCode => 0xedcdc05b;
-
-            public Peer Peer;
-            public double Rating;
-
-            public TopPeerType() { }
-
-            public TopPeerType(Peer Peer, double Rating)
-            {
-                this.Peer = Peer;
-                this.Rating = Rating;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-                Peer.Write(writer);
-                writer.Write(Rating);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Peer = reader.Read<Peer>();
-                Rating = reader.ReadDouble();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(TopPeerType Peer:{0} Rating:{1})", Peer, Rating);
-            }
-        }
-
-        public class TopPeerCategoryBotsPMType : TopPeerCategory
-        {
-            public override uint ConstructorCode => 0xab661b5b;
-
-            public TopPeerCategoryBotsPMType() { }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -27002,19 +34833,32 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return "(TopPeerCategoryBotsPMType)";
+                return "(AuthCodeTypeSmsType)";
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
             }
         }
 
-        public class TopPeerCategoryBotsInlineType : TopPeerCategory
+        public class AuthCodeTypeCallType : AuthCodeType
         {
-            public override uint ConstructorCode => 0x148677e2;
+            public override Types ConstructorCode => Types.AuthCodeTypeCallType;
 
-            public TopPeerCategoryBotsInlineType() { }
+            public AuthCodeTypeCallType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -27023,19 +34867,32 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return "(TopPeerCategoryBotsInlineType)";
+                return "(AuthCodeTypeCallType)";
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
             }
         }
 
-        public class TopPeerCategoryCorrespondentsType : TopPeerCategory
+        public class AuthCodeTypeFlashCallType : AuthCodeType
         {
-            public override uint ConstructorCode => 0x0637b7ed;
+            public override Types ConstructorCode => Types.AuthCodeTypeFlashCallType;
 
-            public TopPeerCategoryCorrespondentsType() { }
+            public AuthCodeTypeFlashCallType() { }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
+                writer.Write((uint)ConstructorCode);
             }
 
             public override void Read(TBinaryReader reader)
@@ -27044,174 +34901,228 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return "(TopPeerCategoryCorrespondentsType)";
+                return "(AuthCodeTypeFlashCallType)";
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    throw new InvalidOperationException("This type has no properties");
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                return false;
             }
         }
 
-        public class TopPeerCategoryGroupsType : TopPeerCategory
+        public class AuthSentCodeTypeAppType : AuthSentCodeType
         {
-            public override uint ConstructorCode => 0xbd17a14a;
+            public override Types ConstructorCode => Types.AuthSentCodeTypeAppType;
 
-            public TopPeerCategoryGroupsType() { }
+            public int Length;
 
-            public override void Write(TBinaryWriter writer)
+            public AuthSentCodeTypeAppType() { }
+
+            public AuthSentCodeTypeAppType(int Length)
             {
-                writer.Write(ConstructorCode);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-            }
-
-            public override string ToString()
-            {
-                return "(TopPeerCategoryGroupsType)";
-            }
-        }
-
-        public class TopPeerCategoryChannelsType : TopPeerCategory
-        {
-            public override uint ConstructorCode => 0x161d9628;
-
-            public TopPeerCategoryChannelsType() { }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write(ConstructorCode);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-            }
-
-            public override string ToString()
-            {
-                return "(TopPeerCategoryChannelsType)";
-            }
-        }
-
-        public class TopPeerCategoryPeersType : TopPeerCategoryPeers
-        {
-            public override uint ConstructorCode => 0xfb834291;
-
-            public TopPeerCategory Category;
-            public int Count;
-            public List<TopPeer> Peers;
-
-            public TopPeerCategoryPeersType() { }
-
-            public TopPeerCategoryPeersType(TopPeerCategory Category, int Count, List<TopPeer> Peers)
-            {
-                this.Category = Category;
-                this.Count = Count;
-                this.Peers = Peers;
+                this.Length = Length;
             }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
-                Category.Write(writer);
-                writer.Write(Count);
-                writer.Write(0x1cb5c415); // vector code
-                writer.Write(Peers.Count);
-                foreach (TopPeer PeersElement in Peers)
-                    PeersElement.Write(writer);
+                writer.Write((uint)ConstructorCode);
+                writer.Write(Length);
             }
 
             public override void Read(TBinaryReader reader)
             {
-                Category = reader.Read<TopPeerCategory>();
-                Count = reader.ReadInt32();
-                reader.ReadInt32(); // vector code
-                int PeersLength = reader.ReadInt32();
-                Peers = new List<TopPeer>(PeersLength);
-                for (int PeersIndex = 0; PeersIndex < PeersLength; PeersIndex++)
-                    Peers.Add(reader.Read<TopPeer>());
+                Length = reader.ReadInt32();
             }
 
             public override string ToString()
             {
-                return string.Format("(TopPeerCategoryPeersType Category:{0} Count:{1} Peers:{2})", Category, Count, Peers);
+                return string.Format("(AuthSentCodeTypeAppType Length:{0})", Length);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Length": return Length;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Length":
+                        return true;
+                    default: return false;
+                }
             }
         }
 
-        public class ContactsTopPeersNotModifiedType : ContactsTopPeers
+        public class AuthSentCodeTypeSmsType : AuthSentCodeType
         {
-            public override uint ConstructorCode => 0xde266ef5;
+            public override Types ConstructorCode => Types.AuthSentCodeTypeSmsType;
 
-            public ContactsTopPeersNotModifiedType() { }
+            public int Length;
 
-            public override void Write(TBinaryWriter writer)
+            public AuthSentCodeTypeSmsType() { }
+
+            public AuthSentCodeTypeSmsType(int Length)
             {
-                writer.Write(ConstructorCode);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-            }
-
-            public override string ToString()
-            {
-                return "(ContactsTopPeersNotModifiedType)";
-            }
-        }
-
-        public class ContactsTopPeersType : ContactsTopPeers
-        {
-            public override uint ConstructorCode => 0x70b772a8;
-
-            public List<TopPeerCategoryPeers> Categories;
-            public List<Chat> Chats;
-            public List<User> Users;
-
-            public ContactsTopPeersType() { }
-
-            public ContactsTopPeersType(List<TopPeerCategoryPeers> Categories, List<Chat> Chats, List<User> Users)
-            {
-                this.Categories = Categories;
-                this.Chats = Chats;
-                this.Users = Users;
+                this.Length = Length;
             }
 
             public override void Write(TBinaryWriter writer)
             {
-                writer.Write(ConstructorCode);
-                writer.Write(0x1cb5c415); // vector code
-                writer.Write(Categories.Count);
-                foreach (TopPeerCategoryPeers CategoriesElement in Categories)
-                    CategoriesElement.Write(writer);
-                writer.Write(0x1cb5c415); // vector code
-                writer.Write(Chats.Count);
-                foreach (Chat ChatsElement in Chats)
-                    ChatsElement.Write(writer);
-                writer.Write(0x1cb5c415); // vector code
-                writer.Write(Users.Count);
-                foreach (User UsersElement in Users)
-                    UsersElement.Write(writer);
+                writer.Write((uint)ConstructorCode);
+                writer.Write(Length);
             }
 
             public override void Read(TBinaryReader reader)
             {
-                reader.ReadInt32(); // vector code
-                int CategoriesLength = reader.ReadInt32();
-                Categories = new List<TopPeerCategoryPeers>(CategoriesLength);
-                for (int CategoriesIndex = 0; CategoriesIndex < CategoriesLength; CategoriesIndex++)
-                    Categories.Add(reader.Read<TopPeerCategoryPeers>());
-                reader.ReadInt32(); // vector code
-                int ChatsLength = reader.ReadInt32();
-                Chats = new List<Chat>(ChatsLength);
-                for (int ChatsIndex = 0; ChatsIndex < ChatsLength; ChatsIndex++)
-                    Chats.Add(reader.Read<Chat>());
-                reader.ReadInt32(); // vector code
-                int UsersLength = reader.ReadInt32();
-                Users = new List<User>(UsersLength);
-                for (int UsersIndex = 0; UsersIndex < UsersLength; UsersIndex++)
-                    Users.Add(reader.Read<User>());
+                Length = reader.ReadInt32();
             }
 
             public override string ToString()
             {
-                return string.Format("(ContactsTopPeersType Categories:{0} Chats:{1} Users:{2})", Categories, Chats, Users);
+                return string.Format("(AuthSentCodeTypeSmsType Length:{0})", Length);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Length": return Length;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Length":
+                        return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class AuthSentCodeTypeCallType : AuthSentCodeType
+        {
+            public override Types ConstructorCode => Types.AuthSentCodeTypeCallType;
+
+            public int Length;
+
+            public AuthSentCodeTypeCallType() { }
+
+            public AuthSentCodeTypeCallType(int Length)
+            {
+                this.Length = Length;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(Length);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                Length = reader.ReadInt32();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(AuthSentCodeTypeCallType Length:{0})", Length);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Length": return Length;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Length":
+                        return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class AuthSentCodeTypeFlashCallType : AuthSentCodeType
+        {
+            public override Types ConstructorCode => Types.AuthSentCodeTypeFlashCallType;
+
+            public string Pattern;
+
+            public AuthSentCodeTypeFlashCallType() { }
+
+            public AuthSentCodeTypeFlashCallType(string Pattern)
+            {
+                this.Pattern = Pattern;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(Pattern);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                Pattern = reader.ReadString();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(AuthSentCodeTypeFlashCallType Pattern:{0})", Pattern);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Pattern": return Pattern;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Pattern":
+                        return true;
+                    default: return false;
+                }
             }
         }
 

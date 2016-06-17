@@ -51,7 +51,7 @@ namespace TeleTurk.Core.Handlers
             await _sender.Send(request);
             await _sender.Receive(request);
 
-            return request.Result is TL.BoolTrueType ? true : false;
+            return request.Result;
         }
 
         public async Task<string> getInviteText(string lang_code)

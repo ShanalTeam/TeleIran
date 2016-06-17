@@ -93,7 +93,7 @@ namespace TeleTurk.Core.Handlers
             await _sender.Send(request);
             await _sender.Receive(request);
 
-            return request.Result is TL.BoolTrueType ? true : false;
+            return request.Result;
         }
 
         public async Task<Tuple<int, int>> deleteMessages(InputChannel channel, List<int> id)
@@ -127,7 +127,7 @@ namespace TeleTurk.Core.Handlers
             await _sender.Send(request);
             await _sender.Receive(request);
 
-            return request.Result is TL.BoolTrueType ? true : false;
+            return request.Result;
         }
 
         public async Task<Tuple<List<Message>, List<Chat>, List<User>, List<MessageGroup>, int, int>> getMessages(InputChannel channel, List<int> id)
@@ -232,7 +232,7 @@ namespace TeleTurk.Core.Handlers
             await _sender.Send(request);
             await _sender.Receive(request);
 
-            return request.Result is TL.BoolTrueType ? true : false;
+            return request.Result;
         }
 
         public async Task<Updates> editAdmin(InputChannel channel, InputUser user_id, ChannelParticipantRole role)
@@ -265,7 +265,7 @@ namespace TeleTurk.Core.Handlers
             return request.Result;
         }
 
-        public async Task<Updates> toggleComments(InputChannel channel, Bool enabled)
+        public async Task<Updates> toggleComments(InputChannel channel, bool enabled)
         {
             var request = new TL.ChannelsToggleCommentsRequest(channel, enabled);
 
@@ -282,7 +282,7 @@ namespace TeleTurk.Core.Handlers
             await _sender.Send(request);
             await _sender.Receive(request);
 
-            return request.Result is TL.BoolTrueType ? true : false;
+            return request.Result;
         }
 
         public async Task<bool> updateUsername(InputChannel channel, string username)
@@ -292,7 +292,7 @@ namespace TeleTurk.Core.Handlers
             await _sender.Send(request);
             await _sender.Receive(request);
 
-            return request.Result is TL.BoolTrueType ? true : false;
+            return request.Result;
         }
 
         public async Task<Updates> joinChannel(InputChannel channel)
@@ -356,7 +356,7 @@ namespace TeleTurk.Core.Handlers
             return request.Result;
         }
 
-        public async Task<Updates> toggleInvites(InputChannel channel, Bool enabled)
+        public async Task<Updates> toggleInvites(InputChannel channel, bool enabled)
         {
             var request = new TL.ChannelsToggleInvitesRequest(channel, enabled);
 
@@ -376,7 +376,7 @@ namespace TeleTurk.Core.Handlers
             return request.Result;
         }
 
-        public async Task<Updates> toggleSignatures(InputChannel channel, Bool enabled)
+        public async Task<Updates> toggleSignatures(InputChannel channel, bool enabled)
         {
             var request = new TL.ChannelsToggleSignaturesRequest(channel, enabled);
 
