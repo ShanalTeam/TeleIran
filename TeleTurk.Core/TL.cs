@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace TeleTurk.Core.MTProto
+namespace TLSharp.Core.MTProto
 {
     #region Abstract types
 
