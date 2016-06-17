@@ -151,12 +151,7 @@ namespace TeleTurk.Core
                 contacts.Add(new TL.InputPhoneContactType(0, phone, "Test Name " + phone, string.Empty));
 
             var request = new TL.ContactsImportContactsRequest(contacts, false);
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            var result = (TL.ContactsImportedContactsType)request.Result;
-
-            return result.Users;
+            return (await _sender.SendReceive<TL.ContactsImportedContactsType>(request)).Users;
         }
 
         public async Task<bool> SendMessage(User user, string message)
@@ -171,9 +166,7 @@ namespace TeleTurk.Core
                 return false;
 
             var request = new TL.MessagesSendMessageRequest(null, null, null, null, peer, null, message, getRandomLong(), null, null);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
+            await _sender.SendReceive(request);
 
             return true;
         }
@@ -181,13 +174,7 @@ namespace TeleTurk.Core
         public async Task<UpdatesDifference> GetDifferenceUpdates(int pts, int date, int qts)
         {
             var request = new TL.UpdatesGetDifferenceRequest(pts, date, qts);
-
-            await _sender.Send(request);
-            await _sender.Receive(request);
-
-            var result = (UpdatesDifference)request.Result;
-
-            return result;
+            return await _sender.SendReceive<UpdatesDifference>(request);
         }
 
         static readonly Random r = new Random();

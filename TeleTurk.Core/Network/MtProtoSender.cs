@@ -33,6 +33,19 @@ namespace TeleTurk.Core.Network
             return confirmed ? _session.Sequence++ * 2 + 1 : _session.Sequence * 2;
         }
 
+        public async Task<T> SendReceive<T>(MTProtoRequest request)
+        {
+            return (T)await SendReceive(request);
+        }
+
+        public async Task<object> SendReceive(MTProtoRequest request)
+        {
+            await Send(request);
+            await Receive(request);
+
+            return request.GetResult();
+        }
+
         public async Task Send(MTProtoRequest request)
         {
             // TODO: refactor

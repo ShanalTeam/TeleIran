@@ -34,6 +34,8 @@ namespace TeleTurk.Core.MTProto
         public abstract bool Confirmed { get; }
         public abstract bool Responded { get; }
 
+        public abstract object GetResult();
+
         public virtual void OnSendSuccess()
         {
             SendTime = DateTime.Now;
@@ -1355,6 +1357,7 @@ namespace TeleTurk.Core.MTProto
             public List<long> MsgIds;
 
             public MsgsAck Result;
+            public override object GetResult() => Result;
 
             public MsgsAckRequest() { }
 
@@ -1398,6 +1401,7 @@ namespace TeleTurk.Core.MTProto
             public long ReqMsgId;
 
             public RpcDropAnswer Result;
+            public override object GetResult() => Result;
 
             public RpcDropAnswerRequest() { }
 
@@ -1438,6 +1442,7 @@ namespace TeleTurk.Core.MTProto
             public int Num;
 
             public FutureSalts Result;
+            public override object GetResult() => Result;
 
             public GetFutureSaltsRequest() { }
 
@@ -1478,6 +1483,7 @@ namespace TeleTurk.Core.MTProto
             public long PingId;
 
             public Pong Result;
+            public override object GetResult() => Result;
 
             public PingRequest() { }
 
@@ -1519,6 +1525,7 @@ namespace TeleTurk.Core.MTProto
             public int DisconnectDelay;
 
             public Pong Result;
+            public override object GetResult() => Result;
 
             public PingDelayDisconnectRequest() { }
 
@@ -1561,6 +1568,7 @@ namespace TeleTurk.Core.MTProto
             public long SessionId;
 
             public DestroySessionRes Result;
+            public override object GetResult() => Result;
 
             public DestroySessionRequest() { }
 
@@ -1605,6 +1613,7 @@ namespace TeleTurk.Core.MTProto
             public string City;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public RegisterSaveDeveloperInfoRequest() { }
 
@@ -1654,6 +1663,7 @@ namespace TeleTurk.Core.MTProto
             public MTProtoRequest Query;
 
             public TLObject Result;
+            public override object GetResult() => Result;
 
             public InvokeAfterMsgRequest() { }
 
@@ -1697,6 +1707,7 @@ namespace TeleTurk.Core.MTProto
             public MTProtoRequest Query;
 
             public TLObject Result;
+            public override object GetResult() => Result;
 
             public InvokeAfterMsgsRequest() { }
 
@@ -1747,6 +1758,7 @@ namespace TeleTurk.Core.MTProto
             public MTProtoRequest Query;
 
             public TLObject Result;
+            public override object GetResult() => Result;
 
             public InitConnectionRequest() { }
 
@@ -1798,6 +1810,7 @@ namespace TeleTurk.Core.MTProto
             public MTProtoRequest Query;
 
             public TLObject Result;
+            public override object GetResult() => Result;
 
             public InvokeWithLayerRequest() { }
 
@@ -1840,6 +1853,7 @@ namespace TeleTurk.Core.MTProto
             public MTProtoRequest Query;
 
             public TLObject Result;
+            public override object GetResult() => Result;
 
             public InvokeWithoutUpdatesRequest() { }
 
@@ -1880,6 +1894,7 @@ namespace TeleTurk.Core.MTProto
             public string PhoneNumber;
 
             public AuthCheckedPhone Result;
+            public override object GetResult() => Result;
 
             public AuthCheckPhoneRequest() { }
 
@@ -1925,6 +1940,7 @@ namespace TeleTurk.Core.MTProto
             public string LangCode;
 
             public AuthSentCode Result;
+            public override object GetResult() => Result;
 
             public AuthSendCodeRequest() { }
 
@@ -2000,6 +2016,7 @@ namespace TeleTurk.Core.MTProto
             public string LastName;
 
             public AuthAuthorization Result;
+            public override object GetResult() => Result;
 
             public AuthSignUpRequest() { }
 
@@ -2050,6 +2067,7 @@ namespace TeleTurk.Core.MTProto
             public string PhoneCode;
 
             public AuthAuthorization Result;
+            public override object GetResult() => Result;
 
             public AuthSignInRequest() { }
 
@@ -2092,6 +2110,7 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.AuthLogOutRequest;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AuthLogOutRequest() { }
 
@@ -2124,6 +2143,7 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.AuthResetAuthorizationsRequest;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AuthResetAuthorizationsRequest() { }
 
@@ -2159,6 +2179,7 @@ namespace TeleTurk.Core.MTProto
             public string Message;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AuthSendInvitesRequest() { }
 
@@ -2204,6 +2225,7 @@ namespace TeleTurk.Core.MTProto
             public int DcId;
 
             public AuthExportedAuthorization Result;
+            public override object GetResult() => Result;
 
             public AuthExportAuthorizationRequest() { }
 
@@ -2245,6 +2267,7 @@ namespace TeleTurk.Core.MTProto
             public byte[] Bytes;
 
             public AuthAuthorization Result;
+            public override object GetResult() => Result;
 
             public AuthImportAuthorizationRequest() { }
 
@@ -2290,6 +2313,7 @@ namespace TeleTurk.Core.MTProto
             public byte[] EncryptedMessage;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AuthBindTempAuthKeyRequest() { }
 
@@ -2339,6 +2363,7 @@ namespace TeleTurk.Core.MTProto
             public string BotAuthToken;
 
             public AuthAuthorization Result;
+            public override object GetResult() => Result;
 
             public AuthImportBotAuthorizationRequest() { }
 
@@ -2385,6 +2410,7 @@ namespace TeleTurk.Core.MTProto
             public byte[] PasswordHash;
 
             public AuthAuthorization Result;
+            public override object GetResult() => Result;
 
             public AuthCheckPasswordRequest() { }
 
@@ -2423,6 +2449,7 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.AuthRequestPasswordRecoveryRequest;
 
             public AuthPasswordRecovery Result;
+            public override object GetResult() => Result;
 
             public AuthRequestPasswordRecoveryRequest() { }
 
@@ -2457,6 +2484,7 @@ namespace TeleTurk.Core.MTProto
             public string Code;
 
             public AuthAuthorization Result;
+            public override object GetResult() => Result;
 
             public AuthRecoverPasswordRequest() { }
 
@@ -2498,6 +2526,7 @@ namespace TeleTurk.Core.MTProto
             public string PhoneCodeHash;
 
             public AuthSentCode Result;
+            public override object GetResult() => Result;
 
             public AuthResendCodeRequest() { }
 
@@ -2541,6 +2570,7 @@ namespace TeleTurk.Core.MTProto
             public string PhoneCodeHash;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AuthCancelCodeRequest() { }
 
@@ -2589,6 +2619,7 @@ namespace TeleTurk.Core.MTProto
             public string LangCode;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AccountRegisterDeviceRequest() { }
 
@@ -2642,6 +2673,7 @@ namespace TeleTurk.Core.MTProto
             public string Token;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AccountUnregisterDeviceRequest() { }
 
@@ -2685,6 +2717,7 @@ namespace TeleTurk.Core.MTProto
             public InputPeerNotifySettings Settings;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AccountUpdateNotifySettingsRequest() { }
 
@@ -2727,6 +2760,7 @@ namespace TeleTurk.Core.MTProto
             public InputNotifyPeer Peer;
 
             public PeerNotifySettings Result;
+            public override object GetResult() => Result;
 
             public AccountGetNotifySettingsRequest() { }
 
@@ -2765,6 +2799,7 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.AccountResetNotifySettingsRequest;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AccountResetNotifySettingsRequest() { }
 
@@ -2801,6 +2836,7 @@ namespace TeleTurk.Core.MTProto
             public string About;
 
             public User Result;
+            public override object GetResult() => Result;
 
             public AccountUpdateProfileRequest() { }
 
@@ -2867,6 +2903,7 @@ namespace TeleTurk.Core.MTProto
             public bool Offline;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AccountUpdateStatusRequest() { }
 
@@ -2905,6 +2942,7 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.AccountGetWallPapersRequest;
 
             public List<WallPaper> Result;
+            public override object GetResult() => Result;
 
             public AccountGetWallPapersRequest() { }
 
@@ -2940,6 +2978,7 @@ namespace TeleTurk.Core.MTProto
             public ReportReason Reason;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AccountReportPeerRequest() { }
 
@@ -2982,6 +3021,7 @@ namespace TeleTurk.Core.MTProto
             public string Username;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AccountCheckUsernameRequest() { }
 
@@ -3022,6 +3062,7 @@ namespace TeleTurk.Core.MTProto
             public string Username;
 
             public User Result;
+            public override object GetResult() => Result;
 
             public AccountUpdateUsernameRequest() { }
 
@@ -3062,6 +3103,7 @@ namespace TeleTurk.Core.MTProto
             public InputPrivacyKey Key;
 
             public AccountPrivacyRules Result;
+            public override object GetResult() => Result;
 
             public AccountGetPrivacyRequest() { }
 
@@ -3103,6 +3145,7 @@ namespace TeleTurk.Core.MTProto
             public List<InputPrivacyRule> Rules;
 
             public AccountPrivacyRules Result;
+            public override object GetResult() => Result;
 
             public AccountSetPrivacyRequest() { }
 
@@ -3148,6 +3191,7 @@ namespace TeleTurk.Core.MTProto
             public string Reason;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AccountDeleteAccountRequest() { }
 
@@ -3186,6 +3230,7 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.AccountGetAccountTTLRequest;
 
             public AccountDaysTTL Result;
+            public override object GetResult() => Result;
 
             public AccountGetAccountTTLRequest() { }
 
@@ -3220,6 +3265,7 @@ namespace TeleTurk.Core.MTProto
             public AccountDaysTTL Ttl;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AccountSetAccountTTLRequest() { }
 
@@ -3262,6 +3308,7 @@ namespace TeleTurk.Core.MTProto
             public bool? CurrentNumber;
 
             public AuthSentCode Result;
+            public override object GetResult() => Result;
 
             public AccountSendChangePhoneCodeRequest() { }
 
@@ -3326,6 +3373,7 @@ namespace TeleTurk.Core.MTProto
             public string PhoneCode;
 
             public User Result;
+            public override object GetResult() => Result;
 
             public AccountChangePhoneRequest() { }
 
@@ -3370,6 +3418,7 @@ namespace TeleTurk.Core.MTProto
             public int Period;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AccountUpdateDeviceLockedRequest() { }
 
@@ -3408,6 +3457,7 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.AccountGetAuthorizationsRequest;
 
             public AccountAuthorizations Result;
+            public override object GetResult() => Result;
 
             public AccountGetAuthorizationsRequest() { }
 
@@ -3442,6 +3492,7 @@ namespace TeleTurk.Core.MTProto
             public long Hash;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AccountResetAuthorizationRequest() { }
 
@@ -3480,6 +3531,7 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.AccountGetPasswordRequest;
 
             public AccountPassword Result;
+            public override object GetResult() => Result;
 
             public AccountGetPasswordRequest() { }
 
@@ -3514,6 +3566,7 @@ namespace TeleTurk.Core.MTProto
             public byte[] CurrentPasswordHash;
 
             public AccountPasswordSettings Result;
+            public override object GetResult() => Result;
 
             public AccountGetPasswordSettingsRequest() { }
 
@@ -3555,6 +3608,7 @@ namespace TeleTurk.Core.MTProto
             public AccountPasswordInputSettings NewSettings;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public AccountUpdatePasswordSettingsRequest() { }
 
@@ -3597,6 +3651,7 @@ namespace TeleTurk.Core.MTProto
             public List<InputUser> Id;
 
             public List<User> Result;
+            public override object GetResult() => Result;
 
             public UsersGetUsersRequest() { }
 
@@ -3640,6 +3695,7 @@ namespace TeleTurk.Core.MTProto
             public InputUser Id;
 
             public UserFull Result;
+            public override object GetResult() => Result;
 
             public UsersGetFullUserRequest() { }
 
@@ -3678,6 +3734,7 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.ContactsGetStatusesRequest;
 
             public List<ContactStatus> Result;
+            public override object GetResult() => Result;
 
             public ContactsGetStatusesRequest() { }
 
@@ -3712,6 +3769,7 @@ namespace TeleTurk.Core.MTProto
             public string Hash;
 
             public ContactsContacts Result;
+            public override object GetResult() => Result;
 
             public ContactsGetContactsRequest() { }
 
@@ -3753,6 +3811,7 @@ namespace TeleTurk.Core.MTProto
             public bool Replace;
 
             public ContactsImportedContacts Result;
+            public override object GetResult() => Result;
 
             public ContactsImportContactsRequest() { }
 
@@ -3798,6 +3857,7 @@ namespace TeleTurk.Core.MTProto
             public InputUser Id;
 
             public ContactsLink Result;
+            public override object GetResult() => Result;
 
             public ContactsDeleteContactRequest() { }
 
@@ -3838,6 +3898,7 @@ namespace TeleTurk.Core.MTProto
             public List<InputUser> Id;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public ContactsDeleteContactsRequest() { }
 
@@ -3881,6 +3942,7 @@ namespace TeleTurk.Core.MTProto
             public InputUser Id;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public ContactsBlockRequest() { }
 
@@ -3921,6 +3983,7 @@ namespace TeleTurk.Core.MTProto
             public InputUser Id;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public ContactsUnblockRequest() { }
 
@@ -3962,6 +4025,7 @@ namespace TeleTurk.Core.MTProto
             public int Limit;
 
             public ContactsBlocked Result;
+            public override object GetResult() => Result;
 
             public ContactsGetBlockedRequest() { }
 
@@ -4002,6 +4066,7 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.ContactsExportCardRequest;
 
             public List<int> Result;
+            public override object GetResult() => Result;
 
             public ContactsExportCardRequest() { }
 
@@ -4036,6 +4101,7 @@ namespace TeleTurk.Core.MTProto
             public List<int> ExportCard;
 
             public User Result;
+            public override object GetResult() => Result;
 
             public ContactsImportCardRequest() { }
 
@@ -4080,6 +4146,7 @@ namespace TeleTurk.Core.MTProto
             public int Limit;
 
             public ContactsFound Result;
+            public override object GetResult() => Result;
 
             public ContactsSearchRequest() { }
 
@@ -4122,6 +4189,7 @@ namespace TeleTurk.Core.MTProto
             public string Username;
 
             public ContactsResolvedPeer Result;
+            public override object GetResult() => Result;
 
             public ContactsResolveUsernameRequest() { }
 
@@ -4162,6 +4230,7 @@ namespace TeleTurk.Core.MTProto
             public List<int> Id;
 
             public MessagesMessages Result;
+            public override object GetResult() => Result;
 
             public MessagesGetMessagesRequest() { }
 
@@ -4208,6 +4277,7 @@ namespace TeleTurk.Core.MTProto
             public int Limit;
 
             public MessagesDialogs Result;
+            public override object GetResult() => Result;
 
             public MessagesGetDialogsRequest() { }
 
@@ -4260,6 +4330,7 @@ namespace TeleTurk.Core.MTProto
             public int MinId;
 
             public MessagesMessages Result;
+            public override object GetResult() => Result;
 
             public MessagesGetHistoryRequest() { }
 
@@ -4320,6 +4391,7 @@ namespace TeleTurk.Core.MTProto
             public int Limit;
 
             public MessagesMessages Result;
+            public override object GetResult() => Result;
 
             public MessagesSearchRequest() { }
 
@@ -4397,6 +4469,7 @@ namespace TeleTurk.Core.MTProto
             public int MaxId;
 
             public MessagesAffectedMessages Result;
+            public override object GetResult() => Result;
 
             public MessagesReadHistoryRequest() { }
 
@@ -4440,6 +4513,7 @@ namespace TeleTurk.Core.MTProto
             public int MaxId;
 
             public MessagesAffectedHistory Result;
+            public override object GetResult() => Result;
 
             public MessagesDeleteHistoryRequest() { }
 
@@ -4482,6 +4556,7 @@ namespace TeleTurk.Core.MTProto
             public List<int> Id;
 
             public MessagesAffectedMessages Result;
+            public override object GetResult() => Result;
 
             public MessagesDeleteMessagesRequest() { }
 
@@ -4525,6 +4600,7 @@ namespace TeleTurk.Core.MTProto
             public int MaxId;
 
             public List<ReceivedNotifyMessage> Result;
+            public override object GetResult() => Result;
 
             public MessagesReceivedMessagesRequest() { }
 
@@ -4566,6 +4642,7 @@ namespace TeleTurk.Core.MTProto
             public SendMessageAction Action;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public MessagesSetTypingRequest() { }
 
@@ -4617,6 +4694,7 @@ namespace TeleTurk.Core.MTProto
             public List<MessageEntity> Entities;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public MessagesSendMessageRequest() { }
 
@@ -4730,6 +4808,7 @@ namespace TeleTurk.Core.MTProto
             public ReplyMarkup ReplyMarkup;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public MessagesSendMediaRequest() { }
 
@@ -4825,6 +4904,7 @@ namespace TeleTurk.Core.MTProto
             public InputPeer ToPeer;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public MessagesForwardMessagesRequest() { }
 
@@ -4909,6 +4989,7 @@ namespace TeleTurk.Core.MTProto
             public InputPeer Peer;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public MessagesReportSpamRequest() { }
 
@@ -4949,6 +5030,7 @@ namespace TeleTurk.Core.MTProto
             public InputPeer Peer;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public MessagesHideReportSpamRequest() { }
 
@@ -4989,6 +5071,7 @@ namespace TeleTurk.Core.MTProto
             public InputPeer Peer;
 
             public PeerSettings Result;
+            public override object GetResult() => Result;
 
             public MessagesGetPeerSettingsRequest() { }
 
@@ -5029,6 +5112,7 @@ namespace TeleTurk.Core.MTProto
             public List<int> Id;
 
             public MessagesChats Result;
+            public override object GetResult() => Result;
 
             public MessagesGetChatsRequest() { }
 
@@ -5072,6 +5156,7 @@ namespace TeleTurk.Core.MTProto
             public int ChatId;
 
             public MessagesChatFull Result;
+            public override object GetResult() => Result;
 
             public MessagesGetFullChatRequest() { }
 
@@ -5113,6 +5198,7 @@ namespace TeleTurk.Core.MTProto
             public string Title;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public MessagesEditChatTitleRequest() { }
 
@@ -5156,6 +5242,7 @@ namespace TeleTurk.Core.MTProto
             public InputChatPhoto Photo;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public MessagesEditChatPhotoRequest() { }
 
@@ -5200,6 +5287,7 @@ namespace TeleTurk.Core.MTProto
             public int FwdLimit;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public MessagesAddChatUserRequest() { }
 
@@ -5245,6 +5333,7 @@ namespace TeleTurk.Core.MTProto
             public InputUser UserId;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public MessagesDeleteChatUserRequest() { }
 
@@ -5288,6 +5377,7 @@ namespace TeleTurk.Core.MTProto
             public string Title;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public MessagesCreateChatRequest() { }
 
@@ -5335,6 +5425,7 @@ namespace TeleTurk.Core.MTProto
             public long RandomId;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public MessagesForwardMessageRequest() { }
 
@@ -5382,6 +5473,7 @@ namespace TeleTurk.Core.MTProto
             public InputMedia Media;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public MessagesSendBroadcastRequest() { }
 
@@ -5435,6 +5527,7 @@ namespace TeleTurk.Core.MTProto
             public int RandomLength;
 
             public MessagesDhConfig Result;
+            public override object GetResult() => Result;
 
             public MessagesGetDhConfigRequest() { }
 
@@ -5479,6 +5572,7 @@ namespace TeleTurk.Core.MTProto
             public byte[] GA;
 
             public EncryptedChat Result;
+            public override object GetResult() => Result;
 
             public MessagesRequestEncryptionRequest() { }
 
@@ -5525,6 +5619,7 @@ namespace TeleTurk.Core.MTProto
             public long KeyFingerprint;
 
             public EncryptedChat Result;
+            public override object GetResult() => Result;
 
             public MessagesAcceptEncryptionRequest() { }
 
@@ -5569,6 +5664,7 @@ namespace TeleTurk.Core.MTProto
             public int ChatId;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public MessagesDiscardEncryptionRequest() { }
 
@@ -5610,6 +5706,7 @@ namespace TeleTurk.Core.MTProto
             public bool Typing;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public MessagesSetEncryptedTypingRequest() { }
 
@@ -5653,6 +5750,7 @@ namespace TeleTurk.Core.MTProto
             public int MaxDate;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public MessagesReadEncryptedHistoryRequest() { }
 
@@ -5697,6 +5795,7 @@ namespace TeleTurk.Core.MTProto
             public byte[] Data;
 
             public MessagesSentEncryptedMessage Result;
+            public override object GetResult() => Result;
 
             public MessagesSendEncryptedRequest() { }
 
@@ -5744,6 +5843,7 @@ namespace TeleTurk.Core.MTProto
             public InputEncryptedFile File;
 
             public MessagesSentEncryptedMessage Result;
+            public override object GetResult() => Result;
 
             public MessagesSendEncryptedFileRequest() { }
 
@@ -5792,6 +5892,7 @@ namespace TeleTurk.Core.MTProto
             public byte[] Data;
 
             public MessagesSentEncryptedMessage Result;
+            public override object GetResult() => Result;
 
             public MessagesSendEncryptedServiceRequest() { }
 
@@ -5836,6 +5937,7 @@ namespace TeleTurk.Core.MTProto
             public int MaxQts;
 
             public List<long> Result;
+            public override object GetResult() => Result;
 
             public MessagesReceivedQueueRequest() { }
 
@@ -5876,6 +5978,7 @@ namespace TeleTurk.Core.MTProto
             public List<int> Id;
 
             public MessagesAffectedMessages Result;
+            public override object GetResult() => Result;
 
             public MessagesReadMessageContentsRequest() { }
 
@@ -5920,6 +6023,7 @@ namespace TeleTurk.Core.MTProto
             public string Hash;
 
             public MessagesStickers Result;
+            public override object GetResult() => Result;
 
             public MessagesGetStickersRequest() { }
 
@@ -5962,6 +6066,7 @@ namespace TeleTurk.Core.MTProto
             public int Hash;
 
             public MessagesAllStickers Result;
+            public override object GetResult() => Result;
 
             public MessagesGetAllStickersRequest() { }
 
@@ -6002,6 +6107,7 @@ namespace TeleTurk.Core.MTProto
             public string Message;
 
             public MessageMedia Result;
+            public override object GetResult() => Result;
 
             public MessagesGetWebPagePreviewRequest() { }
 
@@ -6042,6 +6148,7 @@ namespace TeleTurk.Core.MTProto
             public int ChatId;
 
             public ExportedChatInvite Result;
+            public override object GetResult() => Result;
 
             public MessagesExportChatInviteRequest() { }
 
@@ -6082,6 +6189,7 @@ namespace TeleTurk.Core.MTProto
             public string Hash;
 
             public ChatInvite Result;
+            public override object GetResult() => Result;
 
             public MessagesCheckChatInviteRequest() { }
 
@@ -6122,6 +6230,7 @@ namespace TeleTurk.Core.MTProto
             public string Hash;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public MessagesImportChatInviteRequest() { }
 
@@ -6162,6 +6271,7 @@ namespace TeleTurk.Core.MTProto
             public InputStickerSet Stickerset;
 
             public MessagesStickerSet Result;
+            public override object GetResult() => Result;
 
             public MessagesGetStickerSetRequest() { }
 
@@ -6203,6 +6313,7 @@ namespace TeleTurk.Core.MTProto
             public bool Disabled;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public MessagesInstallStickerSetRequest() { }
 
@@ -6245,6 +6356,7 @@ namespace TeleTurk.Core.MTProto
             public InputStickerSet Stickerset;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public MessagesUninstallStickerSetRequest() { }
 
@@ -6288,6 +6400,7 @@ namespace TeleTurk.Core.MTProto
             public string StartParam;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public MessagesStartBotRequest() { }
 
@@ -6336,6 +6449,7 @@ namespace TeleTurk.Core.MTProto
             public bool Increment;
 
             public List<int> Result;
+            public override object GetResult() => Result;
 
             public MessagesGetMessagesViewsRequest() { }
 
@@ -6384,6 +6498,7 @@ namespace TeleTurk.Core.MTProto
             public bool Enabled;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public MessagesToggleChatAdminsRequest() { }
 
@@ -6428,6 +6543,7 @@ namespace TeleTurk.Core.MTProto
             public bool IsAdmin;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public MessagesEditChatAdminRequest() { }
 
@@ -6472,6 +6588,7 @@ namespace TeleTurk.Core.MTProto
             public int ChatId;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public MessagesMigrateChatRequest() { }
 
@@ -6516,6 +6633,7 @@ namespace TeleTurk.Core.MTProto
             public int Limit;
 
             public MessagesMessages Result;
+            public override object GetResult() => Result;
 
             public MessagesSearchGlobalRequest() { }
 
@@ -6564,6 +6682,7 @@ namespace TeleTurk.Core.MTProto
             public List<long> Order;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public MessagesReorderStickerSetsRequest() { }
 
@@ -6609,6 +6728,7 @@ namespace TeleTurk.Core.MTProto
             public string MimeType;
 
             public Document Result;
+            public override object GetResult() => Result;
 
             public MessagesGetDocumentByHashRequest() { }
 
@@ -6654,6 +6774,7 @@ namespace TeleTurk.Core.MTProto
             public int Offset;
 
             public MessagesFoundGifs Result;
+            public override object GetResult() => Result;
 
             public MessagesSearchGifsRequest() { }
 
@@ -6696,6 +6817,7 @@ namespace TeleTurk.Core.MTProto
             public int Hash;
 
             public MessagesSavedGifs Result;
+            public override object GetResult() => Result;
 
             public MessagesGetSavedGifsRequest() { }
 
@@ -6737,6 +6859,7 @@ namespace TeleTurk.Core.MTProto
             public bool Unsave;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public MessagesSaveGifRequest() { }
 
@@ -6781,6 +6904,7 @@ namespace TeleTurk.Core.MTProto
             public string Offset;
 
             public MessagesBotResults Result;
+            public override object GetResult() => Result;
 
             public MessagesGetInlineBotResultsRequest() { }
 
@@ -6830,6 +6954,7 @@ namespace TeleTurk.Core.MTProto
             public string NextOffset;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public MessagesSetInlineBotResultsRequest() { }
 
@@ -6915,6 +7040,7 @@ namespace TeleTurk.Core.MTProto
             public string Id;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public MessagesSendInlineBotResultRequest() { }
 
@@ -6998,6 +7124,7 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.UpdatesGetStateRequest;
 
             public UpdatesState Result;
+            public override object GetResult() => Result;
 
             public UpdatesGetStateRequest() { }
 
@@ -7034,6 +7161,7 @@ namespace TeleTurk.Core.MTProto
             public int Qts;
 
             public UpdatesDifference Result;
+            public override object GetResult() => Result;
 
             public UpdatesGetDifferenceRequest() { }
 
@@ -7081,6 +7209,7 @@ namespace TeleTurk.Core.MTProto
             public int Limit;
 
             public UpdatesChannelDifference Result;
+            public override object GetResult() => Result;
 
             public UpdatesGetChannelDifferenceRequest() { }
 
@@ -7128,6 +7257,7 @@ namespace TeleTurk.Core.MTProto
             public InputPhotoCrop Crop;
 
             public UserProfilePhoto Result;
+            public override object GetResult() => Result;
 
             public PhotosUpdateProfilePhotoRequest() { }
 
@@ -7173,6 +7303,7 @@ namespace TeleTurk.Core.MTProto
             public InputPhotoCrop Crop;
 
             public PhotosPhoto Result;
+            public override object GetResult() => Result;
 
             public PhotosUploadProfilePhotoRequest() { }
 
@@ -7219,6 +7350,7 @@ namespace TeleTurk.Core.MTProto
             public List<InputPhoto> Id;
 
             public List<long> Result;
+            public override object GetResult() => Result;
 
             public PhotosDeletePhotosRequest() { }
 
@@ -7265,6 +7397,7 @@ namespace TeleTurk.Core.MTProto
             public int Limit;
 
             public PhotosPhotos Result;
+            public override object GetResult() => Result;
 
             public PhotosGetUserPhotosRequest() { }
 
@@ -7313,6 +7446,7 @@ namespace TeleTurk.Core.MTProto
             public byte[] Bytes;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public UploadSaveFilePartRequest() { }
 
@@ -7359,6 +7493,7 @@ namespace TeleTurk.Core.MTProto
             public int Limit;
 
             public UploadFile Result;
+            public override object GetResult() => Result;
 
             public UploadGetFileRequest() { }
 
@@ -7406,6 +7541,7 @@ namespace TeleTurk.Core.MTProto
             public byte[] Bytes;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public UploadSaveBigFilePartRequest() { }
 
@@ -7450,6 +7586,7 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.HelpGetConfigRequest;
 
             public Config Result;
+            public override object GetResult() => Result;
 
             public HelpGetConfigRequest() { }
 
@@ -7482,6 +7619,7 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.HelpGetNearestDcRequest;
 
             public NearestDc Result;
+            public override object GetResult() => Result;
 
             public HelpGetNearestDcRequest() { }
 
@@ -7519,6 +7657,7 @@ namespace TeleTurk.Core.MTProto
             public string LangCode;
 
             public HelpAppUpdate Result;
+            public override object GetResult() => Result;
 
             public HelpGetAppUpdateRequest() { }
 
@@ -7565,6 +7704,7 @@ namespace TeleTurk.Core.MTProto
             public List<InputAppEvent> Events;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public HelpSaveAppLogRequest() { }
 
@@ -7608,6 +7748,7 @@ namespace TeleTurk.Core.MTProto
             public string LangCode;
 
             public HelpInviteText Result;
+            public override object GetResult() => Result;
 
             public HelpGetInviteTextRequest() { }
 
@@ -7646,6 +7787,7 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.HelpGetSupportRequest;
 
             public HelpSupport Result;
+            public override object GetResult() => Result;
 
             public HelpGetSupportRequest() { }
 
@@ -7683,6 +7825,7 @@ namespace TeleTurk.Core.MTProto
             public string LangCode;
 
             public HelpAppChangelog Result;
+            public override object GetResult() => Result;
 
             public HelpGetAppChangelogRequest() { }
 
@@ -7729,6 +7872,7 @@ namespace TeleTurk.Core.MTProto
             public string LangCode;
 
             public HelpTermsOfService Result;
+            public override object GetResult() => Result;
 
             public HelpGetTermsOfServiceRequest() { }
 
@@ -7770,6 +7914,7 @@ namespace TeleTurk.Core.MTProto
             public int Limit;
 
             public MessagesDialogs Result;
+            public override object GetResult() => Result;
 
             public ChannelsGetDialogsRequest() { }
 
@@ -7818,6 +7963,7 @@ namespace TeleTurk.Core.MTProto
             public int MinId;
 
             public MessagesMessages Result;
+            public override object GetResult() => Result;
 
             public ChannelsGetImportantHistoryRequest() { }
 
@@ -7871,6 +8017,7 @@ namespace TeleTurk.Core.MTProto
             public int MaxId;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public ChannelsReadHistoryRequest() { }
 
@@ -7914,6 +8061,7 @@ namespace TeleTurk.Core.MTProto
             public List<int> Id;
 
             public MessagesAffectedMessages Result;
+            public override object GetResult() => Result;
 
             public ChannelsDeleteMessagesRequest() { }
 
@@ -7960,6 +8108,7 @@ namespace TeleTurk.Core.MTProto
             public InputUser UserId;
 
             public MessagesAffectedHistory Result;
+            public override object GetResult() => Result;
 
             public ChannelsDeleteUserHistoryRequest() { }
 
@@ -8004,6 +8153,7 @@ namespace TeleTurk.Core.MTProto
             public List<int> Id;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public ChannelsReportSpamRequest() { }
 
@@ -8052,6 +8202,7 @@ namespace TeleTurk.Core.MTProto
             public List<int> Id;
 
             public MessagesMessages Result;
+            public override object GetResult() => Result;
 
             public ChannelsGetMessagesRequest() { }
 
@@ -8100,6 +8251,7 @@ namespace TeleTurk.Core.MTProto
             public int Limit;
 
             public ChannelsChannelParticipants Result;
+            public override object GetResult() => Result;
 
             public ChannelsGetParticipantsRequest() { }
 
@@ -8147,6 +8299,7 @@ namespace TeleTurk.Core.MTProto
             public InputUser UserId;
 
             public ChannelsChannelParticipant Result;
+            public override object GetResult() => Result;
 
             public ChannelsGetParticipantRequest() { }
 
@@ -8189,6 +8342,7 @@ namespace TeleTurk.Core.MTProto
             public List<InputChannel> Id;
 
             public MessagesChats Result;
+            public override object GetResult() => Result;
 
             public ChannelsGetChannelsRequest() { }
 
@@ -8232,6 +8386,7 @@ namespace TeleTurk.Core.MTProto
             public InputChannel Channel;
 
             public MessagesChatFull Result;
+            public override object GetResult() => Result;
 
             public ChannelsGetFullChannelRequest() { }
 
@@ -8275,6 +8430,7 @@ namespace TeleTurk.Core.MTProto
             public string About;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public ChannelsCreateChannelRequest() { }
 
@@ -8341,6 +8497,7 @@ namespace TeleTurk.Core.MTProto
             public string About;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public ChannelsEditAboutRequest() { }
 
@@ -8385,6 +8542,7 @@ namespace TeleTurk.Core.MTProto
             public ChannelParticipantRole Role;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public ChannelsEditAdminRequest() { }
 
@@ -8430,6 +8588,7 @@ namespace TeleTurk.Core.MTProto
             public string Title;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public ChannelsEditTitleRequest() { }
 
@@ -8473,6 +8632,7 @@ namespace TeleTurk.Core.MTProto
             public InputChatPhoto Photo;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public ChannelsEditPhotoRequest() { }
 
@@ -8516,6 +8676,7 @@ namespace TeleTurk.Core.MTProto
             public bool Enabled;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public ChannelsToggleCommentsRequest() { }
 
@@ -8559,6 +8720,7 @@ namespace TeleTurk.Core.MTProto
             public string Username;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public ChannelsCheckUsernameRequest() { }
 
@@ -8602,6 +8764,7 @@ namespace TeleTurk.Core.MTProto
             public string Username;
 
             public bool Result;
+            public override object GetResult() => Result;
 
             public ChannelsUpdateUsernameRequest() { }
 
@@ -8644,6 +8807,7 @@ namespace TeleTurk.Core.MTProto
             public InputChannel Channel;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public ChannelsJoinChannelRequest() { }
 
@@ -8684,6 +8848,7 @@ namespace TeleTurk.Core.MTProto
             public InputChannel Channel;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public ChannelsLeaveChannelRequest() { }
 
@@ -8725,6 +8890,7 @@ namespace TeleTurk.Core.MTProto
             public List<InputUser> Users;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public ChannelsInviteToChannelRequest() { }
 
@@ -8772,6 +8938,7 @@ namespace TeleTurk.Core.MTProto
             public bool Kicked;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public ChannelsKickFromChannelRequest() { }
 
@@ -8816,6 +8983,7 @@ namespace TeleTurk.Core.MTProto
             public InputChannel Channel;
 
             public ExportedChatInvite Result;
+            public override object GetResult() => Result;
 
             public ChannelsExportInviteRequest() { }
 
@@ -8856,6 +9024,7 @@ namespace TeleTurk.Core.MTProto
             public InputChannel Channel;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public ChannelsDeleteChannelRequest() { }
 
@@ -8897,6 +9066,7 @@ namespace TeleTurk.Core.MTProto
             public bool Enabled;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public ChannelsToggleInvitesRequest() { }
 
@@ -8940,6 +9110,7 @@ namespace TeleTurk.Core.MTProto
             public int Id;
 
             public ExportedMessageLink Result;
+            public override object GetResult() => Result;
 
             public ChannelsExportMessageLinkRequest() { }
 
@@ -8983,6 +9154,7 @@ namespace TeleTurk.Core.MTProto
             public bool Enabled;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public ChannelsToggleSignaturesRequest() { }
 
@@ -9026,6 +9198,7 @@ namespace TeleTurk.Core.MTProto
             public int Id;
 
             public ChannelsMessageEditData Result;
+            public override object GetResult() => Result;
 
             public ChannelsGetMessageEditDataRequest() { }
 
@@ -9072,6 +9245,7 @@ namespace TeleTurk.Core.MTProto
             public List<MessageEntity> Entities;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public ChannelsEditMessageRequest() { }
 
@@ -9145,6 +9319,7 @@ namespace TeleTurk.Core.MTProto
             public int Id;
 
             public Updates Result;
+            public override object GetResult() => Result;
 
             public ChannelsUpdatePinnedMessageRequest() { }
 
