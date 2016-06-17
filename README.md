@@ -20,31 +20,21 @@ var code = "87493";                                     // you can change code i
 var user = await client.MakeAuth(hash, code);           // send code and hash to get confirm from telegram
 ```
 
-## Using handler requests
-* To Use handler requests you have to create the object of handler that you want and then you will access to all possible request methods
-for example in this case we want to access to channel requests and stablish requests to get dialog results
+## Using the Telegram types
+You have different ways to use the Telegram types. One is casting the `abstract` type to its real type. For example:
+`Message message = ...; // we don't know what type it is, we want the message id`
+`int id;`
+`if (message is TL.MessageType)`
+`	id = ((TL.MessageType)message).Id;`
+`else if (message is TL.MessageType)`
+`	id = ((TL.MessageServiceType)message).Id;`
+`...`
 
-```
-var store = new FileSessionStore();
-var client = new TelegramClient(store, "session");
-await client.Connect();
-ChannelHandlers channels = new ChannelHandlers(client._sender);
-var dialogs = await channels.getDialogs(0, 100);
-List<Chat> chats = dialogs.Item3;
-```
+This however can quickly become annoying. You can also do:
+`Message message = ...;`
+`int id = (int)message["Id"];`
 
-a list of handlers are inside Handlers folder to improve them you need to add the requests for them.
-
-### Availble handlers
-* Help            -- Done
-* Channels        -- Done
-* Account         -- Incomplete
-* Auth            -- Incomplete
-* Messages        -- Incomplete
-* Photos          -- Incomplete
-* Updates         -- Incomplete
-* Uploads         -- Incomplete
-* Contacts        -- Incomplete
+Fairly easier!
 
 # Donations
 Thanks for donations! It's highly appreciated. 
