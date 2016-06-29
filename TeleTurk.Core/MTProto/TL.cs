@@ -14,7 +14,7 @@ namespace TeleTurk.Core.MTProto
         public abstract void Read(TBinaryReader reader);
 
         public abstract object this[string name] { get; }
-        public abstract bool HasKey(string name); 
+        public abstract bool HasKey(string name);
     }
 
     public abstract class MTProtoRequest
@@ -65,6 +65,7 @@ namespace TeleTurk.Core.MTProto
     public abstract class DestroySessionRes : TLObject { }
     public abstract class NewSession : TLObject { }
     public abstract class HttpWait : TLObject { }
+    public abstract class Bool : TLObject { }
     public abstract class True : TLObject { }
     public abstract class Error : TLObject { }
     public abstract class Null : TLObject { }
@@ -185,7 +186,6 @@ namespace TeleTurk.Core.MTProto
     public abstract class InputChannel : TLObject { }
     public abstract class ContactsResolvedPeer : TLObject { }
     public abstract class MessageRange : TLObject { }
-    public abstract class MessageGroup : TLObject { }
     public abstract class UpdatesChannelDifference : TLObject { }
     public abstract class ChannelMessagesFilter : TLObject { }
     public abstract class ChannelParticipant : TLObject { }
@@ -204,9 +204,18 @@ namespace TeleTurk.Core.MTProto
     public abstract class MessagesBotResults : TLObject { }
     public abstract class ExportedMessageLink : TLObject { }
     public abstract class MessageFwdHeader : TLObject { }
-    public abstract class ChannelsMessageEditData : TLObject { }
     public abstract class AuthCodeType : TLObject { }
     public abstract class AuthSentCodeType : TLObject { }
+    public abstract class MessagesBotCallbackAnswer : TLObject { }
+    public abstract class MessagesMessageEditData : TLObject { }
+    public abstract class InputBotInlineMessageID : TLObject { }
+    public abstract class InlineBotSwitchPM : TLObject { }
+    public abstract class MessagesPeerDialogs : TLObject { }
+    public abstract class TopPeer : TLObject { }
+    public abstract class TopPeerCategory : TLObject { }
+    public abstract class TopPeerCategoryPeers : TLObject { }
+    public abstract class ContactsTopPeers : TLObject { }
+    public abstract class DraftMessage : TLObject { }
 
     #endregion
 
@@ -286,9 +295,9 @@ namespace TeleTurk.Core.MTProto
     public class TBinaryWriter : BinaryWriter
     {
         public TBinaryWriter() { }
-        public TBinaryWriter(Stream stream): base(stream) { }
-        public TBinaryWriter(Stream stream, Encoding encoding): base(stream, encoding) { }
-        public TBinaryWriter(Stream stream, Encoding encoding, bool leaveOpen): base(stream, encoding, leaveOpen) { }
+        public TBinaryWriter(Stream stream) : base(stream) { }
+        public TBinaryWriter(Stream stream, Encoding encoding) : base(stream, encoding) { }
+        public TBinaryWriter(Stream stream, Encoding encoding, bool leaveOpen) : base(stream, encoding, leaveOpen) { }
 
         public override void Write(byte[] data)
         {
@@ -346,6 +355,18 @@ namespace TeleTurk.Core.MTProto
 
         public enum Types : uint
         {
+            ResPQRequest = 0x05162463,
+            PQInnerDataRequest = 0x83c95aec,
+            ServerDHParamsFailRequest = 0x79cb045d,
+            ServerDHParamsOkRequest = 0xd0e8075c,
+            ServerDHInnerDataRequest = 0xb5890dba,
+            ClientDHInnerDataRequest = 0x6643b654,
+            DhGenOkRequest = 0x3bcbf734,
+            DhGenRetryRequest = 0x46dc1fb9,
+            DhGenFailRequest = 0xa69dae02,
+            ReqPqRequest = 0x60469778,
+            ReqDHParamsRequest = 0xd712e4be,
+            SetClientDHParamsRequest = 0xf5045f1f,
             MsgsAckType = 0x62d6b459,
             MsgsAckRequest = 0x62d6b459,
             BadMsgNotificationType = 0xa7eff811,
@@ -373,7 +394,10 @@ namespace TeleTurk.Core.MTProto
             PingDelayDisconnectRequest = 0xf3427b8c,
             DestroySessionRequest = 0xe7512126,
             RegisterSaveDeveloperInfoRequest = 0x9a5f6e95,
+            BoolFalseType = 0xbc799737,
+            BoolTrueType = 0x997275b5,
             TrueType = 0x3fedd339,
+            VectorType = 0x1cb5c415,
             ErrorType = 0xc4b9f9bb,
             NullType = 0x56730bcc,
             InputPeerEmptyType = 0x7f3b18ea,
@@ -439,9 +463,9 @@ namespace TeleTurk.Core.MTProto
             ChatType = 0xd91cdd54,
             ChatForbiddenType = 0x07328bdb,
             ChannelType = 0xa14dca52,
-            ChannelForbiddenType = 0x2d85832c,
+            ChannelForbiddenType = 0x8537784f,
             ChatFullType = 0x2e02a614,
-            ChannelFullType = 0x97bee562,
+            ChannelFullType = 0xc3d5512f,
             ChatParticipantType = 0xc8d7493e,
             ChatParticipantCreatorType = 0xda13538a,
             ChatParticipantAdminType = 0xe2d6e436,
@@ -472,8 +496,8 @@ namespace TeleTurk.Core.MTProto
             MessageActionChatMigrateToType = 0x51bdb021,
             MessageActionChannelMigrateFromType = 0xb055eaee,
             MessageActionPinMessageType = 0x94bd38ed,
-            DialogType = 0xc1dd804a,
-            DialogChannelType = 0x5b8496b2,
+            MessageActionHistoryClearType = 0x9fbab604,
+            DialogType = 0x66ffba14,
             PhotoEmptyType = 0x2331b22d,
             PhotoType = 0xcded42fe,
             PhotoSizeEmptyType = 0x0e17e23c,
@@ -518,7 +542,7 @@ namespace TeleTurk.Core.MTProto
             MessagesDialogsSliceType = 0x71e094f3,
             MessagesMessagesType = 0x8c718e87,
             MessagesMessagesSliceType = 0x0b446ae3,
-            MessagesChannelMessagesType = 0xbc0f17bc,
+            MessagesChannelMessagesType = 0x99262e37,
             MessagesChatsType = 0x64ff9fd5,
             MessagesChatFullType = 0xe5d7d19c,
             MessagesAffectedHistoryType = 0xb45c69d1,
@@ -532,6 +556,7 @@ namespace TeleTurk.Core.MTProto
             InputMessagesFilterGifType = 0xffc86587,
             InputMessagesFilterVoiceType = 0x50f5c392,
             InputMessagesFilterMusicType = 0x3751b49e,
+            InputMessagesFilterChatPhotosType = 0x3a20ecb8,
             UpdateNewMessageType = 0x1f2b0afd,
             UpdateMessageIDType = 0x4e90bfd6,
             UpdateDeleteMessagesType = 0xa20db0e5,
@@ -562,7 +587,6 @@ namespace TeleTurk.Core.MTProto
             UpdateReadMessagesContentsType = 0x68c13933,
             UpdateChannelTooLongType = 0xeb0467fb,
             UpdateChannelType = 0xb6d45656,
-            UpdateChannelGroupType = 0xc36c1e3c,
             UpdateNewChannelMessageType = 0x62ba04d9,
             UpdateReadChannelInboxType = 0x4214f37f,
             UpdateDeleteChannelMessagesType = 0xc37521c9,
@@ -573,10 +597,15 @@ namespace TeleTurk.Core.MTProto
             UpdateStickerSetsOrderType = 0xf0dfb451,
             UpdateStickerSetsType = 0x43ae3dec,
             UpdateSavedGifsType = 0x9375341e,
-            UpdateBotInlineQueryType = 0xc01eea08,
-            UpdateBotInlineSendType = 0x0f69e113,
+            UpdateBotInlineQueryType = 0x54826690,
+            UpdateBotInlineSendType = 0x0e48f964,
             UpdateEditChannelMessageType = 0x1b3f4df7,
             UpdateChannelPinnedMessageType = 0x98592475,
+            UpdateBotCallbackQueryType = 0xa68c688c,
+            UpdateEditMessageType = 0xe40370a3,
+            UpdateInlineBotCallbackQueryType = 0x2cbd95af,
+            UpdateReadChannelOutboxType = 0x25d6c9c7,
+            UpdateDraftMessageType = 0xee2bb969,
             UpdatesStateType = 0xa56c2a3e,
             UpdatesDifferenceEmptyType = 0x5d75a138,
             UpdatesDifferenceType = 0x00f49ca0,
@@ -593,7 +622,7 @@ namespace TeleTurk.Core.MTProto
             PhotosPhotoType = 0x20212ca8,
             UploadFileType = 0x096a18d5,
             DcOptionType = 0x05d8c6cc,
-            ConfigType = 0x317ceef4,
+            ConfigType = 0xc9411388,
             NearestDcType = 0x8e1a1775,
             HelpAppUpdateType = 0x8987f311,
             HelpNoAppUpdateType = 0xc45a6536,
@@ -694,10 +723,16 @@ namespace TeleTurk.Core.MTProto
             BotCommandType = 0xc27ac8c7,
             BotInfoType = 0x98e81d3a,
             KeyboardButtonType = 0xa2fa4880,
+            KeyboardButtonUrlType = 0x258aff05,
+            KeyboardButtonCallbackType = 0x683a5e46,
+            KeyboardButtonRequestPhoneType = 0xb16a6c29,
+            KeyboardButtonRequestGeoLocationType = 0xfc796b3f,
+            KeyboardButtonSwitchInlineType = 0xea1b7a14,
             KeyboardButtonRowType = 0x77608b83,
             ReplyKeyboardHideType = 0xa03e5b85,
             ReplyKeyboardForceReplyType = 0xf4108aa0,
             ReplyKeyboardMarkupType = 0x3502758c,
+            ReplyInlineMarkupType = 0x48a30254,
             HelpAppChangelogEmptyType = 0xaf7e0394,
             HelpAppChangelogType = 0x4668e6bd,
             MessageEntityUnknownType = 0xbb92ba95,
@@ -711,17 +746,17 @@ namespace TeleTurk.Core.MTProto
             MessageEntityCodeType = 0x28a20571,
             MessageEntityPreType = 0x73924be0,
             MessageEntityTextUrlType = 0x76a6d327,
+            MessageEntityMentionNameType = 0x352dca58,
+            InputMessageEntityMentionNameType = 0x208e68c9,
             InputChannelEmptyType = 0xee8c1e86,
             InputChannelType = 0xafeb712e,
             ContactsResolvedPeerType = 0x7f077ad9,
             MessageRangeType = 0x0ae30253,
-            MessageGroupType = 0xe8346f53,
             UpdatesChannelDifferenceEmptyType = 0x3e11affb,
-            UpdatesChannelDifferenceTooLongType = 0x5e167646,
+            UpdatesChannelDifferenceTooLongType = 0x410dee07,
             UpdatesChannelDifferenceType = 0x2064674e,
             ChannelMessagesFilterEmptyType = 0x94d42ee7,
             ChannelMessagesFilterType = 0xcd77d957,
-            ChannelMessagesFilterCollapsedType = 0xfa01232e,
             ChannelParticipantType = 0x15ebac1d,
             ChannelParticipantSelfType = 0xa3289a6d,
             ChannelParticipantModeratorType = 0x91057fef,
@@ -743,18 +778,24 @@ namespace TeleTurk.Core.MTProto
             MessagesFoundGifsType = 0x450a1c0a,
             MessagesSavedGifsNotModifiedType = 0xe8025ca2,
             MessagesSavedGifsType = 0x2e0709a5,
-            InputBotInlineMessageMediaAutoType = 0x2e43e587,
-            InputBotInlineMessageTextType = 0xadf0df71,
+            InputBotInlineMessageMediaAutoType = 0x292fed13,
+            InputBotInlineMessageTextType = 0x3dcd7a87,
+            InputBotInlineMessageMediaGeoType = 0xf4a59de1,
+            InputBotInlineMessageMediaVenueType = 0xaaafadc8,
+            InputBotInlineMessageMediaContactType = 0x2daf01a7,
             InputBotInlineResultType = 0x2cbbe15a,
-            BotInlineMessageMediaAutoType = 0xfc56e87d,
-            BotInlineMessageTextType = 0xa56197a9,
-            BotInlineMediaResultDocumentType = 0xf897d33e,
-            BotInlineMediaResultPhotoType = 0xc5528587,
+            InputBotInlineResultPhotoType = 0xa8d864a7,
+            InputBotInlineResultDocumentType = 0xfff8fdc4,
+            BotInlineMessageMediaAutoType = 0x0a74b15b,
+            BotInlineMessageTextType = 0x8c7f65e2,
+            BotInlineMessageMediaGeoType = 0x3a8fd8b8,
+            BotInlineMessageMediaVenueType = 0x4366232e,
+            BotInlineMessageMediaContactType = 0x35edb4d4,
             BotInlineResultType = 0x9bebaeb9,
-            MessagesBotResultsType = 0x1170b0a3,
+            BotInlineMediaResultType = 0x17db940b,
+            MessagesBotResultsType = 0x256709a6,
             ExportedMessageLinkType = 0x1f486803,
             MessageFwdHeaderType = 0xc786ddcb,
-            ChannelsMessageEditDataType = 0x67e1255f,
             AuthCodeTypeSmsType = 0x72a3158c,
             AuthCodeTypeCallType = 0x741cd3e3,
             AuthCodeTypeFlashCallType = 0x226ccefb,
@@ -762,13 +803,29 @@ namespace TeleTurk.Core.MTProto
             AuthSentCodeTypeSmsType = 0xc000bba2,
             AuthSentCodeTypeCallType = 0x5353e5a7,
             AuthSentCodeTypeFlashCallType = 0xab03c6d9,
+            MessagesBotCallbackAnswerType = 0x1264f1c6,
+            MessagesMessageEditDataType = 0x26b5dde6,
+            InputBotInlineMessageIDType = 0x890c3d89,
+            InlineBotSwitchPMType = 0x3c20629f,
+            MessagesPeerDialogsType = 0x3371c354,
+            TopPeerType = 0xedcdc05b,
+            TopPeerCategoryBotsPMType = 0xab661b5b,
+            TopPeerCategoryBotsInlineType = 0x148677e2,
+            TopPeerCategoryCorrespondentsType = 0x0637b7ed,
+            TopPeerCategoryGroupsType = 0xbd17a14a,
+            TopPeerCategoryChannelsType = 0x161d9628,
+            TopPeerCategoryPeersType = 0xfb834291,
+            ContactsTopPeersNotModifiedType = 0xde266ef5,
+            ContactsTopPeersType = 0x70b772a8,
+            DraftMessageEmptyType = 0xba4baec5,
+            DraftMessageType = 0xfd8e711f,
             InvokeAfterMsgRequest = 0xcb9f372d,
             InvokeAfterMsgsRequest = 0x3dc4b4f0,
             InitConnectionRequest = 0x69796de9,
             InvokeWithLayerRequest = 0xda9b0d0d,
             InvokeWithoutUpdatesRequest = 0xbf9459b7,
             AuthCheckPhoneRequest = 0x6fe51dfb,
-            AuthSendCodeRequest = 0xccfd70cf,
+            AuthSendCodeRequest = 0x86aef0ec,
             AuthSignUpRequest = 0x1b067634,
             AuthSignInRequest = 0xbcd51581,
             AuthLogOutRequest = 0x5717da40,
@@ -783,7 +840,7 @@ namespace TeleTurk.Core.MTProto
             AuthRecoverPasswordRequest = 0x4ea56e92,
             AuthResendCodeRequest = 0x3ef1a9bf,
             AuthCancelCodeRequest = 0x1f040578,
-            AccountRegisterDeviceRequest = 0x446c712c,
+            AccountRegisterDeviceRequest = 0x637ea878,
             AccountUnregisterDeviceRequest = 0x65c55b40,
             AccountUpdateNotifySettingsRequest = 0x84be5b93,
             AccountGetNotifySettingsRequest = 0x12b3ad31,
@@ -821,12 +878,14 @@ namespace TeleTurk.Core.MTProto
             ContactsImportCardRequest = 0x4fe196fe,
             ContactsSearchRequest = 0x11f812d8,
             ContactsResolveUsernameRequest = 0xf93ccba3,
+            ContactsGetTopPeersRequest = 0xd4982db5,
+            ContactsResetTopPeerRatingRequest = 0x1ae373ac,
             MessagesGetMessagesRequest = 0x4222fa74,
             MessagesGetDialogsRequest = 0x6b47f94d,
             MessagesGetHistoryRequest = 0xafa92846,
             MessagesSearchRequest = 0xd4569248,
             MessagesReadHistoryRequest = 0x0e306d3a,
-            MessagesDeleteHistoryRequest = 0xb7c13bd9,
+            MessagesDeleteHistoryRequest = 0x1c015b09,
             MessagesDeleteMessagesRequest = 0xa5f18925,
             MessagesReceivedMessagesRequest = 0x05a954c0,
             MessagesSetTypingRequest = 0xa3825e50,
@@ -876,9 +935,17 @@ namespace TeleTurk.Core.MTProto
             MessagesSearchGifsRequest = 0xbf9a776b,
             MessagesGetSavedGifsRequest = 0x83bf3d52,
             MessagesSaveGifRequest = 0x327a30cb,
-            MessagesGetInlineBotResultsRequest = 0x9324600d,
-            MessagesSetInlineBotResultsRequest = 0x3f23ec12,
+            MessagesGetInlineBotResultsRequest = 0x514e999d,
+            MessagesSetInlineBotResultsRequest = 0xeb5ea206,
             MessagesSendInlineBotResultRequest = 0xb16e06fe,
+            MessagesGetMessageEditDataRequest = 0xfda68d36,
+            MessagesEditMessageRequest = 0xce91e4ca,
+            MessagesEditInlineBotMessageRequest = 0x130c2c85,
+            MessagesGetBotCallbackAnswerRequest = 0xa6e94f04,
+            MessagesSetBotCallbackAnswerRequest = 0x481c591a,
+            MessagesGetPeerDialogsRequest = 0x2d9776b9,
+            MessagesSaveDraftRequest = 0xbc39e14b,
+            MessagesGetAllDraftsRequest = 0x6a3f8d65,
             UpdatesGetStateRequest = 0xedd4882a,
             UpdatesGetDifferenceRequest = 0x0a041495,
             UpdatesGetChannelDifferenceRequest = 0xbb32d7c0,
@@ -891,14 +958,12 @@ namespace TeleTurk.Core.MTProto
             UploadSaveBigFilePartRequest = 0xde7b673d,
             HelpGetConfigRequest = 0xc4f9186b,
             HelpGetNearestDcRequest = 0x1fb33026,
-            HelpGetAppUpdateRequest = 0xc812ac7e,
+            HelpGetAppUpdateRequest = 0xae2de196,
             HelpSaveAppLogRequest = 0x6f02f748,
-            HelpGetInviteTextRequest = 0xa4a95186,
+            HelpGetInviteTextRequest = 0x4d392343,
             HelpGetSupportRequest = 0x9cdf08cd,
-            HelpGetAppChangelogRequest = 0x5bab7fb2,
-            HelpGetTermsOfServiceRequest = 0x37d78f83,
-            ChannelsGetDialogsRequest = 0xa9d3d249,
-            ChannelsGetImportantHistoryRequest = 0x8f494bb2,
+            HelpGetAppChangelogRequest = 0xb921197a,
+            HelpGetTermsOfServiceRequest = 0x350170f3,
             ChannelsReadHistoryRequest = 0xcc104937,
             ChannelsDeleteMessagesRequest = 0x84c1fd4e,
             ChannelsDeleteUserHistoryRequest = 0xd10dd71b,
@@ -913,7 +978,6 @@ namespace TeleTurk.Core.MTProto
             ChannelsEditAdminRequest = 0xeb7611d0,
             ChannelsEditTitleRequest = 0x566decd0,
             ChannelsEditPhotoRequest = 0xf12e57c9,
-            ChannelsToggleCommentsRequest = 0xaaa29e88,
             ChannelsCheckUsernameRequest = 0x10e6bd2c,
             ChannelsUpdateUsernameRequest = 0x3514b3de,
             ChannelsJoinChannelRequest = 0x24b524c5,
@@ -925,9 +989,8 @@ namespace TeleTurk.Core.MTProto
             ChannelsToggleInvitesRequest = 0x49609307,
             ChannelsExportMessageLinkRequest = 0xc846d22d,
             ChannelsToggleSignaturesRequest = 0x1f69b606,
-            ChannelsGetMessageEditDataRequest = 0x27ea3a28,
-            ChannelsEditMessageRequest = 0xdcda80ed,
-            ChannelsUpdatePinnedMessageRequest = 0xa72ded52        }
+            ChannelsUpdatePinnedMessageRequest = 0xa72ded52
+        }
 
         #endregion
 
@@ -955,6 +1018,8 @@ namespace TeleTurk.Core.MTProto
             { Types.DestroySessionNoneType, typeof(DestroySessionNoneType) },
             { Types.NewSessionCreatedType, typeof(NewSessionCreatedType) },
             { Types.HttpWaitType, typeof(HttpWaitType) },
+            { Types.BoolFalseType, typeof(BoolFalseType) },
+            { Types.BoolTrueType, typeof(BoolTrueType) },
             { Types.TrueType, typeof(TrueType) },
             { Types.ErrorType, typeof(ErrorType) },
             { Types.NullType, typeof(NullType) },
@@ -1054,8 +1119,8 @@ namespace TeleTurk.Core.MTProto
             { Types.MessageActionChatMigrateToType, typeof(MessageActionChatMigrateToType) },
             { Types.MessageActionChannelMigrateFromType, typeof(MessageActionChannelMigrateFromType) },
             { Types.MessageActionPinMessageType, typeof(MessageActionPinMessageType) },
+            { Types.MessageActionHistoryClearType, typeof(MessageActionHistoryClearType) },
             { Types.DialogType, typeof(DialogType) },
-            { Types.DialogChannelType, typeof(DialogChannelType) },
             { Types.PhotoEmptyType, typeof(PhotoEmptyType) },
             { Types.PhotoType, typeof(PhotoType) },
             { Types.PhotoSizeEmptyType, typeof(PhotoSizeEmptyType) },
@@ -1114,6 +1179,7 @@ namespace TeleTurk.Core.MTProto
             { Types.InputMessagesFilterGifType, typeof(InputMessagesFilterGifType) },
             { Types.InputMessagesFilterVoiceType, typeof(InputMessagesFilterVoiceType) },
             { Types.InputMessagesFilterMusicType, typeof(InputMessagesFilterMusicType) },
+            { Types.InputMessagesFilterChatPhotosType, typeof(InputMessagesFilterChatPhotosType) },
             { Types.UpdateNewMessageType, typeof(UpdateNewMessageType) },
             { Types.UpdateMessageIDType, typeof(UpdateMessageIDType) },
             { Types.UpdateDeleteMessagesType, typeof(UpdateDeleteMessagesType) },
@@ -1144,7 +1210,6 @@ namespace TeleTurk.Core.MTProto
             { Types.UpdateReadMessagesContentsType, typeof(UpdateReadMessagesContentsType) },
             { Types.UpdateChannelTooLongType, typeof(UpdateChannelTooLongType) },
             { Types.UpdateChannelType, typeof(UpdateChannelType) },
-            { Types.UpdateChannelGroupType, typeof(UpdateChannelGroupType) },
             { Types.UpdateNewChannelMessageType, typeof(UpdateNewChannelMessageType) },
             { Types.UpdateReadChannelInboxType, typeof(UpdateReadChannelInboxType) },
             { Types.UpdateDeleteChannelMessagesType, typeof(UpdateDeleteChannelMessagesType) },
@@ -1159,6 +1224,11 @@ namespace TeleTurk.Core.MTProto
             { Types.UpdateBotInlineSendType, typeof(UpdateBotInlineSendType) },
             { Types.UpdateEditChannelMessageType, typeof(UpdateEditChannelMessageType) },
             { Types.UpdateChannelPinnedMessageType, typeof(UpdateChannelPinnedMessageType) },
+            { Types.UpdateBotCallbackQueryType, typeof(UpdateBotCallbackQueryType) },
+            { Types.UpdateEditMessageType, typeof(UpdateEditMessageType) },
+            { Types.UpdateInlineBotCallbackQueryType, typeof(UpdateInlineBotCallbackQueryType) },
+            { Types.UpdateReadChannelOutboxType, typeof(UpdateReadChannelOutboxType) },
+            { Types.UpdateDraftMessageType, typeof(UpdateDraftMessageType) },
             { Types.UpdatesStateType, typeof(UpdatesStateType) },
             { Types.UpdatesDifferenceEmptyType, typeof(UpdatesDifferenceEmptyType) },
             { Types.UpdatesDifferenceType, typeof(UpdatesDifferenceType) },
@@ -1276,10 +1346,16 @@ namespace TeleTurk.Core.MTProto
             { Types.BotCommandType, typeof(BotCommandType) },
             { Types.BotInfoType, typeof(BotInfoType) },
             { Types.KeyboardButtonType, typeof(KeyboardButtonType) },
+            { Types.KeyboardButtonUrlType, typeof(KeyboardButtonUrlType) },
+            { Types.KeyboardButtonCallbackType, typeof(KeyboardButtonCallbackType) },
+            { Types.KeyboardButtonRequestPhoneType, typeof(KeyboardButtonRequestPhoneType) },
+            { Types.KeyboardButtonRequestGeoLocationType, typeof(KeyboardButtonRequestGeoLocationType) },
+            { Types.KeyboardButtonSwitchInlineType, typeof(KeyboardButtonSwitchInlineType) },
             { Types.KeyboardButtonRowType, typeof(KeyboardButtonRowType) },
             { Types.ReplyKeyboardHideType, typeof(ReplyKeyboardHideType) },
             { Types.ReplyKeyboardForceReplyType, typeof(ReplyKeyboardForceReplyType) },
             { Types.ReplyKeyboardMarkupType, typeof(ReplyKeyboardMarkupType) },
+            { Types.ReplyInlineMarkupType, typeof(ReplyInlineMarkupType) },
             { Types.HelpAppChangelogEmptyType, typeof(HelpAppChangelogEmptyType) },
             { Types.HelpAppChangelogType, typeof(HelpAppChangelogType) },
             { Types.MessageEntityUnknownType, typeof(MessageEntityUnknownType) },
@@ -1293,17 +1369,17 @@ namespace TeleTurk.Core.MTProto
             { Types.MessageEntityCodeType, typeof(MessageEntityCodeType) },
             { Types.MessageEntityPreType, typeof(MessageEntityPreType) },
             { Types.MessageEntityTextUrlType, typeof(MessageEntityTextUrlType) },
+            { Types.MessageEntityMentionNameType, typeof(MessageEntityMentionNameType) },
+            { Types.InputMessageEntityMentionNameType, typeof(InputMessageEntityMentionNameType) },
             { Types.InputChannelEmptyType, typeof(InputChannelEmptyType) },
             { Types.InputChannelType, typeof(InputChannelType) },
             { Types.ContactsResolvedPeerType, typeof(ContactsResolvedPeerType) },
             { Types.MessageRangeType, typeof(MessageRangeType) },
-            { Types.MessageGroupType, typeof(MessageGroupType) },
             { Types.UpdatesChannelDifferenceEmptyType, typeof(UpdatesChannelDifferenceEmptyType) },
             { Types.UpdatesChannelDifferenceTooLongType, typeof(UpdatesChannelDifferenceTooLongType) },
             { Types.UpdatesChannelDifferenceType, typeof(UpdatesChannelDifferenceType) },
             { Types.ChannelMessagesFilterEmptyType, typeof(ChannelMessagesFilterEmptyType) },
             { Types.ChannelMessagesFilterType, typeof(ChannelMessagesFilterType) },
-            { Types.ChannelMessagesFilterCollapsedType, typeof(ChannelMessagesFilterCollapsedType) },
             { Types.ChannelParticipantType, typeof(ChannelParticipantType) },
             { Types.ChannelParticipantSelfType, typeof(ChannelParticipantSelfType) },
             { Types.ChannelParticipantModeratorType, typeof(ChannelParticipantModeratorType) },
@@ -1327,23 +1403,45 @@ namespace TeleTurk.Core.MTProto
             { Types.MessagesSavedGifsType, typeof(MessagesSavedGifsType) },
             { Types.InputBotInlineMessageMediaAutoType, typeof(InputBotInlineMessageMediaAutoType) },
             { Types.InputBotInlineMessageTextType, typeof(InputBotInlineMessageTextType) },
+            { Types.InputBotInlineMessageMediaGeoType, typeof(InputBotInlineMessageMediaGeoType) },
+            { Types.InputBotInlineMessageMediaVenueType, typeof(InputBotInlineMessageMediaVenueType) },
+            { Types.InputBotInlineMessageMediaContactType, typeof(InputBotInlineMessageMediaContactType) },
             { Types.InputBotInlineResultType, typeof(InputBotInlineResultType) },
+            { Types.InputBotInlineResultPhotoType, typeof(InputBotInlineResultPhotoType) },
+            { Types.InputBotInlineResultDocumentType, typeof(InputBotInlineResultDocumentType) },
             { Types.BotInlineMessageMediaAutoType, typeof(BotInlineMessageMediaAutoType) },
             { Types.BotInlineMessageTextType, typeof(BotInlineMessageTextType) },
-            { Types.BotInlineMediaResultDocumentType, typeof(BotInlineMediaResultDocumentType) },
-            { Types.BotInlineMediaResultPhotoType, typeof(BotInlineMediaResultPhotoType) },
+            { Types.BotInlineMessageMediaGeoType, typeof(BotInlineMessageMediaGeoType) },
+            { Types.BotInlineMessageMediaVenueType, typeof(BotInlineMessageMediaVenueType) },
+            { Types.BotInlineMessageMediaContactType, typeof(BotInlineMessageMediaContactType) },
             { Types.BotInlineResultType, typeof(BotInlineResultType) },
+            { Types.BotInlineMediaResultType, typeof(BotInlineMediaResultType) },
             { Types.MessagesBotResultsType, typeof(MessagesBotResultsType) },
             { Types.ExportedMessageLinkType, typeof(ExportedMessageLinkType) },
             { Types.MessageFwdHeaderType, typeof(MessageFwdHeaderType) },
-            { Types.ChannelsMessageEditDataType, typeof(ChannelsMessageEditDataType) },
             { Types.AuthCodeTypeSmsType, typeof(AuthCodeTypeSmsType) },
             { Types.AuthCodeTypeCallType, typeof(AuthCodeTypeCallType) },
             { Types.AuthCodeTypeFlashCallType, typeof(AuthCodeTypeFlashCallType) },
             { Types.AuthSentCodeTypeAppType, typeof(AuthSentCodeTypeAppType) },
             { Types.AuthSentCodeTypeSmsType, typeof(AuthSentCodeTypeSmsType) },
             { Types.AuthSentCodeTypeCallType, typeof(AuthSentCodeTypeCallType) },
-            { Types.AuthSentCodeTypeFlashCallType, typeof(AuthSentCodeTypeFlashCallType) }
+            { Types.AuthSentCodeTypeFlashCallType, typeof(AuthSentCodeTypeFlashCallType) },
+            { Types.MessagesBotCallbackAnswerType, typeof(MessagesBotCallbackAnswerType) },
+            { Types.MessagesMessageEditDataType, typeof(MessagesMessageEditDataType) },
+            { Types.InputBotInlineMessageIDType, typeof(InputBotInlineMessageIDType) },
+            { Types.InlineBotSwitchPMType, typeof(InlineBotSwitchPMType) },
+            { Types.MessagesPeerDialogsType, typeof(MessagesPeerDialogsType) },
+            { Types.TopPeerType, typeof(TopPeerType) },
+            { Types.TopPeerCategoryBotsPMType, typeof(TopPeerCategoryBotsPMType) },
+            { Types.TopPeerCategoryBotsInlineType, typeof(TopPeerCategoryBotsInlineType) },
+            { Types.TopPeerCategoryCorrespondentsType, typeof(TopPeerCategoryCorrespondentsType) },
+            { Types.TopPeerCategoryGroupsType, typeof(TopPeerCategoryGroupsType) },
+            { Types.TopPeerCategoryChannelsType, typeof(TopPeerCategoryChannelsType) },
+            { Types.TopPeerCategoryPeersType, typeof(TopPeerCategoryPeersType) },
+            { Types.ContactsTopPeersNotModifiedType, typeof(ContactsTopPeersNotModifiedType) },
+            { Types.ContactsTopPeersType, typeof(ContactsTopPeersType) },
+            { Types.DraftMessageEmptyType, typeof(DraftMessageEmptyType) },
+            { Types.DraftMessageType, typeof(DraftMessageType) }
         };
 
         #endregion
@@ -1937,7 +2035,6 @@ namespace TeleTurk.Core.MTProto
             public bool? CurrentNumber;
             public int ApiId;
             public string ApiHash;
-            public string LangCode;
 
             public AuthSentCode Result;
             public override object GetResult() => Result;
@@ -1952,15 +2049,13 @@ namespace TeleTurk.Core.MTProto
             /// <param name="CurrentNumber">Can be null</param>
             /// <param name="ApiId">Can NOT be null</param>
             /// <param name="ApiHash">Can NOT be null</param>
-            /// <param name="LangCode">Can NOT be null</param>
-            public AuthSendCodeRequest(True AllowFlashcall, string PhoneNumber, bool? CurrentNumber, int ApiId, string ApiHash, string LangCode)
+            public AuthSendCodeRequest(True AllowFlashcall, string PhoneNumber, bool? CurrentNumber, int ApiId, string ApiHash)
             {
                 this.AllowFlashcall = AllowFlashcall;
                 this.PhoneNumber = PhoneNumber;
                 this.CurrentNumber = CurrentNumber;
                 this.ApiId = ApiId;
                 this.ApiHash = ApiHash;
-                this.LangCode = LangCode;
             }
 
             public override void OnSend(TBinaryWriter writer)
@@ -1972,18 +2067,19 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (AllowFlashcall != null) {
+                if (AllowFlashcall != null)
+                {
 
                 }
 
                 writer.Write(PhoneNumber);
-                if (CurrentNumber != null) {
+                if (CurrentNumber != null)
+                {
                     writer.Write(CurrentNumber.Value);
                 }
 
                 writer.Write(ApiId);
                 writer.Write(ApiHash);
-                writer.Write(LangCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -2001,7 +2097,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(AuthSendCodeRequest AllowFlashcall:{0} PhoneNumber:{1} CurrentNumber:{2} ApiId:{3} ApiHash:{4} LangCode:{5})", AllowFlashcall, PhoneNumber, CurrentNumber, ApiId, ApiHash, LangCode);
+                return string.Format("(AuthSendCodeRequest AllowFlashcall:{0} PhoneNumber:{1} CurrentNumber:{2} ApiId:{3} ApiHash:{4})", AllowFlashcall, PhoneNumber, CurrentNumber, ApiId, ApiHash);
             }
         }
 
@@ -2612,26 +2708,16 @@ namespace TeleTurk.Core.MTProto
 
             public int TokenType;
             public string Token;
-            public string DeviceModel;
-            public string SystemVersion;
-            public string AppVersion;
-            public bool AppSandbox;
-            public string LangCode;
 
             public bool Result;
             public override object GetResult() => Result;
 
             public AccountRegisterDeviceRequest() { }
 
-            public AccountRegisterDeviceRequest(int TokenType, string Token, string DeviceModel, string SystemVersion, string AppVersion, bool AppSandbox, string LangCode)
+            public AccountRegisterDeviceRequest(int TokenType, string Token)
             {
                 this.TokenType = TokenType;
                 this.Token = Token;
-                this.DeviceModel = DeviceModel;
-                this.SystemVersion = SystemVersion;
-                this.AppVersion = AppVersion;
-                this.AppSandbox = AppSandbox;
-                this.LangCode = LangCode;
             }
 
             public override void OnSend(TBinaryWriter writer)
@@ -2639,11 +2725,6 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(TokenType);
                 writer.Write(Token);
-                writer.Write(DeviceModel);
-                writer.Write(SystemVersion);
-                writer.Write(AppVersion);
-                writer.Write(AppSandbox);
-                writer.Write(LangCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -2661,7 +2742,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(AccountRegisterDeviceRequest TokenType:{0} Token:{1} DeviceModel:{2} SystemVersion:{3} AppVersion:{4} AppSandbox:{5} LangCode:{6})", TokenType, Token, DeviceModel, SystemVersion, AppVersion, AppSandbox, LangCode);
+                return string.Format("(AccountRegisterDeviceRequest TokenType:{0} Token:{1})", TokenType, Token);
             }
         }
 
@@ -2863,15 +2944,18 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (FirstName != null) {
+                if (FirstName != null)
+                {
                     writer.Write(FirstName);
                 }
 
-                if (LastName != null) {
+                if (LastName != null)
+                {
                     writer.Write(LastName);
                 }
 
-                if (About != null) {
+                if (About != null)
+                {
                     writer.Write(About);
                 }
 
@@ -3334,12 +3418,14 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (AllowFlashcall != null) {
+                if (AllowFlashcall != null)
+                {
 
                 }
 
                 writer.Write(PhoneNumber);
-                if (CurrentNumber != null) {
+                if (CurrentNumber != null)
+                {
                     writer.Write(CurrentNumber.Value);
                 }
 
@@ -4223,6 +4309,152 @@ namespace TeleTurk.Core.MTProto
             }
         }
 
+        public class ContactsGetTopPeersRequest : MTProtoRequest
+        {
+            public override Types ConstructorCode => Types.ContactsGetTopPeersRequest;
+
+            public True Correspondents;
+            public True BotsPm;
+            public True BotsInline;
+            public True Groups;
+            public True Channels;
+            public int Offset;
+            public int Limit;
+            public int Hash;
+
+            public ContactsTopPeers Result;
+            public override object GetResult() => Result;
+
+            public ContactsGetTopPeersRequest() { }
+
+            /// <summary>
+            /// The following arguments can be null: Correspondents, BotsPm, BotsInline, Groups, Channels
+            /// </summary>
+            /// <param name="Correspondents">Can be null</param>
+            /// <param name="BotsPm">Can be null</param>
+            /// <param name="BotsInline">Can be null</param>
+            /// <param name="Groups">Can be null</param>
+            /// <param name="Channels">Can be null</param>
+            /// <param name="Offset">Can NOT be null</param>
+            /// <param name="Limit">Can NOT be null</param>
+            /// <param name="Hash">Can NOT be null</param>
+            public ContactsGetTopPeersRequest(True Correspondents, True BotsPm, True BotsInline, True Groups, True Channels, int Offset, int Limit, int Hash)
+            {
+                this.Correspondents = Correspondents;
+                this.BotsPm = BotsPm;
+                this.BotsInline = BotsInline;
+                this.Groups = Groups;
+                this.Channels = Channels;
+                this.Offset = Offset;
+                this.Limit = Limit;
+                this.Hash = Hash;
+            }
+
+            public override void OnSend(TBinaryWriter writer)
+            {
+                int flags =
+                    (Correspondents != null ? 1 << 0 : 0) |
+                    (BotsPm != null ? 1 << 1 : 0) |
+                    (BotsInline != null ? 1 << 2 : 0) |
+                    (Groups != null ? 1 << 10 : 0) |
+                    (Channels != null ? 1 << 15 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                if (Correspondents != null)
+                {
+
+                }
+
+                if (BotsPm != null)
+                {
+
+                }
+
+                if (BotsInline != null)
+                {
+
+                }
+
+                if (Groups != null)
+                {
+
+                }
+
+                if (Channels != null)
+                {
+
+                }
+
+                writer.Write(Offset);
+                writer.Write(Limit);
+                writer.Write(Hash);
+            }
+
+            public override void OnResponse(TBinaryReader reader)
+            {
+                Result = reader.Read<ContactsTopPeers>();
+            }
+
+            public override void OnException(Exception exception)
+            {
+                throw exception;
+            }
+
+            public override bool Confirmed => true;
+            public override bool Responded { get; }
+
+            public override string ToString()
+            {
+                return string.Format("(ContactsGetTopPeersRequest Correspondents:{0} BotsPm:{1} BotsInline:{2} Groups:{3} Channels:{4} Offset:{5} Limit:{6} Hash:{7})", Correspondents, BotsPm, BotsInline, Groups, Channels, Offset, Limit, Hash);
+            }
+        }
+
+        public class ContactsResetTopPeerRatingRequest : MTProtoRequest
+        {
+            public override Types ConstructorCode => Types.ContactsResetTopPeerRatingRequest;
+
+            public TopPeerCategory Category;
+            public InputPeer Peer;
+
+            public bool Result;
+            public override object GetResult() => Result;
+
+            public ContactsResetTopPeerRatingRequest() { }
+
+            public ContactsResetTopPeerRatingRequest(TopPeerCategory Category, InputPeer Peer)
+            {
+                this.Category = Category;
+                this.Peer = Peer;
+            }
+
+            public override void OnSend(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                Category.Write(writer);
+                Peer.Write(writer);
+            }
+
+            public override void OnResponse(TBinaryReader reader)
+            {
+                Result = reader.ReadBoolean();
+            }
+
+            public override void OnException(Exception exception)
+            {
+                throw exception;
+            }
+
+            public override bool Confirmed => true;
+            public override bool Responded { get; }
+
+            public override string ToString()
+            {
+                return string.Format("(ContactsResetTopPeerRatingRequest Category:{0} Peer:{1})", Category, Peer);
+            }
+        }
+
         public class MessagesGetMessagesRequest : MTProtoRequest
         {
             public override Types ConstructorCode => Types.MessagesGetMessagesRequest;
@@ -4380,7 +4612,6 @@ namespace TeleTurk.Core.MTProto
         {
             public override Types ConstructorCode => Types.MessagesSearchRequest;
 
-            public True ImportantOnly;
             public InputPeer Peer;
             public string Q;
             public MessagesFilter Filter;
@@ -4395,21 +4626,8 @@ namespace TeleTurk.Core.MTProto
 
             public MessagesSearchRequest() { }
 
-            /// <summary>
-            /// The following arguments can be null: ImportantOnly
-            /// </summary>
-            /// <param name="ImportantOnly">Can be null</param>
-            /// <param name="Peer">Can NOT be null</param>
-            /// <param name="Q">Can NOT be null</param>
-            /// <param name="Filter">Can NOT be null</param>
-            /// <param name="MinDate">Can NOT be null</param>
-            /// <param name="MaxDate">Can NOT be null</param>
-            /// <param name="Offset">Can NOT be null</param>
-            /// <param name="MaxId">Can NOT be null</param>
-            /// <param name="Limit">Can NOT be null</param>
-            public MessagesSearchRequest(True ImportantOnly, InputPeer Peer, string Q, MessagesFilter Filter, int MinDate, int MaxDate, int Offset, int MaxId, int Limit)
+            public MessagesSearchRequest(InputPeer Peer, string Q, MessagesFilter Filter, int MinDate, int MaxDate, int Offset, int MaxId, int Limit)
             {
-                this.ImportantOnly = ImportantOnly;
                 this.Peer = Peer;
                 this.Q = Q;
                 this.Filter = Filter;
@@ -4422,16 +4640,7 @@ namespace TeleTurk.Core.MTProto
 
             public override void OnSend(TBinaryWriter writer)
             {
-                int flags =
-                    (ImportantOnly != null ? 1 << 0 : 0);
-
                 writer.Write((uint)ConstructorCode);
-                writer.Write(flags);
-
-                if (ImportantOnly != null) {
-
-                }
-
                 Peer.Write(writer);
                 writer.Write(Q);
                 Filter.Write(writer);
@@ -4457,7 +4666,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(MessagesSearchRequest ImportantOnly:{0} Peer:{1} Q:{2} Filter:{3} MinDate:{4} MaxDate:{5} Offset:{6} MaxId:{7} Limit:{8})", ImportantOnly, Peer, Q, Filter, MinDate, MaxDate, Offset, MaxId, Limit);
+                return string.Format("(MessagesSearchRequest Peer:{0} Q:{1} Filter:{2} MinDate:{3} MaxDate:{4} Offset:{5} MaxId:{6} Limit:{7})", Peer, Q, Filter, MinDate, MaxDate, Offset, MaxId, Limit);
             }
         }
 
@@ -4509,6 +4718,7 @@ namespace TeleTurk.Core.MTProto
         {
             public override Types ConstructorCode => Types.MessagesDeleteHistoryRequest;
 
+            public True JustClear;
             public InputPeer Peer;
             public int MaxId;
 
@@ -4517,15 +4727,32 @@ namespace TeleTurk.Core.MTProto
 
             public MessagesDeleteHistoryRequest() { }
 
-            public MessagesDeleteHistoryRequest(InputPeer Peer, int MaxId)
+            /// <summary>
+            /// The following arguments can be null: JustClear
+            /// </summary>
+            /// <param name="JustClear">Can be null</param>
+            /// <param name="Peer">Can NOT be null</param>
+            /// <param name="MaxId">Can NOT be null</param>
+            public MessagesDeleteHistoryRequest(True JustClear, InputPeer Peer, int MaxId)
             {
+                this.JustClear = JustClear;
                 this.Peer = Peer;
                 this.MaxId = MaxId;
             }
 
             public override void OnSend(TBinaryWriter writer)
             {
+                int flags =
+                    (JustClear != null ? 1 << 0 : 0);
+
                 writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                if (JustClear != null)
+                {
+
+                }
+
                 Peer.Write(writer);
                 writer.Write(MaxId);
             }
@@ -4545,7 +4772,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(MessagesDeleteHistoryRequest Peer:{0} MaxId:{1})", Peer, MaxId);
+                return string.Format("(MessagesDeleteHistoryRequest JustClear:{0} Peer:{1} MaxId:{2})", JustClear, Peer, MaxId);
             }
         }
 
@@ -4683,9 +4910,9 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.MessagesSendMessageRequest;
 
             public True NoWebpage;
-            public True Broadcast;
             public True Silent;
             public True Background;
+            public True ClearDraft;
             public InputPeer Peer;
             public int? ReplyToMsgId;
             public string Message;
@@ -4699,24 +4926,24 @@ namespace TeleTurk.Core.MTProto
             public MessagesSendMessageRequest() { }
 
             /// <summary>
-            /// The following arguments can be null: NoWebpage, Broadcast, Silent, Background, ReplyToMsgId, ReplyMarkup, Entities
+            /// The following arguments can be null: NoWebpage, Silent, Background, ClearDraft, ReplyToMsgId, ReplyMarkup, Entities
             /// </summary>
             /// <param name="NoWebpage">Can be null</param>
-            /// <param name="Broadcast">Can be null</param>
             /// <param name="Silent">Can be null</param>
             /// <param name="Background">Can be null</param>
+            /// <param name="ClearDraft">Can be null</param>
             /// <param name="Peer">Can NOT be null</param>
             /// <param name="ReplyToMsgId">Can be null</param>
             /// <param name="Message">Can NOT be null</param>
             /// <param name="RandomId">Can NOT be null</param>
             /// <param name="ReplyMarkup">Can be null</param>
             /// <param name="Entities">Can be null</param>
-            public MessagesSendMessageRequest(True NoWebpage, True Broadcast, True Silent, True Background, InputPeer Peer, int? ReplyToMsgId, string Message, long RandomId, ReplyMarkup ReplyMarkup, List<MessageEntity> Entities)
+            public MessagesSendMessageRequest(True NoWebpage, True Silent, True Background, True ClearDraft, InputPeer Peer, int? ReplyToMsgId, string Message, long RandomId, ReplyMarkup ReplyMarkup, List<MessageEntity> Entities)
             {
                 this.NoWebpage = NoWebpage;
-                this.Broadcast = Broadcast;
                 this.Silent = Silent;
                 this.Background = Background;
+                this.ClearDraft = ClearDraft;
                 this.Peer = Peer;
                 this.ReplyToMsgId = ReplyToMsgId;
                 this.Message = Message;
@@ -4729,9 +4956,9 @@ namespace TeleTurk.Core.MTProto
             {
                 int flags =
                     (NoWebpage != null ? 1 << 1 : 0) |
-                    (Broadcast != null ? 1 << 4 : 0) |
                     (Silent != null ? 1 << 5 : 0) |
                     (Background != null ? 1 << 6 : 0) |
+                    (ClearDraft != null ? 1 << 7 : 0) |
                     (ReplyToMsgId != null ? 1 << 0 : 0) |
                     (ReplyMarkup != null ? 1 << 2 : 0) |
                     (Entities != null ? 1 << 3 : 0);
@@ -4739,34 +4966,41 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (NoWebpage != null) {
+                if (NoWebpage != null)
+                {
 
                 }
 
-                if (Broadcast != null) {
+                if (Silent != null)
+                {
 
                 }
 
-                if (Silent != null) {
+                if (Background != null)
+                {
 
                 }
 
-                if (Background != null) {
+                if (ClearDraft != null)
+                {
 
                 }
 
                 Peer.Write(writer);
-                if (ReplyToMsgId != null) {
+                if (ReplyToMsgId != null)
+                {
                     writer.Write(ReplyToMsgId.Value);
                 }
 
                 writer.Write(Message);
                 writer.Write(RandomId);
-                if (ReplyMarkup != null) {
+                if (ReplyMarkup != null)
+                {
                     ReplyMarkup.Write(writer);
                 }
 
-                if (Entities != null) {
+                if (Entities != null)
+                {
                     writer.Write(0x1cb5c415); // vector code
                     writer.Write(Entities.Count);
                     foreach (MessageEntity EntitiesElement in Entities)
@@ -4790,7 +5024,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(MessagesSendMessageRequest NoWebpage:{0} Broadcast:{1} Silent:{2} Background:{3} Peer:{4} ReplyToMsgId:{5} Message:{6} RandomId:{7} ReplyMarkup:{8} Entities:{9})", NoWebpage, Broadcast, Silent, Background, Peer, ReplyToMsgId, Message, RandomId, ReplyMarkup, Entities);
+                return string.Format("(MessagesSendMessageRequest NoWebpage:{0} Silent:{1} Background:{2} ClearDraft:{3} Peer:{4} ReplyToMsgId:{5} Message:{6} RandomId:{7} ReplyMarkup:{8} Entities:{9})", NoWebpage, Silent, Background, ClearDraft, Peer, ReplyToMsgId, Message, RandomId, ReplyMarkup, Entities);
             }
         }
 
@@ -4798,9 +5032,9 @@ namespace TeleTurk.Core.MTProto
         {
             public override Types ConstructorCode => Types.MessagesSendMediaRequest;
 
-            public True Broadcast;
             public True Silent;
             public True Background;
+            public True ClearDraft;
             public InputPeer Peer;
             public int? ReplyToMsgId;
             public InputMedia Media;
@@ -4813,21 +5047,21 @@ namespace TeleTurk.Core.MTProto
             public MessagesSendMediaRequest() { }
 
             /// <summary>
-            /// The following arguments can be null: Broadcast, Silent, Background, ReplyToMsgId, ReplyMarkup
+            /// The following arguments can be null: Silent, Background, ClearDraft, ReplyToMsgId, ReplyMarkup
             /// </summary>
-            /// <param name="Broadcast">Can be null</param>
             /// <param name="Silent">Can be null</param>
             /// <param name="Background">Can be null</param>
+            /// <param name="ClearDraft">Can be null</param>
             /// <param name="Peer">Can NOT be null</param>
             /// <param name="ReplyToMsgId">Can be null</param>
             /// <param name="Media">Can NOT be null</param>
             /// <param name="RandomId">Can NOT be null</param>
             /// <param name="ReplyMarkup">Can be null</param>
-            public MessagesSendMediaRequest(True Broadcast, True Silent, True Background, InputPeer Peer, int? ReplyToMsgId, InputMedia Media, long RandomId, ReplyMarkup ReplyMarkup)
+            public MessagesSendMediaRequest(True Silent, True Background, True ClearDraft, InputPeer Peer, int? ReplyToMsgId, InputMedia Media, long RandomId, ReplyMarkup ReplyMarkup)
             {
-                this.Broadcast = Broadcast;
                 this.Silent = Silent;
                 this.Background = Background;
+                this.ClearDraft = ClearDraft;
                 this.Peer = Peer;
                 this.ReplyToMsgId = ReplyToMsgId;
                 this.Media = Media;
@@ -4838,35 +5072,40 @@ namespace TeleTurk.Core.MTProto
             public override void OnSend(TBinaryWriter writer)
             {
                 int flags =
-                    (Broadcast != null ? 1 << 4 : 0) |
                     (Silent != null ? 1 << 5 : 0) |
                     (Background != null ? 1 << 6 : 0) |
+                    (ClearDraft != null ? 1 << 7 : 0) |
                     (ReplyToMsgId != null ? 1 << 0 : 0) |
                     (ReplyMarkup != null ? 1 << 2 : 0);
 
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Broadcast != null) {
+                if (Silent != null)
+                {
 
                 }
 
-                if (Silent != null) {
+                if (Background != null)
+                {
 
                 }
 
-                if (Background != null) {
+                if (ClearDraft != null)
+                {
 
                 }
 
                 Peer.Write(writer);
-                if (ReplyToMsgId != null) {
+                if (ReplyToMsgId != null)
+                {
                     writer.Write(ReplyToMsgId.Value);
                 }
 
                 Media.Write(writer);
                 writer.Write(RandomId);
-                if (ReplyMarkup != null) {
+                if (ReplyMarkup != null)
+                {
                     ReplyMarkup.Write(writer);
                 }
 
@@ -4887,7 +5126,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(MessagesSendMediaRequest Broadcast:{0} Silent:{1} Background:{2} Peer:{3} ReplyToMsgId:{4} Media:{5} RandomId:{6} ReplyMarkup:{7})", Broadcast, Silent, Background, Peer, ReplyToMsgId, Media, RandomId, ReplyMarkup);
+                return string.Format("(MessagesSendMediaRequest Silent:{0} Background:{1} ClearDraft:{2} Peer:{3} ReplyToMsgId:{4} Media:{5} RandomId:{6} ReplyMarkup:{7})", Silent, Background, ClearDraft, Peer, ReplyToMsgId, Media, RandomId, ReplyMarkup);
             }
         }
 
@@ -4895,7 +5134,6 @@ namespace TeleTurk.Core.MTProto
         {
             public override Types ConstructorCode => Types.MessagesForwardMessagesRequest;
 
-            public True Broadcast;
             public True Silent;
             public True Background;
             public InputPeer FromPeer;
@@ -4909,18 +5147,16 @@ namespace TeleTurk.Core.MTProto
             public MessagesForwardMessagesRequest() { }
 
             /// <summary>
-            /// The following arguments can be null: Broadcast, Silent, Background
+            /// The following arguments can be null: Silent, Background
             /// </summary>
-            /// <param name="Broadcast">Can be null</param>
             /// <param name="Silent">Can be null</param>
             /// <param name="Background">Can be null</param>
             /// <param name="FromPeer">Can NOT be null</param>
             /// <param name="Id">Can NOT be null</param>
             /// <param name="RandomId">Can NOT be null</param>
             /// <param name="ToPeer">Can NOT be null</param>
-            public MessagesForwardMessagesRequest(True Broadcast, True Silent, True Background, InputPeer FromPeer, List<int> Id, List<long> RandomId, InputPeer ToPeer)
+            public MessagesForwardMessagesRequest(True Silent, True Background, InputPeer FromPeer, List<int> Id, List<long> RandomId, InputPeer ToPeer)
             {
-                this.Broadcast = Broadcast;
                 this.Silent = Silent;
                 this.Background = Background;
                 this.FromPeer = FromPeer;
@@ -4932,22 +5168,19 @@ namespace TeleTurk.Core.MTProto
             public override void OnSend(TBinaryWriter writer)
             {
                 int flags =
-                    (Broadcast != null ? 1 << 4 : 0) |
                     (Silent != null ? 1 << 5 : 0) |
                     (Background != null ? 1 << 6 : 0);
 
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Broadcast != null) {
+                if (Silent != null)
+                {
 
                 }
 
-                if (Silent != null) {
-
-                }
-
-                if (Background != null) {
+                if (Background != null)
+                {
 
                 }
 
@@ -4978,7 +5211,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(MessagesForwardMessagesRequest Broadcast:{0} Silent:{1} Background:{2} FromPeer:{3} Id:{4} RandomId:{5} ToPeer:{6})", Broadcast, Silent, Background, FromPeer, Id, RandomId, ToPeer);
+                return string.Format("(MessagesForwardMessagesRequest Silent:{0} Background:{1} FromPeer:{2} Id:{3} RandomId:{4} ToPeer:{5})", Silent, Background, FromPeer, Id, RandomId, ToPeer);
             }
         }
 
@@ -6900,6 +7133,8 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.MessagesGetInlineBotResultsRequest;
 
             public InputUser Bot;
+            public InputPeer Peer;
+            public InputGeoPoint GeoPoint;
             public string Query;
             public string Offset;
 
@@ -6908,17 +7143,38 @@ namespace TeleTurk.Core.MTProto
 
             public MessagesGetInlineBotResultsRequest() { }
 
-            public MessagesGetInlineBotResultsRequest(InputUser Bot, string Query, string Offset)
+            /// <summary>
+            /// The following arguments can be null: GeoPoint
+            /// </summary>
+            /// <param name="Bot">Can NOT be null</param>
+            /// <param name="Peer">Can NOT be null</param>
+            /// <param name="GeoPoint">Can be null</param>
+            /// <param name="Query">Can NOT be null</param>
+            /// <param name="Offset">Can NOT be null</param>
+            public MessagesGetInlineBotResultsRequest(InputUser Bot, InputPeer Peer, InputGeoPoint GeoPoint, string Query, string Offset)
             {
                 this.Bot = Bot;
+                this.Peer = Peer;
+                this.GeoPoint = GeoPoint;
                 this.Query = Query;
                 this.Offset = Offset;
             }
 
             public override void OnSend(TBinaryWriter writer)
             {
+                int flags =
+                    (GeoPoint != null ? 1 << 0 : 0);
+
                 writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
                 Bot.Write(writer);
+                Peer.Write(writer);
+                if (GeoPoint != null)
+                {
+                    GeoPoint.Write(writer);
+                }
+
                 writer.Write(Query);
                 writer.Write(Offset);
             }
@@ -6938,7 +7194,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(MessagesGetInlineBotResultsRequest Bot:{0} Query:{1} Offset:{2})", Bot, Query, Offset);
+                return string.Format("(MessagesGetInlineBotResultsRequest Bot:{0} Peer:{1} GeoPoint:{2} Query:{3} Offset:{4})", Bot, Peer, GeoPoint, Query, Offset);
             }
         }
 
@@ -6952,6 +7208,7 @@ namespace TeleTurk.Core.MTProto
             public List<InputBotInlineResult> Results;
             public int CacheTime;
             public string NextOffset;
+            public InlineBotSwitchPM SwitchPm;
 
             public bool Result;
             public override object GetResult() => Result;
@@ -6959,7 +7216,7 @@ namespace TeleTurk.Core.MTProto
             public MessagesSetInlineBotResultsRequest() { }
 
             /// <summary>
-            /// The following arguments can be null: Gallery, Private, NextOffset
+            /// The following arguments can be null: Gallery, Private, NextOffset, SwitchPm
             /// </summary>
             /// <param name="Gallery">Can be null</param>
             /// <param name="Private">Can be null</param>
@@ -6967,7 +7224,8 @@ namespace TeleTurk.Core.MTProto
             /// <param name="Results">Can NOT be null</param>
             /// <param name="CacheTime">Can NOT be null</param>
             /// <param name="NextOffset">Can be null</param>
-            public MessagesSetInlineBotResultsRequest(True Gallery, True Private, long QueryId, List<InputBotInlineResult> Results, int CacheTime, string NextOffset)
+            /// <param name="SwitchPm">Can be null</param>
+            public MessagesSetInlineBotResultsRequest(True Gallery, True Private, long QueryId, List<InputBotInlineResult> Results, int CacheTime, string NextOffset, InlineBotSwitchPM SwitchPm)
             {
                 this.Gallery = Gallery;
                 this.Private = Private;
@@ -6975,6 +7233,7 @@ namespace TeleTurk.Core.MTProto
                 this.Results = Results;
                 this.CacheTime = CacheTime;
                 this.NextOffset = NextOffset;
+                this.SwitchPm = SwitchPm;
             }
 
             public override void OnSend(TBinaryWriter writer)
@@ -6982,16 +7241,19 @@ namespace TeleTurk.Core.MTProto
                 int flags =
                     (Gallery != null ? 1 << 0 : 0) |
                     (Private != null ? 1 << 1 : 0) |
-                    (NextOffset != null ? 1 << 2 : 0);
+                    (NextOffset != null ? 1 << 2 : 0) |
+                    (SwitchPm != null ? 1 << 3 : 0);
 
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Gallery != null) {
+                if (Gallery != null)
+                {
 
                 }
 
-                if (Private != null) {
+                if (Private != null)
+                {
 
                 }
 
@@ -7001,8 +7263,14 @@ namespace TeleTurk.Core.MTProto
                 foreach (InputBotInlineResult ResultsElement in Results)
                     ResultsElement.Write(writer);
                 writer.Write(CacheTime);
-                if (NextOffset != null) {
+                if (NextOffset != null)
+                {
                     writer.Write(NextOffset);
+                }
+
+                if (SwitchPm != null)
+                {
+                    SwitchPm.Write(writer);
                 }
 
             }
@@ -7022,7 +7290,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(MessagesSetInlineBotResultsRequest Gallery:{0} Private:{1} QueryId:{2} Results:{3} CacheTime:{4} NextOffset:{5})", Gallery, Private, QueryId, Results, CacheTime, NextOffset);
+                return string.Format("(MessagesSetInlineBotResultsRequest Gallery:{0} Private:{1} QueryId:{2} Results:{3} CacheTime:{4} NextOffset:{5} SwitchPm:{6})", Gallery, Private, QueryId, Results, CacheTime, NextOffset, SwitchPm);
             }
         }
 
@@ -7030,9 +7298,9 @@ namespace TeleTurk.Core.MTProto
         {
             public override Types ConstructorCode => Types.MessagesSendInlineBotResultRequest;
 
-            public True Broadcast;
             public True Silent;
             public True Background;
+            public True ClearDraft;
             public InputPeer Peer;
             public int? ReplyToMsgId;
             public long RandomId;
@@ -7045,21 +7313,21 @@ namespace TeleTurk.Core.MTProto
             public MessagesSendInlineBotResultRequest() { }
 
             /// <summary>
-            /// The following arguments can be null: Broadcast, Silent, Background, ReplyToMsgId
+            /// The following arguments can be null: Silent, Background, ClearDraft, ReplyToMsgId
             /// </summary>
-            /// <param name="Broadcast">Can be null</param>
             /// <param name="Silent">Can be null</param>
             /// <param name="Background">Can be null</param>
+            /// <param name="ClearDraft">Can be null</param>
             /// <param name="Peer">Can NOT be null</param>
             /// <param name="ReplyToMsgId">Can be null</param>
             /// <param name="RandomId">Can NOT be null</param>
             /// <param name="QueryId">Can NOT be null</param>
             /// <param name="Id">Can NOT be null</param>
-            public MessagesSendInlineBotResultRequest(True Broadcast, True Silent, True Background, InputPeer Peer, int? ReplyToMsgId, long RandomId, long QueryId, string Id)
+            public MessagesSendInlineBotResultRequest(True Silent, True Background, True ClearDraft, InputPeer Peer, int? ReplyToMsgId, long RandomId, long QueryId, string Id)
             {
-                this.Broadcast = Broadcast;
                 this.Silent = Silent;
                 this.Background = Background;
+                this.ClearDraft = ClearDraft;
                 this.Peer = Peer;
                 this.ReplyToMsgId = ReplyToMsgId;
                 this.RandomId = RandomId;
@@ -7070,28 +7338,32 @@ namespace TeleTurk.Core.MTProto
             public override void OnSend(TBinaryWriter writer)
             {
                 int flags =
-                    (Broadcast != null ? 1 << 4 : 0) |
                     (Silent != null ? 1 << 5 : 0) |
                     (Background != null ? 1 << 6 : 0) |
+                    (ClearDraft != null ? 1 << 7 : 0) |
                     (ReplyToMsgId != null ? 1 << 0 : 0);
 
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Broadcast != null) {
+                if (Silent != null)
+                {
 
                 }
 
-                if (Silent != null) {
+                if (Background != null)
+                {
 
                 }
 
-                if (Background != null) {
+                if (ClearDraft != null)
+                {
 
                 }
 
                 Peer.Write(writer);
-                if (ReplyToMsgId != null) {
+                if (ReplyToMsgId != null)
+                {
                     writer.Write(ReplyToMsgId.Value);
                 }
 
@@ -7115,7 +7387,505 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(MessagesSendInlineBotResultRequest Broadcast:{0} Silent:{1} Background:{2} Peer:{3} ReplyToMsgId:{4} RandomId:{5} QueryId:{6} Id:{7})", Broadcast, Silent, Background, Peer, ReplyToMsgId, RandomId, QueryId, Id);
+                return string.Format("(MessagesSendInlineBotResultRequest Silent:{0} Background:{1} ClearDraft:{2} Peer:{3} ReplyToMsgId:{4} RandomId:{5} QueryId:{6} Id:{7})", Silent, Background, ClearDraft, Peer, ReplyToMsgId, RandomId, QueryId, Id);
+            }
+        }
+
+        public class MessagesGetMessageEditDataRequest : MTProtoRequest
+        {
+            public override Types ConstructorCode => Types.MessagesGetMessageEditDataRequest;
+
+            public InputPeer Peer;
+            public int Id;
+
+            public MessagesMessageEditData Result;
+            public override object GetResult() => Result;
+
+            public MessagesGetMessageEditDataRequest() { }
+
+            public MessagesGetMessageEditDataRequest(InputPeer Peer, int Id)
+            {
+                this.Peer = Peer;
+                this.Id = Id;
+            }
+
+            public override void OnSend(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                Peer.Write(writer);
+                writer.Write(Id);
+            }
+
+            public override void OnResponse(TBinaryReader reader)
+            {
+                Result = reader.Read<MessagesMessageEditData>();
+            }
+
+            public override void OnException(Exception exception)
+            {
+                throw exception;
+            }
+
+            public override bool Confirmed => true;
+            public override bool Responded { get; }
+
+            public override string ToString()
+            {
+                return string.Format("(MessagesGetMessageEditDataRequest Peer:{0} Id:{1})", Peer, Id);
+            }
+        }
+
+        public class MessagesEditMessageRequest : MTProtoRequest
+        {
+            public override Types ConstructorCode => Types.MessagesEditMessageRequest;
+
+            public True NoWebpage;
+            public InputPeer Peer;
+            public int Id;
+            public string Message;
+            public ReplyMarkup ReplyMarkup;
+            public List<MessageEntity> Entities;
+
+            public Updates Result;
+            public override object GetResult() => Result;
+
+            public MessagesEditMessageRequest() { }
+
+            /// <summary>
+            /// The following arguments can be null: NoWebpage, Message, ReplyMarkup, Entities
+            /// </summary>
+            /// <param name="NoWebpage">Can be null</param>
+            /// <param name="Peer">Can NOT be null</param>
+            /// <param name="Id">Can NOT be null</param>
+            /// <param name="Message">Can be null</param>
+            /// <param name="ReplyMarkup">Can be null</param>
+            /// <param name="Entities">Can be null</param>
+            public MessagesEditMessageRequest(True NoWebpage, InputPeer Peer, int Id, string Message, ReplyMarkup ReplyMarkup, List<MessageEntity> Entities)
+            {
+                this.NoWebpage = NoWebpage;
+                this.Peer = Peer;
+                this.Id = Id;
+                this.Message = Message;
+                this.ReplyMarkup = ReplyMarkup;
+                this.Entities = Entities;
+            }
+
+            public override void OnSend(TBinaryWriter writer)
+            {
+                int flags =
+                    (NoWebpage != null ? 1 << 1 : 0) |
+                    (Message != null ? 1 << 11 : 0) |
+                    (ReplyMarkup != null ? 1 << 2 : 0) |
+                    (Entities != null ? 1 << 3 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                if (NoWebpage != null)
+                {
+
+                }
+
+                Peer.Write(writer);
+                writer.Write(Id);
+                if (Message != null)
+                {
+                    writer.Write(Message);
+                }
+
+                if (ReplyMarkup != null)
+                {
+                    ReplyMarkup.Write(writer);
+                }
+
+                if (Entities != null)
+                {
+                    writer.Write(0x1cb5c415); // vector code
+                    writer.Write(Entities.Count);
+                    foreach (MessageEntity EntitiesElement in Entities)
+                        EntitiesElement.Write(writer);
+                }
+
+            }
+
+            public override void OnResponse(TBinaryReader reader)
+            {
+                Result = reader.Read<Updates>();
+            }
+
+            public override void OnException(Exception exception)
+            {
+                throw exception;
+            }
+
+            public override bool Confirmed => true;
+            public override bool Responded { get; }
+
+            public override string ToString()
+            {
+                return string.Format("(MessagesEditMessageRequest NoWebpage:{0} Peer:{1} Id:{2} Message:{3} ReplyMarkup:{4} Entities:{5})", NoWebpage, Peer, Id, Message, ReplyMarkup, Entities);
+            }
+        }
+
+        public class MessagesEditInlineBotMessageRequest : MTProtoRequest
+        {
+            public override Types ConstructorCode => Types.MessagesEditInlineBotMessageRequest;
+
+            public True NoWebpage;
+            public InputBotInlineMessageID Id;
+            public string Message;
+            public ReplyMarkup ReplyMarkup;
+            public List<MessageEntity> Entities;
+
+            public bool Result;
+            public override object GetResult() => Result;
+
+            public MessagesEditInlineBotMessageRequest() { }
+
+            /// <summary>
+            /// The following arguments can be null: NoWebpage, Message, ReplyMarkup, Entities
+            /// </summary>
+            /// <param name="NoWebpage">Can be null</param>
+            /// <param name="Id">Can NOT be null</param>
+            /// <param name="Message">Can be null</param>
+            /// <param name="ReplyMarkup">Can be null</param>
+            /// <param name="Entities">Can be null</param>
+            public MessagesEditInlineBotMessageRequest(True NoWebpage, InputBotInlineMessageID Id, string Message, ReplyMarkup ReplyMarkup, List<MessageEntity> Entities)
+            {
+                this.NoWebpage = NoWebpage;
+                this.Id = Id;
+                this.Message = Message;
+                this.ReplyMarkup = ReplyMarkup;
+                this.Entities = Entities;
+            }
+
+            public override void OnSend(TBinaryWriter writer)
+            {
+                int flags =
+                    (NoWebpage != null ? 1 << 1 : 0) |
+                    (Message != null ? 1 << 11 : 0) |
+                    (ReplyMarkup != null ? 1 << 2 : 0) |
+                    (Entities != null ? 1 << 3 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                if (NoWebpage != null)
+                {
+
+                }
+
+                Id.Write(writer);
+                if (Message != null)
+                {
+                    writer.Write(Message);
+                }
+
+                if (ReplyMarkup != null)
+                {
+                    ReplyMarkup.Write(writer);
+                }
+
+                if (Entities != null)
+                {
+                    writer.Write(0x1cb5c415); // vector code
+                    writer.Write(Entities.Count);
+                    foreach (MessageEntity EntitiesElement in Entities)
+                        EntitiesElement.Write(writer);
+                }
+
+            }
+
+            public override void OnResponse(TBinaryReader reader)
+            {
+                Result = reader.ReadBoolean();
+            }
+
+            public override void OnException(Exception exception)
+            {
+                throw exception;
+            }
+
+            public override bool Confirmed => true;
+            public override bool Responded { get; }
+
+            public override string ToString()
+            {
+                return string.Format("(MessagesEditInlineBotMessageRequest NoWebpage:{0} Id:{1} Message:{2} ReplyMarkup:{3} Entities:{4})", NoWebpage, Id, Message, ReplyMarkup, Entities);
+            }
+        }
+
+        public class MessagesGetBotCallbackAnswerRequest : MTProtoRequest
+        {
+            public override Types ConstructorCode => Types.MessagesGetBotCallbackAnswerRequest;
+
+            public InputPeer Peer;
+            public int MsgId;
+            public byte[] Data;
+
+            public MessagesBotCallbackAnswer Result;
+            public override object GetResult() => Result;
+
+            public MessagesGetBotCallbackAnswerRequest() { }
+
+            public MessagesGetBotCallbackAnswerRequest(InputPeer Peer, int MsgId, byte[] Data)
+            {
+                this.Peer = Peer;
+                this.MsgId = MsgId;
+                this.Data = Data;
+            }
+
+            public override void OnSend(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                Peer.Write(writer);
+                writer.Write(MsgId);
+                writer.Write(Data);
+            }
+
+            public override void OnResponse(TBinaryReader reader)
+            {
+                Result = reader.Read<MessagesBotCallbackAnswer>();
+            }
+
+            public override void OnException(Exception exception)
+            {
+                throw exception;
+            }
+
+            public override bool Confirmed => true;
+            public override bool Responded { get; }
+
+            public override string ToString()
+            {
+                return string.Format("(MessagesGetBotCallbackAnswerRequest Peer:{0} MsgId:{1} Data:{2})", Peer, MsgId, Data);
+            }
+        }
+
+        public class MessagesSetBotCallbackAnswerRequest : MTProtoRequest
+        {
+            public override Types ConstructorCode => Types.MessagesSetBotCallbackAnswerRequest;
+
+            public True Alert;
+            public long QueryId;
+            public string Message;
+
+            public bool Result;
+            public override object GetResult() => Result;
+
+            public MessagesSetBotCallbackAnswerRequest() { }
+
+            /// <summary>
+            /// The following arguments can be null: Alert, Message
+            /// </summary>
+            /// <param name="Alert">Can be null</param>
+            /// <param name="QueryId">Can NOT be null</param>
+            /// <param name="Message">Can be null</param>
+            public MessagesSetBotCallbackAnswerRequest(True Alert, long QueryId, string Message)
+            {
+                this.Alert = Alert;
+                this.QueryId = QueryId;
+                this.Message = Message;
+            }
+
+            public override void OnSend(TBinaryWriter writer)
+            {
+                int flags =
+                    (Alert != null ? 1 << 1 : 0) |
+                    (Message != null ? 1 << 0 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                if (Alert != null)
+                {
+
+                }
+
+                writer.Write(QueryId);
+                if (Message != null)
+                {
+                    writer.Write(Message);
+                }
+
+            }
+
+            public override void OnResponse(TBinaryReader reader)
+            {
+                Result = reader.ReadBoolean();
+            }
+
+            public override void OnException(Exception exception)
+            {
+                throw exception;
+            }
+
+            public override bool Confirmed => true;
+            public override bool Responded { get; }
+
+            public override string ToString()
+            {
+                return string.Format("(MessagesSetBotCallbackAnswerRequest Alert:{0} QueryId:{1} Message:{2})", Alert, QueryId, Message);
+            }
+        }
+
+        public class MessagesGetPeerDialogsRequest : MTProtoRequest
+        {
+            public override Types ConstructorCode => Types.MessagesGetPeerDialogsRequest;
+
+            public List<InputPeer> Peers;
+
+            public MessagesPeerDialogs Result;
+            public override object GetResult() => Result;
+
+            public MessagesGetPeerDialogsRequest() { }
+
+            public MessagesGetPeerDialogsRequest(List<InputPeer> Peers)
+            {
+                this.Peers = Peers;
+            }
+
+            public override void OnSend(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(0x1cb5c415); // vector code
+                writer.Write(Peers.Count);
+                foreach (InputPeer PeersElement in Peers)
+                    PeersElement.Write(writer);
+            }
+
+            public override void OnResponse(TBinaryReader reader)
+            {
+                Result = reader.Read<MessagesPeerDialogs>();
+            }
+
+            public override void OnException(Exception exception)
+            {
+                throw exception;
+            }
+
+            public override bool Confirmed => true;
+            public override bool Responded { get; }
+
+            public override string ToString()
+            {
+                return string.Format("(MessagesGetPeerDialogsRequest Peers:{0})", Peers);
+            }
+        }
+
+        public class MessagesSaveDraftRequest : MTProtoRequest
+        {
+            public override Types ConstructorCode => Types.MessagesSaveDraftRequest;
+
+            public True NoWebpage;
+            public int? ReplyToMsgId;
+            public InputPeer Peer;
+            public string Message;
+            public List<MessageEntity> Entities;
+
+            public bool Result;
+            public override object GetResult() => Result;
+
+            public MessagesSaveDraftRequest() { }
+
+            /// <summary>
+            /// The following arguments can be null: NoWebpage, ReplyToMsgId, Entities
+            /// </summary>
+            /// <param name="NoWebpage">Can be null</param>
+            /// <param name="ReplyToMsgId">Can be null</param>
+            /// <param name="Peer">Can NOT be null</param>
+            /// <param name="Message">Can NOT be null</param>
+            /// <param name="Entities">Can be null</param>
+            public MessagesSaveDraftRequest(True NoWebpage, int? ReplyToMsgId, InputPeer Peer, string Message, List<MessageEntity> Entities)
+            {
+                this.NoWebpage = NoWebpage;
+                this.ReplyToMsgId = ReplyToMsgId;
+                this.Peer = Peer;
+                this.Message = Message;
+                this.Entities = Entities;
+            }
+
+            public override void OnSend(TBinaryWriter writer)
+            {
+                int flags =
+                    (NoWebpage != null ? 1 << 1 : 0) |
+                    (ReplyToMsgId != null ? 1 << 0 : 0) |
+                    (Entities != null ? 1 << 3 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                if (NoWebpage != null)
+                {
+
+                }
+
+                if (ReplyToMsgId != null)
+                {
+                    writer.Write(ReplyToMsgId.Value);
+                }
+
+                Peer.Write(writer);
+                writer.Write(Message);
+                if (Entities != null)
+                {
+                    writer.Write(0x1cb5c415); // vector code
+                    writer.Write(Entities.Count);
+                    foreach (MessageEntity EntitiesElement in Entities)
+                        EntitiesElement.Write(writer);
+                }
+
+            }
+
+            public override void OnResponse(TBinaryReader reader)
+            {
+                Result = reader.ReadBoolean();
+            }
+
+            public override void OnException(Exception exception)
+            {
+                throw exception;
+            }
+
+            public override bool Confirmed => true;
+            public override bool Responded { get; }
+
+            public override string ToString()
+            {
+                return string.Format("(MessagesSaveDraftRequest NoWebpage:{0} ReplyToMsgId:{1} Peer:{2} Message:{3} Entities:{4})", NoWebpage, ReplyToMsgId, Peer, Message, Entities);
+            }
+        }
+
+        public class MessagesGetAllDraftsRequest : MTProtoRequest
+        {
+            public override Types ConstructorCode => Types.MessagesGetAllDraftsRequest;
+
+            public Updates Result;
+            public override object GetResult() => Result;
+
+            public MessagesGetAllDraftsRequest() { }
+
+            public override void OnSend(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+            }
+
+            public override void OnResponse(TBinaryReader reader)
+            {
+                Result = reader.Read<Updates>();
+            }
+
+            public override void OnException(Exception exception)
+            {
+                throw exception;
+            }
+
+            public override bool Confirmed => true;
+            public override bool Responded { get; }
+
+            public override string ToString()
+            {
+                return "(MessagesGetAllDraftsRequest)";
             }
         }
 
@@ -7651,31 +8421,14 @@ namespace TeleTurk.Core.MTProto
         {
             public override Types ConstructorCode => Types.HelpGetAppUpdateRequest;
 
-            public string DeviceModel;
-            public string SystemVersion;
-            public string AppVersion;
-            public string LangCode;
-
             public HelpAppUpdate Result;
             public override object GetResult() => Result;
 
             public HelpGetAppUpdateRequest() { }
 
-            public HelpGetAppUpdateRequest(string DeviceModel, string SystemVersion, string AppVersion, string LangCode)
-            {
-                this.DeviceModel = DeviceModel;
-                this.SystemVersion = SystemVersion;
-                this.AppVersion = AppVersion;
-                this.LangCode = LangCode;
-            }
-
             public override void OnSend(TBinaryWriter writer)
             {
                 writer.Write((uint)ConstructorCode);
-                writer.Write(DeviceModel);
-                writer.Write(SystemVersion);
-                writer.Write(AppVersion);
-                writer.Write(LangCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -7693,7 +8446,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(HelpGetAppUpdateRequest DeviceModel:{0} SystemVersion:{1} AppVersion:{2} LangCode:{3})", DeviceModel, SystemVersion, AppVersion, LangCode);
+                return "(HelpGetAppUpdateRequest)";
             }
         }
 
@@ -7745,22 +8498,14 @@ namespace TeleTurk.Core.MTProto
         {
             public override Types ConstructorCode => Types.HelpGetInviteTextRequest;
 
-            public string LangCode;
-
             public HelpInviteText Result;
             public override object GetResult() => Result;
 
             public HelpGetInviteTextRequest() { }
 
-            public HelpGetInviteTextRequest(string LangCode)
-            {
-                this.LangCode = LangCode;
-            }
-
             public override void OnSend(TBinaryWriter writer)
             {
                 writer.Write((uint)ConstructorCode);
-                writer.Write(LangCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -7778,7 +8523,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(HelpGetInviteTextRequest LangCode:{0})", LangCode);
+                return "(HelpGetInviteTextRequest)";
             }
         }
 
@@ -7819,31 +8564,14 @@ namespace TeleTurk.Core.MTProto
         {
             public override Types ConstructorCode => Types.HelpGetAppChangelogRequest;
 
-            public string DeviceModel;
-            public string SystemVersion;
-            public string AppVersion;
-            public string LangCode;
-
             public HelpAppChangelog Result;
             public override object GetResult() => Result;
 
             public HelpGetAppChangelogRequest() { }
 
-            public HelpGetAppChangelogRequest(string DeviceModel, string SystemVersion, string AppVersion, string LangCode)
-            {
-                this.DeviceModel = DeviceModel;
-                this.SystemVersion = SystemVersion;
-                this.AppVersion = AppVersion;
-                this.LangCode = LangCode;
-            }
-
             public override void OnSend(TBinaryWriter writer)
             {
                 writer.Write((uint)ConstructorCode);
-                writer.Write(DeviceModel);
-                writer.Write(SystemVersion);
-                writer.Write(AppVersion);
-                writer.Write(LangCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -7861,7 +8589,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(HelpGetAppChangelogRequest DeviceModel:{0} SystemVersion:{1} AppVersion:{2} LangCode:{3})", DeviceModel, SystemVersion, AppVersion, LangCode);
+                return "(HelpGetAppChangelogRequest)";
             }
         }
 
@@ -7869,22 +8597,14 @@ namespace TeleTurk.Core.MTProto
         {
             public override Types ConstructorCode => Types.HelpGetTermsOfServiceRequest;
 
-            public string LangCode;
-
             public HelpTermsOfService Result;
             public override object GetResult() => Result;
 
             public HelpGetTermsOfServiceRequest() { }
 
-            public HelpGetTermsOfServiceRequest(string LangCode)
-            {
-                this.LangCode = LangCode;
-            }
-
             public override void OnSend(TBinaryWriter writer)
             {
                 writer.Write((uint)ConstructorCode);
-                writer.Write(LangCode);
             }
 
             public override void OnResponse(TBinaryReader reader)
@@ -7902,110 +8622,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(HelpGetTermsOfServiceRequest LangCode:{0})", LangCode);
-            }
-        }
-
-        public class ChannelsGetDialogsRequest : MTProtoRequest
-        {
-            public override Types ConstructorCode => Types.ChannelsGetDialogsRequest;
-
-            public int Offset;
-            public int Limit;
-
-            public MessagesDialogs Result;
-            public override object GetResult() => Result;
-
-            public ChannelsGetDialogsRequest() { }
-
-            public ChannelsGetDialogsRequest(int Offset, int Limit)
-            {
-                this.Offset = Offset;
-                this.Limit = Limit;
-            }
-
-            public override void OnSend(TBinaryWriter writer)
-            {
-                writer.Write((uint)ConstructorCode);
-                writer.Write(Offset);
-                writer.Write(Limit);
-            }
-
-            public override void OnResponse(TBinaryReader reader)
-            {
-                Result = reader.Read<MessagesDialogs>();
-            }
-
-            public override void OnException(Exception exception)
-            {
-                throw exception;
-            }
-
-            public override bool Confirmed => true;
-            public override bool Responded { get; }
-
-            public override string ToString()
-            {
-                return string.Format("(ChannelsGetDialogsRequest Offset:{0} Limit:{1})", Offset, Limit);
-            }
-        }
-
-        public class ChannelsGetImportantHistoryRequest : MTProtoRequest
-        {
-            public override Types ConstructorCode => Types.ChannelsGetImportantHistoryRequest;
-
-            public InputChannel Channel;
-            public int OffsetId;
-            public int OffsetDate;
-            public int AddOffset;
-            public int Limit;
-            public int MaxId;
-            public int MinId;
-
-            public MessagesMessages Result;
-            public override object GetResult() => Result;
-
-            public ChannelsGetImportantHistoryRequest() { }
-
-            public ChannelsGetImportantHistoryRequest(InputChannel Channel, int OffsetId, int OffsetDate, int AddOffset, int Limit, int MaxId, int MinId)
-            {
-                this.Channel = Channel;
-                this.OffsetId = OffsetId;
-                this.OffsetDate = OffsetDate;
-                this.AddOffset = AddOffset;
-                this.Limit = Limit;
-                this.MaxId = MaxId;
-                this.MinId = MinId;
-            }
-
-            public override void OnSend(TBinaryWriter writer)
-            {
-                writer.Write((uint)ConstructorCode);
-                Channel.Write(writer);
-                writer.Write(OffsetId);
-                writer.Write(OffsetDate);
-                writer.Write(AddOffset);
-                writer.Write(Limit);
-                writer.Write(MaxId);
-                writer.Write(MinId);
-            }
-
-            public override void OnResponse(TBinaryReader reader)
-            {
-                Result = reader.Read<MessagesMessages>();
-            }
-
-            public override void OnException(Exception exception)
-            {
-                throw exception;
-            }
-
-            public override bool Confirmed => true;
-            public override bool Responded { get; }
-
-            public override string ToString()
-            {
-                return string.Format("(ChannelsGetImportantHistoryRequest Channel:{0} OffsetId:{1} OffsetDate:{2} AddOffset:{3} Limit:{4} MaxId:{5} MinId:{6})", Channel, OffsetId, OffsetDate, AddOffset, Limit, MaxId, MinId);
+                return "(HelpGetTermsOfServiceRequest)";
             }
         }
 
@@ -8458,11 +9075,13 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Broadcast != null) {
+                if (Broadcast != null)
+                {
 
                 }
 
-                if (Megagroup != null) {
+                if (Megagroup != null)
+                {
 
                 }
 
@@ -8665,50 +9284,6 @@ namespace TeleTurk.Core.MTProto
             public override string ToString()
             {
                 return string.Format("(ChannelsEditPhotoRequest Channel:{0} Photo:{1})", Channel, Photo);
-            }
-        }
-
-        public class ChannelsToggleCommentsRequest : MTProtoRequest
-        {
-            public override Types ConstructorCode => Types.ChannelsToggleCommentsRequest;
-
-            public InputChannel Channel;
-            public bool Enabled;
-
-            public Updates Result;
-            public override object GetResult() => Result;
-
-            public ChannelsToggleCommentsRequest() { }
-
-            public ChannelsToggleCommentsRequest(InputChannel Channel, bool Enabled)
-            {
-                this.Channel = Channel;
-                this.Enabled = Enabled;
-            }
-
-            public override void OnSend(TBinaryWriter writer)
-            {
-                writer.Write((uint)ConstructorCode);
-                Channel.Write(writer);
-                writer.Write(Enabled);
-            }
-
-            public override void OnResponse(TBinaryReader reader)
-            {
-                Result = reader.Read<Updates>();
-            }
-
-            public override void OnException(Exception exception)
-            {
-                throw exception;
-            }
-
-            public override bool Confirmed => true;
-            public override bool Responded { get; }
-
-            public override string ToString()
-            {
-                return string.Format("(ChannelsToggleCommentsRequest Channel:{0} Enabled:{1})", Channel, Enabled);
             }
         }
 
@@ -9190,126 +9765,6 @@ namespace TeleTurk.Core.MTProto
             }
         }
 
-        public class ChannelsGetMessageEditDataRequest : MTProtoRequest
-        {
-            public override Types ConstructorCode => Types.ChannelsGetMessageEditDataRequest;
-
-            public InputChannel Channel;
-            public int Id;
-
-            public ChannelsMessageEditData Result;
-            public override object GetResult() => Result;
-
-            public ChannelsGetMessageEditDataRequest() { }
-
-            public ChannelsGetMessageEditDataRequest(InputChannel Channel, int Id)
-            {
-                this.Channel = Channel;
-                this.Id = Id;
-            }
-
-            public override void OnSend(TBinaryWriter writer)
-            {
-                writer.Write((uint)ConstructorCode);
-                Channel.Write(writer);
-                writer.Write(Id);
-            }
-
-            public override void OnResponse(TBinaryReader reader)
-            {
-                Result = reader.Read<ChannelsMessageEditData>();
-            }
-
-            public override void OnException(Exception exception)
-            {
-                throw exception;
-            }
-
-            public override bool Confirmed => true;
-            public override bool Responded { get; }
-
-            public override string ToString()
-            {
-                return string.Format("(ChannelsGetMessageEditDataRequest Channel:{0} Id:{1})", Channel, Id);
-            }
-        }
-
-        public class ChannelsEditMessageRequest : MTProtoRequest
-        {
-            public override Types ConstructorCode => Types.ChannelsEditMessageRequest;
-
-            public True NoWebpage;
-            public InputChannel Channel;
-            public int Id;
-            public string Message;
-            public List<MessageEntity> Entities;
-
-            public Updates Result;
-            public override object GetResult() => Result;
-
-            public ChannelsEditMessageRequest() { }
-
-            /// <summary>
-            /// The following arguments can be null: NoWebpage, Entities
-            /// </summary>
-            /// <param name="NoWebpage">Can be null</param>
-            /// <param name="Channel">Can NOT be null</param>
-            /// <param name="Id">Can NOT be null</param>
-            /// <param name="Message">Can NOT be null</param>
-            /// <param name="Entities">Can be null</param>
-            public ChannelsEditMessageRequest(True NoWebpage, InputChannel Channel, int Id, string Message, List<MessageEntity> Entities)
-            {
-                this.NoWebpage = NoWebpage;
-                this.Channel = Channel;
-                this.Id = Id;
-                this.Message = Message;
-                this.Entities = Entities;
-            }
-
-            public override void OnSend(TBinaryWriter writer)
-            {
-                int flags =
-                    (NoWebpage != null ? 1 << 1 : 0) |
-                    (Entities != null ? 1 << 3 : 0);
-
-                writer.Write((uint)ConstructorCode);
-                writer.Write(flags);
-
-                if (NoWebpage != null) {
-
-                }
-
-                Channel.Write(writer);
-                writer.Write(Id);
-                writer.Write(Message);
-                if (Entities != null) {
-                    writer.Write(0x1cb5c415); // vector code
-                    writer.Write(Entities.Count);
-                    foreach (MessageEntity EntitiesElement in Entities)
-                        EntitiesElement.Write(writer);
-                }
-
-            }
-
-            public override void OnResponse(TBinaryReader reader)
-            {
-                Result = reader.Read<Updates>();
-            }
-
-            public override void OnException(Exception exception)
-            {
-                throw exception;
-            }
-
-            public override bool Confirmed => true;
-            public override bool Responded { get; }
-
-            public override string ToString()
-            {
-                return string.Format("(ChannelsEditMessageRequest NoWebpage:{0} Channel:{1} Id:{2} Message:{3} Entities:{4})", NoWebpage, Channel, Id, Message, Entities);
-            }
-        }
-
         public class ChannelsUpdatePinnedMessageRequest : MTProtoRequest
         {
             public override Types ConstructorCode => Types.ChannelsUpdatePinnedMessageRequest;
@@ -9344,7 +9799,8 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Silent != null) {
+                if (Silent != null)
+                {
 
                 }
 
@@ -10012,7 +10468,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -10038,7 +10494,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -10524,6 +10980,58 @@ namespace TeleTurk.Core.MTProto
             }
         }
 
+        public class BoolFalseType : Bool
+        {
+            public override Types ConstructorCode => Types.BoolFalseType;
+
+            public BoolFalseType() { }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+            }
+
+            public override string ToString()
+            {
+                return "(BoolFalseType)";
+            }
+
+            public override object this[string name]
+            { get { throw new InvalidOperationException("This type has no properties"); } }
+
+            public override bool HasKey(string name) => false;
+        }
+
+        public class BoolTrueType : Bool
+        {
+            public override Types ConstructorCode => Types.BoolTrueType;
+
+            public BoolTrueType() { }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+            }
+
+            public override string ToString()
+            {
+                return "(BoolTrueType)";
+            }
+
+            public override object this[string name]
+            { get { throw new InvalidOperationException("This type has no properties"); } }
+
+            public override bool HasKey(string name) => false;
+        }
+
         public class TrueType : True
         {
             public override Types ConstructorCode => Types.TrueType;
@@ -10545,7 +11053,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -10628,7 +11136,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -10654,7 +11162,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -10680,7 +11188,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -10871,7 +11379,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -10897,7 +11405,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -11181,7 +11689,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -11782,7 +12290,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -11922,7 +12430,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -12005,7 +12513,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -12265,7 +12773,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -12576,7 +13084,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -12602,7 +13110,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -12628,7 +13136,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -12654,7 +13162,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -12680,7 +13188,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -12706,7 +13214,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -12732,7 +13240,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -12758,7 +13266,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -12784,7 +13292,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -12810,7 +13318,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -13012,6 +13520,7 @@ namespace TeleTurk.Core.MTProto
             public True Verified;
             public True Restricted;
             public True Min;
+            public True BotInlineGeo;
             public int Id;
             public long? AccessHash;
             public string FirstName;
@@ -13027,7 +13536,7 @@ namespace TeleTurk.Core.MTProto
             public UserType() { }
 
             /// <summary>
-            /// The following arguments can be null: Self, Contact, MutualContact, Deleted, Bot, BotChatHistory, BotNochats, Verified, Restricted, Min, AccessHash, FirstName, LastName, Username, Phone, Photo, Status, BotInfoVersion, RestrictionReason, BotInlinePlaceholder
+            /// The following arguments can be null: Self, Contact, MutualContact, Deleted, Bot, BotChatHistory, BotNochats, Verified, Restricted, Min, BotInlineGeo, AccessHash, FirstName, LastName, Username, Phone, Photo, Status, BotInfoVersion, RestrictionReason, BotInlinePlaceholder
             /// </summary>
             /// <param name="Self">Can be null</param>
             /// <param name="Contact">Can be null</param>
@@ -13039,6 +13548,7 @@ namespace TeleTurk.Core.MTProto
             /// <param name="Verified">Can be null</param>
             /// <param name="Restricted">Can be null</param>
             /// <param name="Min">Can be null</param>
+            /// <param name="BotInlineGeo">Can be null</param>
             /// <param name="Id">Can NOT be null</param>
             /// <param name="AccessHash">Can be null</param>
             /// <param name="FirstName">Can be null</param>
@@ -13050,7 +13560,7 @@ namespace TeleTurk.Core.MTProto
             /// <param name="BotInfoVersion">Can be null</param>
             /// <param name="RestrictionReason">Can be null</param>
             /// <param name="BotInlinePlaceholder">Can be null</param>
-            public UserType(True Self, True Contact, True MutualContact, True Deleted, True Bot, True BotChatHistory, True BotNochats, True Verified, True Restricted, True Min, int Id, long? AccessHash, string FirstName, string LastName, string Username, string Phone, UserProfilePhoto Photo, UserStatus Status, int? BotInfoVersion, string RestrictionReason, string BotInlinePlaceholder)
+            public UserType(True Self, True Contact, True MutualContact, True Deleted, True Bot, True BotChatHistory, True BotNochats, True Verified, True Restricted, True Min, True BotInlineGeo, int Id, long? AccessHash, string FirstName, string LastName, string Username, string Phone, UserProfilePhoto Photo, UserStatus Status, int? BotInfoVersion, string RestrictionReason, string BotInlinePlaceholder)
             {
                 this.Self = Self;
                 this.Contact = Contact;
@@ -13062,6 +13572,7 @@ namespace TeleTurk.Core.MTProto
                 this.Verified = Verified;
                 this.Restricted = Restricted;
                 this.Min = Min;
+                this.BotInlineGeo = BotInlineGeo;
                 this.Id = Id;
                 this.AccessHash = AccessHash;
                 this.FirstName = FirstName;
@@ -13088,6 +13599,7 @@ namespace TeleTurk.Core.MTProto
                     (Verified != null ? 1 << 17 : 0) |
                     (Restricted != null ? 1 << 18 : 0) |
                     (Min != null ? 1 << 20 : 0) |
+                    (BotInlineGeo != null ? 1 << 21 : 0) |
                     (AccessHash != null ? 1 << 0 : 0) |
                     (FirstName != null ? 1 << 1 : 0) |
                     (LastName != null ? 1 << 2 : 0) |
@@ -13102,84 +13614,109 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Self != null) {
+                if (Self != null)
+                {
 
                 }
 
-                if (Contact != null) {
+                if (Contact != null)
+                {
 
                 }
 
-                if (MutualContact != null) {
+                if (MutualContact != null)
+                {
 
                 }
 
-                if (Deleted != null) {
+                if (Deleted != null)
+                {
 
                 }
 
-                if (Bot != null) {
+                if (Bot != null)
+                {
 
                 }
 
-                if (BotChatHistory != null) {
+                if (BotChatHistory != null)
+                {
 
                 }
 
-                if (BotNochats != null) {
+                if (BotNochats != null)
+                {
 
                 }
 
-                if (Verified != null) {
+                if (Verified != null)
+                {
 
                 }
 
-                if (Restricted != null) {
+                if (Restricted != null)
+                {
 
                 }
 
-                if (Min != null) {
+                if (Min != null)
+                {
+
+                }
+
+                if (BotInlineGeo != null)
+                {
 
                 }
 
                 writer.Write(Id);
-                if (AccessHash != null) {
+                if (AccessHash != null)
+                {
                     writer.Write(AccessHash.Value);
                 }
 
-                if (FirstName != null) {
+                if (FirstName != null)
+                {
                     writer.Write(FirstName);
                 }
 
-                if (LastName != null) {
+                if (LastName != null)
+                {
                     writer.Write(LastName);
                 }
 
-                if (Username != null) {
+                if (Username != null)
+                {
                     writer.Write(Username);
                 }
 
-                if (Phone != null) {
+                if (Phone != null)
+                {
                     writer.Write(Phone);
                 }
 
-                if (Photo != null) {
+                if (Photo != null)
+                {
                     Photo.Write(writer);
                 }
 
-                if (Status != null) {
+                if (Status != null)
+                {
                     Status.Write(writer);
                 }
 
-                if (BotInfoVersion != null) {
+                if (BotInfoVersion != null)
+                {
                     writer.Write(BotInfoVersion.Value);
                 }
 
-                if (RestrictionReason != null) {
+                if (RestrictionReason != null)
+                {
                     writer.Write(RestrictionReason);
                 }
 
-                if (BotInlinePlaceholder != null) {
+                if (BotInlinePlaceholder != null)
+                {
                     writer.Write(BotInlinePlaceholder);
                 }
 
@@ -13188,84 +13725,109 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 10)) != 0) {
+                if ((flags & (1 << 10)) != 0)
+                {
                     Self = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 11)) != 0) {
+                if ((flags & (1 << 11)) != 0)
+                {
                     Contact = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 12)) != 0) {
+                if ((flags & (1 << 12)) != 0)
+                {
                     MutualContact = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 13)) != 0) {
+                if ((flags & (1 << 13)) != 0)
+                {
                     Deleted = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 14)) != 0) {
+                if ((flags & (1 << 14)) != 0)
+                {
                     Bot = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 15)) != 0) {
+                if ((flags & (1 << 15)) != 0)
+                {
                     BotChatHistory = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 16)) != 0) {
+                if ((flags & (1 << 16)) != 0)
+                {
                     BotNochats = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 17)) != 0) {
+                if ((flags & (1 << 17)) != 0)
+                {
                     Verified = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 18)) != 0) {
+                if ((flags & (1 << 18)) != 0)
+                {
                     Restricted = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 20)) != 0) {
+                if ((flags & (1 << 20)) != 0)
+                {
                     Min = reader.ReadTrue();
                 }
 
+                if ((flags & (1 << 21)) != 0)
+                {
+                    BotInlineGeo = reader.ReadTrue();
+                }
+
                 Id = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     AccessHash = reader.ReadInt64();
                 }
 
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     FirstName = reader.ReadString();
                 }
 
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     LastName = reader.ReadString();
                 }
 
-                if ((flags & (1 << 3)) != 0) {
+                if ((flags & (1 << 3)) != 0)
+                {
                     Username = reader.ReadString();
                 }
 
-                if ((flags & (1 << 4)) != 0) {
+                if ((flags & (1 << 4)) != 0)
+                {
                     Phone = reader.ReadString();
                 }
 
-                if ((flags & (1 << 5)) != 0) {
+                if ((flags & (1 << 5)) != 0)
+                {
                     Photo = reader.Read<UserProfilePhoto>();
                 }
 
-                if ((flags & (1 << 6)) != 0) {
+                if ((flags & (1 << 6)) != 0)
+                {
                     Status = reader.Read<UserStatus>();
                 }
 
-                if ((flags & (1 << 14)) != 0) {
+                if ((flags & (1 << 14)) != 0)
+                {
                     BotInfoVersion = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 18)) != 0) {
+                if ((flags & (1 << 18)) != 0)
+                {
                     RestrictionReason = reader.ReadString();
                 }
 
-                if ((flags & (1 << 19)) != 0) {
+                if ((flags & (1 << 19)) != 0)
+                {
                     BotInlinePlaceholder = reader.ReadString();
                 }
 
@@ -13273,7 +13835,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(UserType Self:{0} Contact:{1} MutualContact:{2} Deleted:{3} Bot:{4} BotChatHistory:{5} BotNochats:{6} Verified:{7} Restricted:{8} Min:{9} Id:{10} AccessHash:{11} FirstName:{12} LastName:{13} Username:{14} Phone:{15} Photo:{16} Status:{17} BotInfoVersion:{18} RestrictionReason:{19} BotInlinePlaceholder:{20})", Self, Contact, MutualContact, Deleted, Bot, BotChatHistory, BotNochats, Verified, Restricted, Min, Id, AccessHash, FirstName, LastName, Username, Phone, Photo, Status, BotInfoVersion, RestrictionReason, BotInlinePlaceholder);
+                return string.Format("(UserType Self:{0} Contact:{1} MutualContact:{2} Deleted:{3} Bot:{4} BotChatHistory:{5} BotNochats:{6} Verified:{7} Restricted:{8} Min:{9} BotInlineGeo:{10} Id:{11} AccessHash:{12} FirstName:{13} LastName:{14} Username:{15} Phone:{16} Photo:{17} Status:{18} BotInfoVersion:{19} RestrictionReason:{20} BotInlinePlaceholder:{21})", Self, Contact, MutualContact, Deleted, Bot, BotChatHistory, BotNochats, Verified, Restricted, Min, BotInlineGeo, Id, AccessHash, FirstName, LastName, Username, Phone, Photo, Status, BotInfoVersion, RestrictionReason, BotInlinePlaceholder);
             }
 
             public override object this[string name]
@@ -13292,6 +13854,7 @@ namespace TeleTurk.Core.MTProto
                         case "Verified": return Verified;
                         case "Restricted": return Restricted;
                         case "Min": return Min;
+                        case "BotInlineGeo": return BotInlineGeo;
                         case "Id": return Id;
                         case "AccessHash": return AccessHash;
                         case "FirstName": return FirstName;
@@ -13322,6 +13885,7 @@ namespace TeleTurk.Core.MTProto
                     case "Verified":
                     case "Restricted":
                     case "Min":
+                    case "BotInlineGeo":
                     case "Id":
                     case "AccessHash":
                     case "FirstName":
@@ -13359,7 +13923,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -13448,7 +14012,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -13576,7 +14140,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -13602,7 +14166,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -13628,7 +14192,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -13751,27 +14315,33 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Creator != null) {
+                if (Creator != null)
+                {
 
                 }
 
-                if (Kicked != null) {
+                if (Kicked != null)
+                {
 
                 }
 
-                if (Left != null) {
+                if (Left != null)
+                {
 
                 }
 
-                if (AdminsEnabled != null) {
+                if (AdminsEnabled != null)
+                {
 
                 }
 
-                if (Admin != null) {
+                if (Admin != null)
+                {
 
                 }
 
-                if (Deactivated != null) {
+                if (Deactivated != null)
+                {
 
                 }
 
@@ -13781,7 +14351,8 @@ namespace TeleTurk.Core.MTProto
                 writer.Write(ParticipantsCount);
                 writer.Write(Date);
                 writer.Write(Version);
-                if (MigratedTo != null) {
+                if (MigratedTo != null)
+                {
                     MigratedTo.Write(writer);
                 }
 
@@ -13790,27 +14361,33 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     Creator = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Kicked = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     Left = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 3)) != 0) {
+                if ((flags & (1 << 3)) != 0)
+                {
                     AdminsEnabled = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 4)) != 0) {
+                if ((flags & (1 << 4)) != 0)
+                {
                     Admin = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 5)) != 0) {
+                if ((flags & (1 << 5)) != 0)
+                {
                     Deactivated = reader.ReadTrue();
                 }
 
@@ -13820,7 +14397,8 @@ namespace TeleTurk.Core.MTProto
                 ParticipantsCount = reader.ReadInt32();
                 Date = reader.ReadInt32();
                 Version = reader.ReadInt32();
-                if ((flags & (1 << 6)) != 0) {
+                if ((flags & (1 << 6)) != 0)
+                {
                     MigratedTo = reader.Read<InputChannel>();
                 }
 
@@ -14030,68 +14608,83 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Creator != null) {
+                if (Creator != null)
+                {
 
                 }
 
-                if (Kicked != null) {
+                if (Kicked != null)
+                {
 
                 }
 
-                if (Left != null) {
+                if (Left != null)
+                {
 
                 }
 
-                if (Editor != null) {
+                if (Editor != null)
+                {
 
                 }
 
-                if (Moderator != null) {
+                if (Moderator != null)
+                {
 
                 }
 
-                if (Broadcast != null) {
+                if (Broadcast != null)
+                {
 
                 }
 
-                if (Verified != null) {
+                if (Verified != null)
+                {
 
                 }
 
-                if (Megagroup != null) {
+                if (Megagroup != null)
+                {
 
                 }
 
-                if (Restricted != null) {
+                if (Restricted != null)
+                {
 
                 }
 
-                if (Democracy != null) {
+                if (Democracy != null)
+                {
 
                 }
 
-                if (Signatures != null) {
+                if (Signatures != null)
+                {
 
                 }
 
-                if (Min != null) {
+                if (Min != null)
+                {
 
                 }
 
                 writer.Write(Id);
-                if (AccessHash != null) {
+                if (AccessHash != null)
+                {
                     writer.Write(AccessHash.Value);
                 }
 
                 writer.Write(Title);
-                if (Username != null) {
+                if (Username != null)
+                {
                     writer.Write(Username);
                 }
 
                 Photo.Write(writer);
                 writer.Write(Date);
                 writer.Write(Version);
-                if (RestrictionReason != null) {
+                if (RestrictionReason != null)
+                {
                     writer.Write(RestrictionReason);
                 }
 
@@ -14100,68 +14693,83 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     Creator = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Kicked = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     Left = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 3)) != 0) {
+                if ((flags & (1 << 3)) != 0)
+                {
                     Editor = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 4)) != 0) {
+                if ((flags & (1 << 4)) != 0)
+                {
                     Moderator = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 5)) != 0) {
+                if ((flags & (1 << 5)) != 0)
+                {
                     Broadcast = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 7)) != 0) {
+                if ((flags & (1 << 7)) != 0)
+                {
                     Verified = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 8)) != 0) {
+                if ((flags & (1 << 8)) != 0)
+                {
                     Megagroup = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 9)) != 0) {
+                if ((flags & (1 << 9)) != 0)
+                {
                     Restricted = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 10)) != 0) {
+                if ((flags & (1 << 10)) != 0)
+                {
                     Democracy = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 11)) != 0) {
+                if ((flags & (1 << 11)) != 0)
+                {
                     Signatures = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 12)) != 0) {
+                if ((flags & (1 << 12)) != 0)
+                {
                     Min = reader.ReadTrue();
                 }
 
                 Id = reader.ReadInt32();
-                if ((flags & (1 << 13)) != 0) {
+                if ((flags & (1 << 13)) != 0)
+                {
                     AccessHash = reader.ReadInt64();
                 }
 
                 Title = reader.ReadString();
-                if ((flags & (1 << 6)) != 0) {
+                if ((flags & (1 << 6)) != 0)
+                {
                     Username = reader.ReadString();
                 }
 
                 Photo = reader.Read<ChatPhoto>();
                 Date = reader.ReadInt32();
                 Version = reader.ReadInt32();
-                if ((flags & (1 << 9)) != 0) {
+                if ((flags & (1 << 9)) != 0)
+                {
                     RestrictionReason = reader.ReadString();
                 }
 
@@ -14236,14 +14844,26 @@ namespace TeleTurk.Core.MTProto
         {
             public override Types ConstructorCode => Types.ChannelForbiddenType;
 
+            public True Broadcast;
+            public True Megagroup;
             public int Id;
             public long AccessHash;
             public string Title;
 
             public ChannelForbiddenType() { }
 
-            public ChannelForbiddenType(int Id, long AccessHash, string Title)
+            /// <summary>
+            /// The following arguments can be null: Broadcast, Megagroup
+            /// </summary>
+            /// <param name="Broadcast">Can be null</param>
+            /// <param name="Megagroup">Can be null</param>
+            /// <param name="Id">Can NOT be null</param>
+            /// <param name="AccessHash">Can NOT be null</param>
+            /// <param name="Title">Can NOT be null</param>
+            public ChannelForbiddenType(True Broadcast, True Megagroup, int Id, long AccessHash, string Title)
             {
+                this.Broadcast = Broadcast;
+                this.Megagroup = Megagroup;
                 this.Id = Id;
                 this.AccessHash = AccessHash;
                 this.Title = Title;
@@ -14251,7 +14871,23 @@ namespace TeleTurk.Core.MTProto
 
             public override void Write(TBinaryWriter writer)
             {
+                int flags =
+                    (Broadcast != null ? 1 << 5 : 0) |
+                    (Megagroup != null ? 1 << 8 : 0);
+
                 writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                if (Broadcast != null)
+                {
+
+                }
+
+                if (Megagroup != null)
+                {
+
+                }
+
                 writer.Write(Id);
                 writer.Write(AccessHash);
                 writer.Write(Title);
@@ -14259,6 +14895,17 @@ namespace TeleTurk.Core.MTProto
 
             public override void Read(TBinaryReader reader)
             {
+                int flags = reader.ReadInt32();
+                if ((flags & (1 << 5)) != 0)
+                {
+                    Broadcast = reader.ReadTrue();
+                }
+
+                if ((flags & (1 << 8)) != 0)
+                {
+                    Megagroup = reader.ReadTrue();
+                }
+
                 Id = reader.ReadInt32();
                 AccessHash = reader.ReadInt64();
                 Title = reader.ReadString();
@@ -14266,7 +14913,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(ChannelForbiddenType Id:{0} AccessHash:{1} Title:{2})", Id, AccessHash, Title);
+                return string.Format("(ChannelForbiddenType Broadcast:{0} Megagroup:{1} Id:{2} AccessHash:{3} Title:{4})", Broadcast, Megagroup, Id, AccessHash, Title);
             }
 
             public override object this[string name]
@@ -14275,6 +14922,8 @@ namespace TeleTurk.Core.MTProto
                 {
                     switch (name)
                     {
+                        case "Broadcast": return Broadcast;
+                        case "Megagroup": return Megagroup;
                         case "Id": return Id;
                         case "AccessHash": return AccessHash;
                         case "Title": return Title;
@@ -14287,6 +14936,8 @@ namespace TeleTurk.Core.MTProto
             {
                 switch (name)
                 {
+                    case "Broadcast":
+                    case "Megagroup":
                     case "Id":
                     case "AccessHash":
                     case "Title": return true;
@@ -14395,8 +15046,8 @@ namespace TeleTurk.Core.MTProto
             public int? AdminsCount;
             public int? KickedCount;
             public int ReadInboxMaxId;
+            public int ReadOutboxMaxId;
             public int UnreadCount;
-            public int UnreadImportantCount;
             public Photo ChatPhoto;
             public PeerNotifySettings NotifySettings;
             public ExportedChatInvite ExportedInvite;
@@ -14418,8 +15069,8 @@ namespace TeleTurk.Core.MTProto
             /// <param name="AdminsCount">Can be null</param>
             /// <param name="KickedCount">Can be null</param>
             /// <param name="ReadInboxMaxId">Can NOT be null</param>
+            /// <param name="ReadOutboxMaxId">Can NOT be null</param>
             /// <param name="UnreadCount">Can NOT be null</param>
-            /// <param name="UnreadImportantCount">Can NOT be null</param>
             /// <param name="ChatPhoto">Can NOT be null</param>
             /// <param name="NotifySettings">Can NOT be null</param>
             /// <param name="ExportedInvite">Can NOT be null</param>
@@ -14427,7 +15078,7 @@ namespace TeleTurk.Core.MTProto
             /// <param name="MigratedFromChatId">Can be null</param>
             /// <param name="MigratedFromMaxId">Can be null</param>
             /// <param name="PinnedMsgId">Can be null</param>
-            public ChannelFullType(True CanViewParticipants, True CanSetUsername, int Id, string About, int? ParticipantsCount, int? AdminsCount, int? KickedCount, int ReadInboxMaxId, int UnreadCount, int UnreadImportantCount, Photo ChatPhoto, PeerNotifySettings NotifySettings, ExportedChatInvite ExportedInvite, List<BotInfo> BotInfo, int? MigratedFromChatId, int? MigratedFromMaxId, int? PinnedMsgId)
+            public ChannelFullType(True CanViewParticipants, True CanSetUsername, int Id, string About, int? ParticipantsCount, int? AdminsCount, int? KickedCount, int ReadInboxMaxId, int ReadOutboxMaxId, int UnreadCount, Photo ChatPhoto, PeerNotifySettings NotifySettings, ExportedChatInvite ExportedInvite, List<BotInfo> BotInfo, int? MigratedFromChatId, int? MigratedFromMaxId, int? PinnedMsgId)
             {
                 this.CanViewParticipants = CanViewParticipants;
                 this.CanSetUsername = CanSetUsername;
@@ -14437,8 +15088,8 @@ namespace TeleTurk.Core.MTProto
                 this.AdminsCount = AdminsCount;
                 this.KickedCount = KickedCount;
                 this.ReadInboxMaxId = ReadInboxMaxId;
+                this.ReadOutboxMaxId = ReadOutboxMaxId;
                 this.UnreadCount = UnreadCount;
-                this.UnreadImportantCount = UnreadImportantCount;
                 this.ChatPhoto = ChatPhoto;
                 this.NotifySettings = NotifySettings;
                 this.ExportedInvite = ExportedInvite;
@@ -14463,31 +15114,36 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (CanViewParticipants != null) {
+                if (CanViewParticipants != null)
+                {
 
                 }
 
-                if (CanSetUsername != null) {
+                if (CanSetUsername != null)
+                {
 
                 }
 
                 writer.Write(Id);
                 writer.Write(About);
-                if (ParticipantsCount != null) {
+                if (ParticipantsCount != null)
+                {
                     writer.Write(ParticipantsCount.Value);
                 }
 
-                if (AdminsCount != null) {
+                if (AdminsCount != null)
+                {
                     writer.Write(AdminsCount.Value);
                 }
 
-                if (KickedCount != null) {
+                if (KickedCount != null)
+                {
                     writer.Write(KickedCount.Value);
                 }
 
                 writer.Write(ReadInboxMaxId);
+                writer.Write(ReadOutboxMaxId);
                 writer.Write(UnreadCount);
-                writer.Write(UnreadImportantCount);
                 ChatPhoto.Write(writer);
                 NotifySettings.Write(writer);
                 ExportedInvite.Write(writer);
@@ -14495,15 +15151,18 @@ namespace TeleTurk.Core.MTProto
                 writer.Write(BotInfo.Count);
                 foreach (BotInfo BotInfoElement in BotInfo)
                     BotInfoElement.Write(writer);
-                if (MigratedFromChatId != null) {
+                if (MigratedFromChatId != null)
+                {
                     writer.Write(MigratedFromChatId.Value);
                 }
 
-                if (MigratedFromMaxId != null) {
+                if (MigratedFromMaxId != null)
+                {
                     writer.Write(MigratedFromMaxId.Value);
                 }
 
-                if (PinnedMsgId != null) {
+                if (PinnedMsgId != null)
+                {
                     writer.Write(PinnedMsgId.Value);
                 }
 
@@ -14512,31 +15171,36 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 3)) != 0) {
+                if ((flags & (1 << 3)) != 0)
+                {
                     CanViewParticipants = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 6)) != 0) {
+                if ((flags & (1 << 6)) != 0)
+                {
                     CanSetUsername = reader.ReadTrue();
                 }
 
                 Id = reader.ReadInt32();
                 About = reader.ReadString();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     ParticipantsCount = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     AdminsCount = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     KickedCount = reader.ReadInt32();
                 }
 
                 ReadInboxMaxId = reader.ReadInt32();
+                ReadOutboxMaxId = reader.ReadInt32();
                 UnreadCount = reader.ReadInt32();
-                UnreadImportantCount = reader.ReadInt32();
                 ChatPhoto = reader.Read<Photo>();
                 NotifySettings = reader.Read<PeerNotifySettings>();
                 ExportedInvite = reader.Read<ExportedChatInvite>();
@@ -14545,15 +15209,18 @@ namespace TeleTurk.Core.MTProto
                 BotInfo = new List<BotInfo>(BotInfoLength);
                 for (int BotInfoIndex = 0; BotInfoIndex < BotInfoLength; BotInfoIndex++)
                     BotInfo.Add(reader.Read<BotInfo>());
-                if ((flags & (1 << 4)) != 0) {
+                if ((flags & (1 << 4)) != 0)
+                {
                     MigratedFromChatId = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 4)) != 0) {
+                if ((flags & (1 << 4)) != 0)
+                {
                     MigratedFromMaxId = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 5)) != 0) {
+                if ((flags & (1 << 5)) != 0)
+                {
                     PinnedMsgId = reader.ReadInt32();
                 }
 
@@ -14561,7 +15228,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(ChannelFullType CanViewParticipants:{0} CanSetUsername:{1} Id:{2} About:{3} ParticipantsCount:{4} AdminsCount:{5} KickedCount:{6} ReadInboxMaxId:{7} UnreadCount:{8} UnreadImportantCount:{9} ChatPhoto:{10} NotifySettings:{11} ExportedInvite:{12} BotInfo:{13} MigratedFromChatId:{14} MigratedFromMaxId:{15} PinnedMsgId:{16})", CanViewParticipants, CanSetUsername, Id, About, ParticipantsCount, AdminsCount, KickedCount, ReadInboxMaxId, UnreadCount, UnreadImportantCount, ChatPhoto, NotifySettings, ExportedInvite, BotInfo, MigratedFromChatId, MigratedFromMaxId, PinnedMsgId);
+                return string.Format("(ChannelFullType CanViewParticipants:{0} CanSetUsername:{1} Id:{2} About:{3} ParticipantsCount:{4} AdminsCount:{5} KickedCount:{6} ReadInboxMaxId:{7} ReadOutboxMaxId:{8} UnreadCount:{9} ChatPhoto:{10} NotifySettings:{11} ExportedInvite:{12} BotInfo:{13} MigratedFromChatId:{14} MigratedFromMaxId:{15} PinnedMsgId:{16})", CanViewParticipants, CanSetUsername, Id, About, ParticipantsCount, AdminsCount, KickedCount, ReadInboxMaxId, ReadOutboxMaxId, UnreadCount, ChatPhoto, NotifySettings, ExportedInvite, BotInfo, MigratedFromChatId, MigratedFromMaxId, PinnedMsgId);
             }
 
             public override object this[string name]
@@ -14578,8 +15245,8 @@ namespace TeleTurk.Core.MTProto
                         case "AdminsCount": return AdminsCount;
                         case "KickedCount": return KickedCount;
                         case "ReadInboxMaxId": return ReadInboxMaxId;
+                        case "ReadOutboxMaxId": return ReadOutboxMaxId;
                         case "UnreadCount": return UnreadCount;
-                        case "UnreadImportantCount": return UnreadImportantCount;
                         case "ChatPhoto": return ChatPhoto;
                         case "NotifySettings": return NotifySettings;
                         case "ExportedInvite": return ExportedInvite;
@@ -14604,8 +15271,8 @@ namespace TeleTurk.Core.MTProto
                     case "AdminsCount":
                     case "KickedCount":
                     case "ReadInboxMaxId":
+                    case "ReadOutboxMaxId":
                     case "UnreadCount":
-                    case "UnreadImportantCount":
                     case "ChatPhoto":
                     case "NotifySettings":
                     case "ExportedInvite":
@@ -14824,7 +15491,8 @@ namespace TeleTurk.Core.MTProto
                 writer.Write(flags);
 
                 writer.Write(ChatId);
-                if (SelfParticipant != null) {
+                if (SelfParticipant != null)
+                {
                     SelfParticipant.Write(writer);
                 }
 
@@ -14834,7 +15502,8 @@ namespace TeleTurk.Core.MTProto
             {
                 int flags = reader.ReadInt32();
                 ChatId = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     SelfParticipant = reader.Read<ChatParticipant>();
                 }
 
@@ -14960,7 +15629,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -15077,7 +15746,6 @@ namespace TeleTurk.Core.MTProto
         {
             public override Types ConstructorCode => Types.MessageType;
 
-            public True Unread;
             public True Out;
             public True Mentioned;
             public True MediaUnread;
@@ -15100,9 +15768,8 @@ namespace TeleTurk.Core.MTProto
             public MessageType() { }
 
             /// <summary>
-            /// The following arguments can be null: Unread, Out, Mentioned, MediaUnread, Silent, Post, FromId, FwdFrom, ViaBotId, ReplyToMsgId, Media, ReplyMarkup, Entities, Views, EditDate
+            /// The following arguments can be null: Out, Mentioned, MediaUnread, Silent, Post, FromId, FwdFrom, ViaBotId, ReplyToMsgId, Media, ReplyMarkup, Entities, Views, EditDate
             /// </summary>
-            /// <param name="Unread">Can be null</param>
             /// <param name="Out">Can be null</param>
             /// <param name="Mentioned">Can be null</param>
             /// <param name="MediaUnread">Can be null</param>
@@ -15121,9 +15788,8 @@ namespace TeleTurk.Core.MTProto
             /// <param name="Entities">Can be null</param>
             /// <param name="Views">Can be null</param>
             /// <param name="EditDate">Can be null</param>
-            public MessageType(True Unread, True Out, True Mentioned, True MediaUnread, True Silent, True Post, int Id, int? FromId, Peer ToId, MessageFwdHeader FwdFrom, int? ViaBotId, int? ReplyToMsgId, int Date, string Message, MessageMedia Media, ReplyMarkup ReplyMarkup, List<MessageEntity> Entities, int? Views, int? EditDate)
+            public MessageType(True Out, True Mentioned, True MediaUnread, True Silent, True Post, int Id, int? FromId, Peer ToId, MessageFwdHeader FwdFrom, int? ViaBotId, int? ReplyToMsgId, int Date, string Message, MessageMedia Media, ReplyMarkup ReplyMarkup, List<MessageEntity> Entities, int? Views, int? EditDate)
             {
-                this.Unread = Unread;
                 this.Out = Out;
                 this.Mentioned = Mentioned;
                 this.MediaUnread = MediaUnread;
@@ -15147,7 +15813,6 @@ namespace TeleTurk.Core.MTProto
             public override void Write(TBinaryWriter writer)
             {
                 int flags =
-                    (Unread != null ? 1 << 0 : 0) |
                     (Out != null ? 1 << 1 : 0) |
                     (Mentioned != null ? 1 << 4 : 0) |
                     (MediaUnread != null ? 1 << 5 : 0) |
@@ -15166,70 +15831,80 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Unread != null) {
+                if (Out != null)
+                {
 
                 }
 
-                if (Out != null) {
+                if (Mentioned != null)
+                {
 
                 }
 
-                if (Mentioned != null) {
+                if (MediaUnread != null)
+                {
 
                 }
 
-                if (MediaUnread != null) {
+                if (Silent != null)
+                {
 
                 }
 
-                if (Silent != null) {
-
-                }
-
-                if (Post != null) {
+                if (Post != null)
+                {
 
                 }
 
                 writer.Write(Id);
-                if (FromId != null) {
+                if (FromId != null)
+                {
                     writer.Write(FromId.Value);
                 }
 
                 ToId.Write(writer);
-                if (FwdFrom != null) {
+                if (FwdFrom != null)
+                {
                     FwdFrom.Write(writer);
                 }
 
-                if (ViaBotId != null) {
+                if (ViaBotId != null)
+                {
                     writer.Write(ViaBotId.Value);
                 }
 
-                if (ReplyToMsgId != null) {
+                if (ReplyToMsgId != null)
+                {
                     writer.Write(ReplyToMsgId.Value);
                 }
 
                 writer.Write(Date);
                 writer.Write(Message);
-                if (Media != null) {
+                if (Media != null)
+                {
                     Media.Write(writer);
                 }
 
-                if (ReplyMarkup != null) {
+                if (ReplyMarkup != null)
+                {
                     ReplyMarkup.Write(writer);
                 }
 
-                if (Entities != null) {
+                if (Entities != null)
+                {
                     writer.Write(0x1cb5c415); // vector code
                     writer.Write(Entities.Count);
                     foreach (MessageEntity EntitiesElement in Entities)
                         EntitiesElement.Write(writer);
                 }
 
-                if (Views != null) {
+                if (Views != null)
+                {
                     writer.Write(Views.Value);
                 }
 
-                if (EditDate != null) {
+                if (EditDate != null)
+                {
                     writer.Write(EditDate.Value);
                 }
 
@@ -15238,71 +15913,81 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
-                    Unread = reader.ReadTrue();
-                }
-
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Out = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 4)) != 0) {
+                if ((flags & (1 << 4)) != 0)
+                {
                     Mentioned = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 5)) != 0) {
+                if ((flags & (1 << 5)) != 0)
+                {
                     MediaUnread = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 13)) != 0) {
+                if ((flags & (1 << 13)) != 0)
+                {
                     Silent = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 14)) != 0) {
+                if ((flags & (1 << 14)) != 0)
+                {
                     Post = reader.ReadTrue();
                 }
 
                 Id = reader.ReadInt32();
-                if ((flags & (1 << 8)) != 0) {
+                if ((flags & (1 << 8)) != 0)
+                {
                     FromId = reader.ReadInt32();
                 }
 
                 ToId = reader.Read<Peer>();
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     FwdFrom = reader.Read<MessageFwdHeader>();
                 }
 
-                if ((flags & (1 << 11)) != 0) {
+                if ((flags & (1 << 11)) != 0)
+                {
                     ViaBotId = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 3)) != 0) {
+                if ((flags & (1 << 3)) != 0)
+                {
                     ReplyToMsgId = reader.ReadInt32();
                 }
 
                 Date = reader.ReadInt32();
                 Message = reader.ReadString();
-                if ((flags & (1 << 9)) != 0) {
+                if ((flags & (1 << 9)) != 0)
+                {
                     Media = reader.Read<MessageMedia>();
                 }
 
-                if ((flags & (1 << 6)) != 0) {
+                if ((flags & (1 << 6)) != 0)
+                {
                     ReplyMarkup = reader.Read<ReplyMarkup>();
                 }
 
-                if ((flags & (1 << 7)) != 0) {
+                if ((flags & (1 << 7)) != 0)
+                {
                     reader.ReadInt32(); // vector code
                     int EntitiesLength = reader.ReadInt32();
                     Entities = new List<MessageEntity>(EntitiesLength);
                     for (int EntitiesIndex = 0; EntitiesIndex < EntitiesLength; EntitiesIndex++)
                         Entities.Add(reader.Read<MessageEntity>());
-                    }
+                }
 
-                if ((flags & (1 << 10)) != 0) {
+                if ((flags & (1 << 10)) != 0)
+                {
                     Views = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 15)) != 0) {
+                if ((flags & (1 << 15)) != 0)
+                {
                     EditDate = reader.ReadInt32();
                 }
 
@@ -15310,7 +15995,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(MessageType Unread:{0} Out:{1} Mentioned:{2} MediaUnread:{3} Silent:{4} Post:{5} Id:{6} FromId:{7} ToId:{8} FwdFrom:{9} ViaBotId:{10} ReplyToMsgId:{11} Date:{12} Message:{13} Media:{14} ReplyMarkup:{15} Entities:{16} Views:{17} EditDate:{18})", Unread, Out, Mentioned, MediaUnread, Silent, Post, Id, FromId, ToId, FwdFrom, ViaBotId, ReplyToMsgId, Date, Message, Media, ReplyMarkup, Entities, Views, EditDate);
+                return string.Format("(MessageType Out:{0} Mentioned:{1} MediaUnread:{2} Silent:{3} Post:{4} Id:{5} FromId:{6} ToId:{7} FwdFrom:{8} ViaBotId:{9} ReplyToMsgId:{10} Date:{11} Message:{12} Media:{13} ReplyMarkup:{14} Entities:{15} Views:{16} EditDate:{17})", Out, Mentioned, MediaUnread, Silent, Post, Id, FromId, ToId, FwdFrom, ViaBotId, ReplyToMsgId, Date, Message, Media, ReplyMarkup, Entities, Views, EditDate);
             }
 
             public override object this[string name]
@@ -15319,7 +16004,6 @@ namespace TeleTurk.Core.MTProto
                 {
                     switch (name)
                     {
-                        case "Unread": return Unread;
                         case "Out": return Out;
                         case "Mentioned": return Mentioned;
                         case "MediaUnread": return MediaUnread;
@@ -15347,7 +16031,6 @@ namespace TeleTurk.Core.MTProto
             {
                 switch (name)
                 {
-                    case "Unread":
                     case "Out":
                     case "Mentioned":
                     case "MediaUnread":
@@ -15375,7 +16058,6 @@ namespace TeleTurk.Core.MTProto
         {
             public override Types ConstructorCode => Types.MessageServiceType;
 
-            public True Unread;
             public True Out;
             public True Mentioned;
             public True MediaUnread;
@@ -15391,9 +16073,8 @@ namespace TeleTurk.Core.MTProto
             public MessageServiceType() { }
 
             /// <summary>
-            /// The following arguments can be null: Unread, Out, Mentioned, MediaUnread, Silent, Post, FromId, ReplyToMsgId
+            /// The following arguments can be null: Out, Mentioned, MediaUnread, Silent, Post, FromId, ReplyToMsgId
             /// </summary>
-            /// <param name="Unread">Can be null</param>
             /// <param name="Out">Can be null</param>
             /// <param name="Mentioned">Can be null</param>
             /// <param name="MediaUnread">Can be null</param>
@@ -15405,9 +16086,8 @@ namespace TeleTurk.Core.MTProto
             /// <param name="ReplyToMsgId">Can be null</param>
             /// <param name="Date">Can NOT be null</param>
             /// <param name="Action">Can NOT be null</param>
-            public MessageServiceType(True Unread, True Out, True Mentioned, True MediaUnread, True Silent, True Post, int Id, int? FromId, Peer ToId, int? ReplyToMsgId, int Date, MessageAction Action)
+            public MessageServiceType(True Out, True Mentioned, True MediaUnread, True Silent, True Post, int Id, int? FromId, Peer ToId, int? ReplyToMsgId, int Date, MessageAction Action)
             {
-                this.Unread = Unread;
                 this.Out = Out;
                 this.Mentioned = Mentioned;
                 this.MediaUnread = MediaUnread;
@@ -15424,7 +16104,6 @@ namespace TeleTurk.Core.MTProto
             public override void Write(TBinaryWriter writer)
             {
                 int flags =
-                    (Unread != null ? 1 << 0 : 0) |
                     (Out != null ? 1 << 1 : 0) |
                     (Mentioned != null ? 1 << 4 : 0) |
                     (MediaUnread != null ? 1 << 5 : 0) |
@@ -15436,37 +16115,40 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Unread != null) {
+                if (Out != null)
+                {
 
                 }
 
-                if (Out != null) {
+                if (Mentioned != null)
+                {
 
                 }
 
-                if (Mentioned != null) {
+                if (MediaUnread != null)
+                {
 
                 }
 
-                if (MediaUnread != null) {
+                if (Silent != null)
+                {
 
                 }
 
-                if (Silent != null) {
-
-                }
-
-                if (Post != null) {
+                if (Post != null)
+                {
 
                 }
 
                 writer.Write(Id);
-                if (FromId != null) {
+                if (FromId != null)
+                {
                     writer.Write(FromId.Value);
                 }
 
                 ToId.Write(writer);
-                if (ReplyToMsgId != null) {
+                if (ReplyToMsgId != null)
+                {
                     writer.Write(ReplyToMsgId.Value);
                 }
 
@@ -15477,37 +16159,40 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
-                    Unread = reader.ReadTrue();
-                }
-
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Out = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 4)) != 0) {
+                if ((flags & (1 << 4)) != 0)
+                {
                     Mentioned = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 5)) != 0) {
+                if ((flags & (1 << 5)) != 0)
+                {
                     MediaUnread = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 13)) != 0) {
+                if ((flags & (1 << 13)) != 0)
+                {
                     Silent = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 14)) != 0) {
+                if ((flags & (1 << 14)) != 0)
+                {
                     Post = reader.ReadTrue();
                 }
 
                 Id = reader.ReadInt32();
-                if ((flags & (1 << 8)) != 0) {
+                if ((flags & (1 << 8)) != 0)
+                {
                     FromId = reader.ReadInt32();
                 }
 
                 ToId = reader.Read<Peer>();
-                if ((flags & (1 << 3)) != 0) {
+                if ((flags & (1 << 3)) != 0)
+                {
                     ReplyToMsgId = reader.ReadInt32();
                 }
 
@@ -15517,7 +16202,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(MessageServiceType Unread:{0} Out:{1} Mentioned:{2} MediaUnread:{3} Silent:{4} Post:{5} Id:{6} FromId:{7} ToId:{8} ReplyToMsgId:{9} Date:{10} Action:{11})", Unread, Out, Mentioned, MediaUnread, Silent, Post, Id, FromId, ToId, ReplyToMsgId, Date, Action);
+                return string.Format("(MessageServiceType Out:{0} Mentioned:{1} MediaUnread:{2} Silent:{3} Post:{4} Id:{5} FromId:{6} ToId:{7} ReplyToMsgId:{8} Date:{9} Action:{10})", Out, Mentioned, MediaUnread, Silent, Post, Id, FromId, ToId, ReplyToMsgId, Date, Action);
             }
 
             public override object this[string name]
@@ -15526,7 +16211,6 @@ namespace TeleTurk.Core.MTProto
                 {
                     switch (name)
                     {
-                        case "Unread": return Unread;
                         case "Out": return Out;
                         case "Mentioned": return Mentioned;
                         case "MediaUnread": return MediaUnread;
@@ -15547,7 +16231,6 @@ namespace TeleTurk.Core.MTProto
             {
                 switch (name)
                 {
-                    case "Unread":
                     case "Out":
                     case "Mentioned":
                     case "MediaUnread":
@@ -15585,7 +16268,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -15788,7 +16471,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -15997,7 +16680,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -16189,7 +16872,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -16534,7 +17217,33 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
+
+            public override bool HasKey(string name) => false;
+        }
+
+        public class MessageActionHistoryClearType : MessageAction
+        {
+            public override Types ConstructorCode => Types.MessageActionHistoryClearType;
+
+            public MessageActionHistoryClearType() { }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+            }
+
+            public override string ToString()
+            {
+                return "(MessageActionHistoryClearType)";
+            }
+
+            public override object this[string name]
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -16546,129 +17255,88 @@ namespace TeleTurk.Core.MTProto
             public Peer Peer;
             public int TopMessage;
             public int ReadInboxMaxId;
+            public int ReadOutboxMaxId;
             public int UnreadCount;
             public PeerNotifySettings NotifySettings;
+            public int? Pts;
+            public DraftMessage Draft;
 
             public DialogType() { }
 
-            public DialogType(Peer Peer, int TopMessage, int ReadInboxMaxId, int UnreadCount, PeerNotifySettings NotifySettings)
+            /// <summary>
+            /// The following arguments can be null: Pts, Draft
+            /// </summary>
+            /// <param name="Peer">Can NOT be null</param>
+            /// <param name="TopMessage">Can NOT be null</param>
+            /// <param name="ReadInboxMaxId">Can NOT be null</param>
+            /// <param name="ReadOutboxMaxId">Can NOT be null</param>
+            /// <param name="UnreadCount">Can NOT be null</param>
+            /// <param name="NotifySettings">Can NOT be null</param>
+            /// <param name="Pts">Can be null</param>
+            /// <param name="Draft">Can be null</param>
+            public DialogType(Peer Peer, int TopMessage, int ReadInboxMaxId, int ReadOutboxMaxId, int UnreadCount, PeerNotifySettings NotifySettings, int? Pts, DraftMessage Draft)
             {
                 this.Peer = Peer;
                 this.TopMessage = TopMessage;
                 this.ReadInboxMaxId = ReadInboxMaxId;
+                this.ReadOutboxMaxId = ReadOutboxMaxId;
                 this.UnreadCount = UnreadCount;
-                this.NotifySettings = NotifySettings;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write((uint)ConstructorCode);
-                Peer.Write(writer);
-                writer.Write(TopMessage);
-                writer.Write(ReadInboxMaxId);
-                writer.Write(UnreadCount);
-                NotifySettings.Write(writer);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Peer = reader.Read<Peer>();
-                TopMessage = reader.ReadInt32();
-                ReadInboxMaxId = reader.ReadInt32();
-                UnreadCount = reader.ReadInt32();
-                NotifySettings = reader.Read<PeerNotifySettings>();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(DialogType Peer:{0} TopMessage:{1} ReadInboxMaxId:{2} UnreadCount:{3} NotifySettings:{4})", Peer, TopMessage, ReadInboxMaxId, UnreadCount, NotifySettings);
-            }
-
-            public override object this[string name]
-            {
-                get
-                {
-                    switch (name)
-                    {
-                        case "Peer": return Peer;
-                        case "TopMessage": return TopMessage;
-                        case "ReadInboxMaxId": return ReadInboxMaxId;
-                        case "UnreadCount": return UnreadCount;
-                        case "NotifySettings": return NotifySettings;
-                        default: throw new KeyNotFoundException();
-                    }
-                }
-            }
-
-            public override bool HasKey(string name)
-            {
-                switch (name)
-                {
-                    case "Peer":
-                    case "TopMessage":
-                    case "ReadInboxMaxId":
-                    case "UnreadCount":
-                    case "NotifySettings": return true;
-                    default: return false;
-                }
-            }
-        }
-
-        public class DialogChannelType : Dialog
-        {
-            public override Types ConstructorCode => Types.DialogChannelType;
-
-            public Peer Peer;
-            public int TopMessage;
-            public int TopImportantMessage;
-            public int ReadInboxMaxId;
-            public int UnreadCount;
-            public int UnreadImportantCount;
-            public PeerNotifySettings NotifySettings;
-            public int Pts;
-
-            public DialogChannelType() { }
-
-            public DialogChannelType(Peer Peer, int TopMessage, int TopImportantMessage, int ReadInboxMaxId, int UnreadCount, int UnreadImportantCount, PeerNotifySettings NotifySettings, int Pts)
-            {
-                this.Peer = Peer;
-                this.TopMessage = TopMessage;
-                this.TopImportantMessage = TopImportantMessage;
-                this.ReadInboxMaxId = ReadInboxMaxId;
-                this.UnreadCount = UnreadCount;
-                this.UnreadImportantCount = UnreadImportantCount;
                 this.NotifySettings = NotifySettings;
                 this.Pts = Pts;
+                this.Draft = Draft;
             }
 
             public override void Write(TBinaryWriter writer)
             {
+                int flags =
+                    (Pts != null ? 1 << 0 : 0) |
+                    (Draft != null ? 1 << 1 : 0);
+
                 writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
                 Peer.Write(writer);
                 writer.Write(TopMessage);
-                writer.Write(TopImportantMessage);
                 writer.Write(ReadInboxMaxId);
+                writer.Write(ReadOutboxMaxId);
                 writer.Write(UnreadCount);
-                writer.Write(UnreadImportantCount);
                 NotifySettings.Write(writer);
-                writer.Write(Pts);
+                if (Pts != null)
+                {
+                    writer.Write(Pts.Value);
+                }
+
+                if (Draft != null)
+                {
+                    Draft.Write(writer);
+                }
+
             }
 
             public override void Read(TBinaryReader reader)
             {
+                int flags = reader.ReadInt32();
                 Peer = reader.Read<Peer>();
                 TopMessage = reader.ReadInt32();
-                TopImportantMessage = reader.ReadInt32();
                 ReadInboxMaxId = reader.ReadInt32();
+                ReadOutboxMaxId = reader.ReadInt32();
                 UnreadCount = reader.ReadInt32();
-                UnreadImportantCount = reader.ReadInt32();
                 NotifySettings = reader.Read<PeerNotifySettings>();
-                Pts = reader.ReadInt32();
+                if ((flags & (1 << 0)) != 0)
+                {
+                    Pts = reader.ReadInt32();
+                }
+
+                if ((flags & (1 << 1)) != 0)
+                {
+                    Draft = reader.Read<DraftMessage>();
+                }
+
             }
 
             public override string ToString()
             {
-                return string.Format("(DialogChannelType Peer:{0} TopMessage:{1} TopImportantMessage:{2} ReadInboxMaxId:{3} UnreadCount:{4} UnreadImportantCount:{5} NotifySettings:{6} Pts:{7})", Peer, TopMessage, TopImportantMessage, ReadInboxMaxId, UnreadCount, UnreadImportantCount, NotifySettings, Pts);
+                return string.Format("(DialogType Peer:{0} TopMessage:{1} ReadInboxMaxId:{2} ReadOutboxMaxId:{3} UnreadCount:{4} NotifySettings:{5} Pts:{6} Draft:{7})", Peer, TopMessage, ReadInboxMaxId, ReadOutboxMaxId, UnreadCount, NotifySettings, Pts, Draft);
             }
 
             public override object this[string name]
@@ -16679,12 +17347,12 @@ namespace TeleTurk.Core.MTProto
                     {
                         case "Peer": return Peer;
                         case "TopMessage": return TopMessage;
-                        case "TopImportantMessage": return TopImportantMessage;
                         case "ReadInboxMaxId": return ReadInboxMaxId;
+                        case "ReadOutboxMaxId": return ReadOutboxMaxId;
                         case "UnreadCount": return UnreadCount;
-                        case "UnreadImportantCount": return UnreadImportantCount;
                         case "NotifySettings": return NotifySettings;
                         case "Pts": return Pts;
+                        case "Draft": return Draft;
                         default: throw new KeyNotFoundException();
                     }
                 }
@@ -16696,12 +17364,12 @@ namespace TeleTurk.Core.MTProto
                 {
                     case "Peer":
                     case "TopMessage":
-                    case "TopImportantMessage":
                     case "ReadInboxMaxId":
+                    case "ReadOutboxMaxId":
                     case "UnreadCount":
-                    case "UnreadImportantCount":
                     case "NotifySettings":
-                    case "Pts": return true;
+                    case "Pts":
+                    case "Draft": return true;
                     default: return false;
                 }
             }
@@ -17056,7 +17724,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -17208,17 +17876,20 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (PhoneRegistered != null) {
+                if (PhoneRegistered != null)
+                {
 
                 }
 
                 Type.Write(writer);
                 writer.Write(PhoneCodeHash);
-                if (NextType != null) {
+                if (NextType != null)
+                {
                     NextType.Write(writer);
                 }
 
-                if (Timeout != null) {
+                if (Timeout != null)
+                {
                     writer.Write(Timeout.Value);
                 }
 
@@ -17227,17 +17898,20 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     PhoneRegistered = reader.ReadTrue();
                 }
 
                 Type = reader.Read<AuthSentCodeType>();
                 PhoneCodeHash = reader.ReadString();
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     NextType = reader.Read<AuthCodeType>();
                 }
 
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     Timeout = reader.ReadInt32();
                 }
 
@@ -17458,7 +18132,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -17484,7 +18158,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -17510,7 +18184,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -17536,7 +18210,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -17562,7 +18236,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -17602,11 +18276,13 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (ShowPreviews != null) {
+                if (ShowPreviews != null)
+                {
 
                 }
 
-                if (Silent != null) {
+                if (Silent != null)
+                {
 
                 }
 
@@ -17617,11 +18293,13 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     ShowPreviews = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Silent = reader.ReadTrue();
                 }
 
@@ -17683,7 +18361,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -17709,7 +18387,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -17735,7 +18413,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -17775,11 +18453,13 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (ShowPreviews != null) {
+                if (ShowPreviews != null)
+                {
 
                 }
 
-                if (Silent != null) {
+                if (Silent != null)
+                {
 
                 }
 
@@ -17790,11 +18470,13 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     ShowPreviews = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Silent = reader.ReadTrue();
                 }
 
@@ -17860,7 +18542,8 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (ReportSpam != null) {
+                if (ReportSpam != null)
+                {
 
                 }
 
@@ -17869,7 +18552,8 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     ReportSpam = reader.ReadTrue();
                 }
 
@@ -18068,7 +18752,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -18094,7 +18778,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -18120,7 +18804,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -18222,22 +18906,26 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Blocked != null) {
+                if (Blocked != null)
+                {
 
                 }
 
                 User.Write(writer);
-                if (About != null) {
+                if (About != null)
+                {
                     writer.Write(About);
                 }
 
                 Link.Write(writer);
-                if (ProfilePhoto != null) {
+                if (ProfilePhoto != null)
+                {
                     ProfilePhoto.Write(writer);
                 }
 
                 NotifySettings.Write(writer);
-                if (BotInfo != null) {
+                if (BotInfo != null)
+                {
                     BotInfo.Write(writer);
                 }
 
@@ -18246,22 +18934,26 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     Blocked = reader.ReadTrue();
                 }
 
                 User = reader.Read<User>();
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     About = reader.ReadString();
                 }
 
                 Link = reader.Read<ContactsLink>();
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     ProfilePhoto = reader.Read<Photo>();
                 }
 
                 NotifySettings = reader.Read<PeerNotifySettings>();
-                if ((flags & (1 << 3)) != 0) {
+                if ((flags & (1 << 3)) != 0)
+                {
                     BotInfo = reader.Read<BotInfo>();
                 }
 
@@ -18618,7 +19310,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -19307,52 +19999,29 @@ namespace TeleTurk.Core.MTProto
             public int Pts;
             public int Count;
             public List<Message> Messages;
-            public List<MessageGroup> Collapsed;
             public List<Chat> Chats;
             public List<User> Users;
 
             public MessagesChannelMessagesType() { }
 
-            /// <summary>
-            /// The following arguments can be null: Collapsed
-            /// </summary>
-            /// <param name="Pts">Can NOT be null</param>
-            /// <param name="Count">Can NOT be null</param>
-            /// <param name="Messages">Can NOT be null</param>
-            /// <param name="Collapsed">Can be null</param>
-            /// <param name="Chats">Can NOT be null</param>
-            /// <param name="Users">Can NOT be null</param>
-            public MessagesChannelMessagesType(int Pts, int Count, List<Message> Messages, List<MessageGroup> Collapsed, List<Chat> Chats, List<User> Users)
+            public MessagesChannelMessagesType(int Pts, int Count, List<Message> Messages, List<Chat> Chats, List<User> Users)
             {
                 this.Pts = Pts;
                 this.Count = Count;
                 this.Messages = Messages;
-                this.Collapsed = Collapsed;
                 this.Chats = Chats;
                 this.Users = Users;
             }
 
             public override void Write(TBinaryWriter writer)
             {
-                int flags =
-                    (Collapsed != null ? 1 << 0 : 0);
-
                 writer.Write((uint)ConstructorCode);
-                writer.Write(flags);
-
                 writer.Write(Pts);
                 writer.Write(Count);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Messages.Count);
                 foreach (Message MessagesElement in Messages)
                     MessagesElement.Write(writer);
-                if (Collapsed != null) {
-                    writer.Write(0x1cb5c415); // vector code
-                    writer.Write(Collapsed.Count);
-                    foreach (MessageGroup CollapsedElement in Collapsed)
-                        CollapsedElement.Write(writer);
-                }
-
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Chats.Count);
                 foreach (Chat ChatsElement in Chats)
@@ -19365,7 +20034,6 @@ namespace TeleTurk.Core.MTProto
 
             public override void Read(TBinaryReader reader)
             {
-                int flags = reader.ReadInt32();
                 Pts = reader.ReadInt32();
                 Count = reader.ReadInt32();
                 reader.ReadInt32(); // vector code
@@ -19373,14 +20041,6 @@ namespace TeleTurk.Core.MTProto
                 Messages = new List<Message>(MessagesLength);
                 for (int MessagesIndex = 0; MessagesIndex < MessagesLength; MessagesIndex++)
                     Messages.Add(reader.Read<Message>());
-                if ((flags & (1 << 0)) != 0) {
-                    reader.ReadInt32(); // vector code
-                    int CollapsedLength = reader.ReadInt32();
-                    Collapsed = new List<MessageGroup>(CollapsedLength);
-                    for (int CollapsedIndex = 0; CollapsedIndex < CollapsedLength; CollapsedIndex++)
-                        Collapsed.Add(reader.Read<MessageGroup>());
-                    }
-
                 reader.ReadInt32(); // vector code
                 int ChatsLength = reader.ReadInt32();
                 Chats = new List<Chat>(ChatsLength);
@@ -19395,7 +20055,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(MessagesChannelMessagesType Pts:{0} Count:{1} Messages:{2} Collapsed:{3} Chats:{4} Users:{5})", Pts, Count, Messages, Collapsed, Chats, Users);
+                return string.Format("(MessagesChannelMessagesType Pts:{0} Count:{1} Messages:{2} Chats:{3} Users:{4})", Pts, Count, Messages, Chats, Users);
             }
 
             public override object this[string name]
@@ -19407,7 +20067,6 @@ namespace TeleTurk.Core.MTProto
                         case "Pts": return Pts;
                         case "Count": return Count;
                         case "Messages": return Messages;
-                        case "Collapsed": return Collapsed;
                         case "Chats": return Chats;
                         case "Users": return Users;
                         default: throw new KeyNotFoundException();
@@ -19422,7 +20081,6 @@ namespace TeleTurk.Core.MTProto
                     case "Pts":
                     case "Count":
                     case "Messages":
-                    case "Collapsed":
                     case "Chats":
                     case "Users": return true;
                     default: return false;
@@ -19649,7 +20307,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -19675,7 +20333,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -19701,7 +20359,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -19727,7 +20385,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -19753,7 +20411,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -19779,7 +20437,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -19805,7 +20463,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -19831,7 +20489,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -19857,7 +20515,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -19883,7 +20541,33 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
+
+            public override bool HasKey(string name) => false;
+        }
+
+        public class InputMessagesFilterChatPhotosType : MessagesFilter
+        {
+            public override Types ConstructorCode => Types.InputMessagesFilterChatPhotosType;
+
+            public InputMessagesFilterChatPhotosType() { }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+            }
+
+            public override string ToString()
+            {
+                return "(InputMessagesFilterChatPhotosType)";
+            }
+
+            public override object this[string name]
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -21661,7 +22345,8 @@ namespace TeleTurk.Core.MTProto
                 writer.Write(flags);
 
                 writer.Write(ChannelId);
-                if (Pts != null) {
+                if (Pts != null)
+                {
                     writer.Write(Pts.Value);
                 }
 
@@ -21671,7 +22356,8 @@ namespace TeleTurk.Core.MTProto
             {
                 int flags = reader.ReadInt32();
                 ChannelId = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     Pts = reader.ReadInt32();
                 }
 
@@ -21752,63 +22438,6 @@ namespace TeleTurk.Core.MTProto
                 switch (name)
                 {
                     case "ChannelId": return true;
-                    default: return false;
-                }
-            }
-        }
-
-        public class UpdateChannelGroupType : Update
-        {
-            public override Types ConstructorCode => Types.UpdateChannelGroupType;
-
-            public int ChannelId;
-            public MessageGroup Group;
-
-            public UpdateChannelGroupType() { }
-
-            public UpdateChannelGroupType(int ChannelId, MessageGroup Group)
-            {
-                this.ChannelId = ChannelId;
-                this.Group = Group;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write((uint)ConstructorCode);
-                writer.Write(ChannelId);
-                Group.Write(writer);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                ChannelId = reader.ReadInt32();
-                Group = reader.Read<MessageGroup>();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(UpdateChannelGroupType ChannelId:{0} Group:{1})", ChannelId, Group);
-            }
-
-            public override object this[string name]
-            {
-                get
-                {
-                    switch (name)
-                    {
-                        case "ChannelId": return ChannelId;
-                        case "Group": return Group;
-                        default: throw new KeyNotFoundException();
-                    }
-                }
-            }
-
-            public override bool HasKey(string name)
-            {
-                switch (name)
-                {
-                    case "ChannelId":
-                    case "Group": return true;
                     default: return false;
                 }
             }
@@ -22335,7 +22964,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -22361,7 +22990,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -22373,38 +23002,64 @@ namespace TeleTurk.Core.MTProto
             public long QueryId;
             public int UserId;
             public string Query;
+            public GeoPoint Geo;
             public string Offset;
 
             public UpdateBotInlineQueryType() { }
 
-            public UpdateBotInlineQueryType(long QueryId, int UserId, string Query, string Offset)
+            /// <summary>
+            /// The following arguments can be null: Geo
+            /// </summary>
+            /// <param name="QueryId">Can NOT be null</param>
+            /// <param name="UserId">Can NOT be null</param>
+            /// <param name="Query">Can NOT be null</param>
+            /// <param name="Geo">Can be null</param>
+            /// <param name="Offset">Can NOT be null</param>
+            public UpdateBotInlineQueryType(long QueryId, int UserId, string Query, GeoPoint Geo, string Offset)
             {
                 this.QueryId = QueryId;
                 this.UserId = UserId;
                 this.Query = Query;
+                this.Geo = Geo;
                 this.Offset = Offset;
             }
 
             public override void Write(TBinaryWriter writer)
             {
+                int flags =
+                    (Geo != null ? 1 << 0 : 0);
+
                 writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
                 writer.Write(QueryId);
                 writer.Write(UserId);
                 writer.Write(Query);
+                if (Geo != null)
+                {
+                    Geo.Write(writer);
+                }
+
                 writer.Write(Offset);
             }
 
             public override void Read(TBinaryReader reader)
             {
+                int flags = reader.ReadInt32();
                 QueryId = reader.ReadInt64();
                 UserId = reader.ReadInt32();
                 Query = reader.ReadString();
+                if ((flags & (1 << 0)) != 0)
+                {
+                    Geo = reader.Read<GeoPoint>();
+                }
+
                 Offset = reader.ReadString();
             }
 
             public override string ToString()
             {
-                return string.Format("(UpdateBotInlineQueryType QueryId:{0} UserId:{1} Query:{2} Offset:{3})", QueryId, UserId, Query, Offset);
+                return string.Format("(UpdateBotInlineQueryType QueryId:{0} UserId:{1} Query:{2} Geo:{3} Offset:{4})", QueryId, UserId, Query, Geo, Offset);
             }
 
             public override object this[string name]
@@ -22416,6 +23071,7 @@ namespace TeleTurk.Core.MTProto
                         case "QueryId": return QueryId;
                         case "UserId": return UserId;
                         case "Query": return Query;
+                        case "Geo": return Geo;
                         case "Offset": return Offset;
                         default: throw new KeyNotFoundException();
                     }
@@ -22429,6 +23085,7 @@ namespace TeleTurk.Core.MTProto
                     case "QueryId":
                     case "UserId":
                     case "Query":
+                    case "Geo":
                     case "Offset": return true;
                     default: return false;
                 }
@@ -22441,35 +23098,74 @@ namespace TeleTurk.Core.MTProto
 
             public int UserId;
             public string Query;
+            public GeoPoint Geo;
             public string Id;
+            public InputBotInlineMessageID MsgId;
 
             public UpdateBotInlineSendType() { }
 
-            public UpdateBotInlineSendType(int UserId, string Query, string Id)
+            /// <summary>
+            /// The following arguments can be null: Geo, MsgId
+            /// </summary>
+            /// <param name="UserId">Can NOT be null</param>
+            /// <param name="Query">Can NOT be null</param>
+            /// <param name="Geo">Can be null</param>
+            /// <param name="Id">Can NOT be null</param>
+            /// <param name="MsgId">Can be null</param>
+            public UpdateBotInlineSendType(int UserId, string Query, GeoPoint Geo, string Id, InputBotInlineMessageID MsgId)
             {
                 this.UserId = UserId;
                 this.Query = Query;
+                this.Geo = Geo;
                 this.Id = Id;
+                this.MsgId = MsgId;
             }
 
             public override void Write(TBinaryWriter writer)
             {
+                int flags =
+                    (Geo != null ? 1 << 0 : 0) |
+                    (MsgId != null ? 1 << 1 : 0);
+
                 writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
                 writer.Write(UserId);
                 writer.Write(Query);
+                if (Geo != null)
+                {
+                    Geo.Write(writer);
+                }
+
                 writer.Write(Id);
+                if (MsgId != null)
+                {
+                    MsgId.Write(writer);
+                }
+
             }
 
             public override void Read(TBinaryReader reader)
             {
+                int flags = reader.ReadInt32();
                 UserId = reader.ReadInt32();
                 Query = reader.ReadString();
+                if ((flags & (1 << 0)) != 0)
+                {
+                    Geo = reader.Read<GeoPoint>();
+                }
+
                 Id = reader.ReadString();
+                if ((flags & (1 << 1)) != 0)
+                {
+                    MsgId = reader.Read<InputBotInlineMessageID>();
+                }
+
             }
 
             public override string ToString()
             {
-                return string.Format("(UpdateBotInlineSendType UserId:{0} Query:{1} Id:{2})", UserId, Query, Id);
+                return string.Format("(UpdateBotInlineSendType UserId:{0} Query:{1} Geo:{2} Id:{3} MsgId:{4})", UserId, Query, Geo, Id, MsgId);
             }
 
             public override object this[string name]
@@ -22480,7 +23176,9 @@ namespace TeleTurk.Core.MTProto
                     {
                         case "UserId": return UserId;
                         case "Query": return Query;
+                        case "Geo": return Geo;
                         case "Id": return Id;
+                        case "MsgId": return MsgId;
                         default: throw new KeyNotFoundException();
                     }
                 }
@@ -22492,7 +23190,9 @@ namespace TeleTurk.Core.MTProto
                 {
                     case "UserId":
                     case "Query":
-                    case "Id": return true;
+                    case "Geo":
+                    case "Id":
+                    case "MsgId": return true;
                     default: return false;
                 }
             }
@@ -22613,6 +23313,327 @@ namespace TeleTurk.Core.MTProto
                 {
                     case "ChannelId":
                     case "Id": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class UpdateBotCallbackQueryType : Update
+        {
+            public override Types ConstructorCode => Types.UpdateBotCallbackQueryType;
+
+            public long QueryId;
+            public int UserId;
+            public Peer Peer;
+            public int MsgId;
+            public byte[] Data;
+
+            public UpdateBotCallbackQueryType() { }
+
+            public UpdateBotCallbackQueryType(long QueryId, int UserId, Peer Peer, int MsgId, byte[] Data)
+            {
+                this.QueryId = QueryId;
+                this.UserId = UserId;
+                this.Peer = Peer;
+                this.MsgId = MsgId;
+                this.Data = Data;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(QueryId);
+                writer.Write(UserId);
+                Peer.Write(writer);
+                writer.Write(MsgId);
+                writer.Write(Data);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                QueryId = reader.ReadInt64();
+                UserId = reader.ReadInt32();
+                Peer = reader.Read<Peer>();
+                MsgId = reader.ReadInt32();
+                Data = reader.ReadBytes();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(UpdateBotCallbackQueryType QueryId:{0} UserId:{1} Peer:{2} MsgId:{3} Data:{4})", QueryId, UserId, Peer, MsgId, Data);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "QueryId": return QueryId;
+                        case "UserId": return UserId;
+                        case "Peer": return Peer;
+                        case "MsgId": return MsgId;
+                        case "Data": return Data;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "QueryId":
+                    case "UserId":
+                    case "Peer":
+                    case "MsgId":
+                    case "Data": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class UpdateEditMessageType : Update
+        {
+            public override Types ConstructorCode => Types.UpdateEditMessageType;
+
+            public Message Message;
+            public int Pts;
+            public int PtsCount;
+
+            public UpdateEditMessageType() { }
+
+            public UpdateEditMessageType(Message Message, int Pts, int PtsCount)
+            {
+                this.Message = Message;
+                this.Pts = Pts;
+                this.PtsCount = PtsCount;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                Message.Write(writer);
+                writer.Write(Pts);
+                writer.Write(PtsCount);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                Message = reader.Read<Message>();
+                Pts = reader.ReadInt32();
+                PtsCount = reader.ReadInt32();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(UpdateEditMessageType Message:{0} Pts:{1} PtsCount:{2})", Message, Pts, PtsCount);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Message": return Message;
+                        case "Pts": return Pts;
+                        case "PtsCount": return PtsCount;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Message":
+                    case "Pts":
+                    case "PtsCount": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class UpdateInlineBotCallbackQueryType : Update
+        {
+            public override Types ConstructorCode => Types.UpdateInlineBotCallbackQueryType;
+
+            public long QueryId;
+            public int UserId;
+            public InputBotInlineMessageID MsgId;
+            public byte[] Data;
+
+            public UpdateInlineBotCallbackQueryType() { }
+
+            public UpdateInlineBotCallbackQueryType(long QueryId, int UserId, InputBotInlineMessageID MsgId, byte[] Data)
+            {
+                this.QueryId = QueryId;
+                this.UserId = UserId;
+                this.MsgId = MsgId;
+                this.Data = Data;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(QueryId);
+                writer.Write(UserId);
+                MsgId.Write(writer);
+                writer.Write(Data);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                QueryId = reader.ReadInt64();
+                UserId = reader.ReadInt32();
+                MsgId = reader.Read<InputBotInlineMessageID>();
+                Data = reader.ReadBytes();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(UpdateInlineBotCallbackQueryType QueryId:{0} UserId:{1} MsgId:{2} Data:{3})", QueryId, UserId, MsgId, Data);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "QueryId": return QueryId;
+                        case "UserId": return UserId;
+                        case "MsgId": return MsgId;
+                        case "Data": return Data;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "QueryId":
+                    case "UserId":
+                    case "MsgId":
+                    case "Data": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class UpdateReadChannelOutboxType : Update
+        {
+            public override Types ConstructorCode => Types.UpdateReadChannelOutboxType;
+
+            public int ChannelId;
+            public int MaxId;
+
+            public UpdateReadChannelOutboxType() { }
+
+            public UpdateReadChannelOutboxType(int ChannelId, int MaxId)
+            {
+                this.ChannelId = ChannelId;
+                this.MaxId = MaxId;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(ChannelId);
+                writer.Write(MaxId);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                ChannelId = reader.ReadInt32();
+                MaxId = reader.ReadInt32();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(UpdateReadChannelOutboxType ChannelId:{0} MaxId:{1})", ChannelId, MaxId);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "ChannelId": return ChannelId;
+                        case "MaxId": return MaxId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "ChannelId":
+                    case "MaxId": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class UpdateDraftMessageType : Update
+        {
+            public override Types ConstructorCode => Types.UpdateDraftMessageType;
+
+            public Peer Peer;
+            public DraftMessage Draft;
+
+            public UpdateDraftMessageType() { }
+
+            public UpdateDraftMessageType(Peer Peer, DraftMessage Draft)
+            {
+                this.Peer = Peer;
+                this.Draft = Draft;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                Peer.Write(writer);
+                Draft.Write(writer);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                Peer = reader.Read<Peer>();
+                Draft = reader.Read<DraftMessage>();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(UpdateDraftMessageType Peer:{0} Draft:{1})", Peer, Draft);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Peer": return Peer;
+                        case "Draft": return Draft;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Peer":
+                    case "Draft": return true;
                     default: return false;
                 }
             }
@@ -23003,7 +24024,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -23012,7 +24033,6 @@ namespace TeleTurk.Core.MTProto
         {
             public override Types ConstructorCode => Types.UpdateShortMessageType;
 
-            public True Unread;
             public True Out;
             public True Mentioned;
             public True MediaUnread;
@@ -23031,9 +24051,8 @@ namespace TeleTurk.Core.MTProto
             public UpdateShortMessageType() { }
 
             /// <summary>
-            /// The following arguments can be null: Unread, Out, Mentioned, MediaUnread, Silent, FwdFrom, ViaBotId, ReplyToMsgId, Entities
+            /// The following arguments can be null: Out, Mentioned, MediaUnread, Silent, FwdFrom, ViaBotId, ReplyToMsgId, Entities
             /// </summary>
-            /// <param name="Unread">Can be null</param>
             /// <param name="Out">Can be null</param>
             /// <param name="Mentioned">Can be null</param>
             /// <param name="MediaUnread">Can be null</param>
@@ -23048,9 +24067,8 @@ namespace TeleTurk.Core.MTProto
             /// <param name="ViaBotId">Can be null</param>
             /// <param name="ReplyToMsgId">Can be null</param>
             /// <param name="Entities">Can be null</param>
-            public UpdateShortMessageType(True Unread, True Out, True Mentioned, True MediaUnread, True Silent, int Id, int UserId, string Message, int Pts, int PtsCount, int Date, MessageFwdHeader FwdFrom, int? ViaBotId, int? ReplyToMsgId, List<MessageEntity> Entities)
+            public UpdateShortMessageType(True Out, True Mentioned, True MediaUnread, True Silent, int Id, int UserId, string Message, int Pts, int PtsCount, int Date, MessageFwdHeader FwdFrom, int? ViaBotId, int? ReplyToMsgId, List<MessageEntity> Entities)
             {
-                this.Unread = Unread;
                 this.Out = Out;
                 this.Mentioned = Mentioned;
                 this.MediaUnread = MediaUnread;
@@ -23070,7 +24088,6 @@ namespace TeleTurk.Core.MTProto
             public override void Write(TBinaryWriter writer)
             {
                 int flags =
-                    (Unread != null ? 1 << 0 : 0) |
                     (Out != null ? 1 << 1 : 0) |
                     (Mentioned != null ? 1 << 4 : 0) |
                     (MediaUnread != null ? 1 << 5 : 0) |
@@ -23083,23 +24100,23 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Unread != null) {
+                if (Out != null)
+                {
 
                 }
 
-                if (Out != null) {
+                if (Mentioned != null)
+                {
 
                 }
 
-                if (Mentioned != null) {
+                if (MediaUnread != null)
+                {
 
                 }
 
-                if (MediaUnread != null) {
-
-                }
-
-                if (Silent != null) {
+                if (Silent != null)
+                {
 
                 }
 
@@ -23109,19 +24126,23 @@ namespace TeleTurk.Core.MTProto
                 writer.Write(Pts);
                 writer.Write(PtsCount);
                 writer.Write(Date);
-                if (FwdFrom != null) {
+                if (FwdFrom != null)
+                {
                     FwdFrom.Write(writer);
                 }
 
-                if (ViaBotId != null) {
+                if (ViaBotId != null)
+                {
                     writer.Write(ViaBotId.Value);
                 }
 
-                if (ReplyToMsgId != null) {
+                if (ReplyToMsgId != null)
+                {
                     writer.Write(ReplyToMsgId.Value);
                 }
 
-                if (Entities != null) {
+                if (Entities != null)
+                {
                     writer.Write(0x1cb5c415); // vector code
                     writer.Write(Entities.Count);
                     foreach (MessageEntity EntitiesElement in Entities)
@@ -23133,23 +24154,23 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
-                    Unread = reader.ReadTrue();
-                }
-
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Out = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 4)) != 0) {
+                if ((flags & (1 << 4)) != 0)
+                {
                     Mentioned = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 5)) != 0) {
+                if ((flags & (1 << 5)) != 0)
+                {
                     MediaUnread = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 13)) != 0) {
+                if ((flags & (1 << 13)) != 0)
+                {
                     Silent = reader.ReadTrue();
                 }
 
@@ -23159,31 +24180,35 @@ namespace TeleTurk.Core.MTProto
                 Pts = reader.ReadInt32();
                 PtsCount = reader.ReadInt32();
                 Date = reader.ReadInt32();
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     FwdFrom = reader.Read<MessageFwdHeader>();
                 }
 
-                if ((flags & (1 << 11)) != 0) {
+                if ((flags & (1 << 11)) != 0)
+                {
                     ViaBotId = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 3)) != 0) {
+                if ((flags & (1 << 3)) != 0)
+                {
                     ReplyToMsgId = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 7)) != 0) {
+                if ((flags & (1 << 7)) != 0)
+                {
                     reader.ReadInt32(); // vector code
                     int EntitiesLength = reader.ReadInt32();
                     Entities = new List<MessageEntity>(EntitiesLength);
                     for (int EntitiesIndex = 0; EntitiesIndex < EntitiesLength; EntitiesIndex++)
                         Entities.Add(reader.Read<MessageEntity>());
-                    }
+                }
 
             }
 
             public override string ToString()
             {
-                return string.Format("(UpdateShortMessageType Unread:{0} Out:{1} Mentioned:{2} MediaUnread:{3} Silent:{4} Id:{5} UserId:{6} Message:{7} Pts:{8} PtsCount:{9} Date:{10} FwdFrom:{11} ViaBotId:{12} ReplyToMsgId:{13} Entities:{14})", Unread, Out, Mentioned, MediaUnread, Silent, Id, UserId, Message, Pts, PtsCount, Date, FwdFrom, ViaBotId, ReplyToMsgId, Entities);
+                return string.Format("(UpdateShortMessageType Out:{0} Mentioned:{1} MediaUnread:{2} Silent:{3} Id:{4} UserId:{5} Message:{6} Pts:{7} PtsCount:{8} Date:{9} FwdFrom:{10} ViaBotId:{11} ReplyToMsgId:{12} Entities:{13})", Out, Mentioned, MediaUnread, Silent, Id, UserId, Message, Pts, PtsCount, Date, FwdFrom, ViaBotId, ReplyToMsgId, Entities);
             }
 
             public override object this[string name]
@@ -23192,7 +24217,6 @@ namespace TeleTurk.Core.MTProto
                 {
                     switch (name)
                     {
-                        case "Unread": return Unread;
                         case "Out": return Out;
                         case "Mentioned": return Mentioned;
                         case "MediaUnread": return MediaUnread;
@@ -23216,7 +24240,6 @@ namespace TeleTurk.Core.MTProto
             {
                 switch (name)
                 {
-                    case "Unread":
                     case "Out":
                     case "Mentioned":
                     case "MediaUnread":
@@ -23240,7 +24263,6 @@ namespace TeleTurk.Core.MTProto
         {
             public override Types ConstructorCode => Types.UpdateShortChatMessageType;
 
-            public True Unread;
             public True Out;
             public True Mentioned;
             public True MediaUnread;
@@ -23260,9 +24282,8 @@ namespace TeleTurk.Core.MTProto
             public UpdateShortChatMessageType() { }
 
             /// <summary>
-            /// The following arguments can be null: Unread, Out, Mentioned, MediaUnread, Silent, FwdFrom, ViaBotId, ReplyToMsgId, Entities
+            /// The following arguments can be null: Out, Mentioned, MediaUnread, Silent, FwdFrom, ViaBotId, ReplyToMsgId, Entities
             /// </summary>
-            /// <param name="Unread">Can be null</param>
             /// <param name="Out">Can be null</param>
             /// <param name="Mentioned">Can be null</param>
             /// <param name="MediaUnread">Can be null</param>
@@ -23278,9 +24299,8 @@ namespace TeleTurk.Core.MTProto
             /// <param name="ViaBotId">Can be null</param>
             /// <param name="ReplyToMsgId">Can be null</param>
             /// <param name="Entities">Can be null</param>
-            public UpdateShortChatMessageType(True Unread, True Out, True Mentioned, True MediaUnread, True Silent, int Id, int FromId, int ChatId, string Message, int Pts, int PtsCount, int Date, MessageFwdHeader FwdFrom, int? ViaBotId, int? ReplyToMsgId, List<MessageEntity> Entities)
+            public UpdateShortChatMessageType(True Out, True Mentioned, True MediaUnread, True Silent, int Id, int FromId, int ChatId, string Message, int Pts, int PtsCount, int Date, MessageFwdHeader FwdFrom, int? ViaBotId, int? ReplyToMsgId, List<MessageEntity> Entities)
             {
-                this.Unread = Unread;
                 this.Out = Out;
                 this.Mentioned = Mentioned;
                 this.MediaUnread = MediaUnread;
@@ -23301,7 +24321,6 @@ namespace TeleTurk.Core.MTProto
             public override void Write(TBinaryWriter writer)
             {
                 int flags =
-                    (Unread != null ? 1 << 0 : 0) |
                     (Out != null ? 1 << 1 : 0) |
                     (Mentioned != null ? 1 << 4 : 0) |
                     (MediaUnread != null ? 1 << 5 : 0) |
@@ -23314,23 +24333,23 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Unread != null) {
+                if (Out != null)
+                {
 
                 }
 
-                if (Out != null) {
+                if (Mentioned != null)
+                {
 
                 }
 
-                if (Mentioned != null) {
+                if (MediaUnread != null)
+                {
 
                 }
 
-                if (MediaUnread != null) {
-
-                }
-
-                if (Silent != null) {
+                if (Silent != null)
+                {
 
                 }
 
@@ -23341,19 +24360,23 @@ namespace TeleTurk.Core.MTProto
                 writer.Write(Pts);
                 writer.Write(PtsCount);
                 writer.Write(Date);
-                if (FwdFrom != null) {
+                if (FwdFrom != null)
+                {
                     FwdFrom.Write(writer);
                 }
 
-                if (ViaBotId != null) {
+                if (ViaBotId != null)
+                {
                     writer.Write(ViaBotId.Value);
                 }
 
-                if (ReplyToMsgId != null) {
+                if (ReplyToMsgId != null)
+                {
                     writer.Write(ReplyToMsgId.Value);
                 }
 
-                if (Entities != null) {
+                if (Entities != null)
+                {
                     writer.Write(0x1cb5c415); // vector code
                     writer.Write(Entities.Count);
                     foreach (MessageEntity EntitiesElement in Entities)
@@ -23365,23 +24388,23 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
-                    Unread = reader.ReadTrue();
-                }
-
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Out = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 4)) != 0) {
+                if ((flags & (1 << 4)) != 0)
+                {
                     Mentioned = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 5)) != 0) {
+                if ((flags & (1 << 5)) != 0)
+                {
                     MediaUnread = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 13)) != 0) {
+                if ((flags & (1 << 13)) != 0)
+                {
                     Silent = reader.ReadTrue();
                 }
 
@@ -23392,31 +24415,35 @@ namespace TeleTurk.Core.MTProto
                 Pts = reader.ReadInt32();
                 PtsCount = reader.ReadInt32();
                 Date = reader.ReadInt32();
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     FwdFrom = reader.Read<MessageFwdHeader>();
                 }
 
-                if ((flags & (1 << 11)) != 0) {
+                if ((flags & (1 << 11)) != 0)
+                {
                     ViaBotId = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 3)) != 0) {
+                if ((flags & (1 << 3)) != 0)
+                {
                     ReplyToMsgId = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 7)) != 0) {
+                if ((flags & (1 << 7)) != 0)
+                {
                     reader.ReadInt32(); // vector code
                     int EntitiesLength = reader.ReadInt32();
                     Entities = new List<MessageEntity>(EntitiesLength);
                     for (int EntitiesIndex = 0; EntitiesIndex < EntitiesLength; EntitiesIndex++)
                         Entities.Add(reader.Read<MessageEntity>());
-                    }
+                }
 
             }
 
             public override string ToString()
             {
-                return string.Format("(UpdateShortChatMessageType Unread:{0} Out:{1} Mentioned:{2} MediaUnread:{3} Silent:{4} Id:{5} FromId:{6} ChatId:{7} Message:{8} Pts:{9} PtsCount:{10} Date:{11} FwdFrom:{12} ViaBotId:{13} ReplyToMsgId:{14} Entities:{15})", Unread, Out, Mentioned, MediaUnread, Silent, Id, FromId, ChatId, Message, Pts, PtsCount, Date, FwdFrom, ViaBotId, ReplyToMsgId, Entities);
+                return string.Format("(UpdateShortChatMessageType Out:{0} Mentioned:{1} MediaUnread:{2} Silent:{3} Id:{4} FromId:{5} ChatId:{6} Message:{7} Pts:{8} PtsCount:{9} Date:{10} FwdFrom:{11} ViaBotId:{12} ReplyToMsgId:{13} Entities:{14})", Out, Mentioned, MediaUnread, Silent, Id, FromId, ChatId, Message, Pts, PtsCount, Date, FwdFrom, ViaBotId, ReplyToMsgId, Entities);
             }
 
             public override object this[string name]
@@ -23425,7 +24452,6 @@ namespace TeleTurk.Core.MTProto
                 {
                     switch (name)
                     {
-                        case "Unread": return Unread;
                         case "Out": return Out;
                         case "Mentioned": return Mentioned;
                         case "MediaUnread": return MediaUnread;
@@ -23450,7 +24476,6 @@ namespace TeleTurk.Core.MTProto
             {
                 switch (name)
                 {
-                    case "Unread":
                     case "Out":
                     case "Mentioned":
                     case "MediaUnread":
@@ -23730,7 +24755,6 @@ namespace TeleTurk.Core.MTProto
         {
             public override Types ConstructorCode => Types.UpdateShortSentMessageType;
 
-            public True Unread;
             public True Out;
             public int Id;
             public int Pts;
@@ -23742,9 +24766,8 @@ namespace TeleTurk.Core.MTProto
             public UpdateShortSentMessageType() { }
 
             /// <summary>
-            /// The following arguments can be null: Unread, Out, Media, Entities
+            /// The following arguments can be null: Out, Media, Entities
             /// </summary>
-            /// <param name="Unread">Can be null</param>
             /// <param name="Out">Can be null</param>
             /// <param name="Id">Can NOT be null</param>
             /// <param name="Pts">Can NOT be null</param>
@@ -23752,9 +24775,8 @@ namespace TeleTurk.Core.MTProto
             /// <param name="Date">Can NOT be null</param>
             /// <param name="Media">Can be null</param>
             /// <param name="Entities">Can be null</param>
-            public UpdateShortSentMessageType(True Unread, True Out, int Id, int Pts, int PtsCount, int Date, MessageMedia Media, List<MessageEntity> Entities)
+            public UpdateShortSentMessageType(True Out, int Id, int Pts, int PtsCount, int Date, MessageMedia Media, List<MessageEntity> Entities)
             {
-                this.Unread = Unread;
                 this.Out = Out;
                 this.Id = Id;
                 this.Pts = Pts;
@@ -23767,7 +24789,6 @@ namespace TeleTurk.Core.MTProto
             public override void Write(TBinaryWriter writer)
             {
                 int flags =
-                    (Unread != null ? 1 << 0 : 0) |
                     (Out != null ? 1 << 1 : 0) |
                     (Media != null ? 1 << 9 : 0) |
                     (Entities != null ? 1 << 7 : 0);
@@ -23775,11 +24796,8 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Unread != null) {
-
-                }
-
-                if (Out != null) {
+                if (Out != null)
+                {
 
                 }
 
@@ -23787,11 +24805,13 @@ namespace TeleTurk.Core.MTProto
                 writer.Write(Pts);
                 writer.Write(PtsCount);
                 writer.Write(Date);
-                if (Media != null) {
+                if (Media != null)
+                {
                     Media.Write(writer);
                 }
 
-                if (Entities != null) {
+                if (Entities != null)
+                {
                     writer.Write(0x1cb5c415); // vector code
                     writer.Write(Entities.Count);
                     foreach (MessageEntity EntitiesElement in Entities)
@@ -23803,11 +24823,8 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
-                    Unread = reader.ReadTrue();
-                }
-
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Out = reader.ReadTrue();
                 }
 
@@ -23815,23 +24832,25 @@ namespace TeleTurk.Core.MTProto
                 Pts = reader.ReadInt32();
                 PtsCount = reader.ReadInt32();
                 Date = reader.ReadInt32();
-                if ((flags & (1 << 9)) != 0) {
+                if ((flags & (1 << 9)) != 0)
+                {
                     Media = reader.Read<MessageMedia>();
                 }
 
-                if ((flags & (1 << 7)) != 0) {
+                if ((flags & (1 << 7)) != 0)
+                {
                     reader.ReadInt32(); // vector code
                     int EntitiesLength = reader.ReadInt32();
                     Entities = new List<MessageEntity>(EntitiesLength);
                     for (int EntitiesIndex = 0; EntitiesIndex < EntitiesLength; EntitiesIndex++)
                         Entities.Add(reader.Read<MessageEntity>());
-                    }
+                }
 
             }
 
             public override string ToString()
             {
-                return string.Format("(UpdateShortSentMessageType Unread:{0} Out:{1} Id:{2} Pts:{3} PtsCount:{4} Date:{5} Media:{6} Entities:{7})", Unread, Out, Id, Pts, PtsCount, Date, Media, Entities);
+                return string.Format("(UpdateShortSentMessageType Out:{0} Id:{1} Pts:{2} PtsCount:{3} Date:{4} Media:{5} Entities:{6})", Out, Id, Pts, PtsCount, Date, Media, Entities);
             }
 
             public override object this[string name]
@@ -23840,7 +24859,6 @@ namespace TeleTurk.Core.MTProto
                 {
                     switch (name)
                     {
-                        case "Unread": return Unread;
                         case "Out": return Out;
                         case "Id": return Id;
                         case "Pts": return Pts;
@@ -23857,7 +24875,6 @@ namespace TeleTurk.Core.MTProto
             {
                 switch (name)
                 {
-                    case "Unread":
                     case "Out":
                     case "Id":
                     case "Pts":
@@ -24187,15 +25204,18 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Ipv6 != null) {
+                if (Ipv6 != null)
+                {
 
                 }
 
-                if (MediaOnly != null) {
+                if (MediaOnly != null)
+                {
 
                 }
 
-                if (TcpoOnly != null) {
+                if (TcpoOnly != null)
+                {
 
                 }
 
@@ -24207,15 +25227,18 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     Ipv6 = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     MediaOnly = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     TcpoOnly = reader.ReadTrue();
                 }
 
@@ -24284,11 +25307,12 @@ namespace TeleTurk.Core.MTProto
             public int PushChatLimit;
             public int SavedGifsLimit;
             public int EditTimeLimit;
+            public int RatingEDecay;
             public List<DisabledFeature> DisabledFeatures;
 
             public ConfigType() { }
 
-            public ConfigType(int Date, int Expires, bool TestMode, int ThisDc, List<DcOption> DcOptions, int ChatSizeMax, int MegagroupSizeMax, int ForwardedCountMax, int OnlineUpdatePeriodMs, int OfflineBlurTimeoutMs, int OfflineIdleTimeoutMs, int OnlineCloudTimeoutMs, int NotifyCloudDelayMs, int NotifyDefaultDelayMs, int ChatBigSize, int PushChatPeriodMs, int PushChatLimit, int SavedGifsLimit, int EditTimeLimit, List<DisabledFeature> DisabledFeatures)
+            public ConfigType(int Date, int Expires, bool TestMode, int ThisDc, List<DcOption> DcOptions, int ChatSizeMax, int MegagroupSizeMax, int ForwardedCountMax, int OnlineUpdatePeriodMs, int OfflineBlurTimeoutMs, int OfflineIdleTimeoutMs, int OnlineCloudTimeoutMs, int NotifyCloudDelayMs, int NotifyDefaultDelayMs, int ChatBigSize, int PushChatPeriodMs, int PushChatLimit, int SavedGifsLimit, int EditTimeLimit, int RatingEDecay, List<DisabledFeature> DisabledFeatures)
             {
                 this.Date = Date;
                 this.Expires = Expires;
@@ -24309,6 +25333,7 @@ namespace TeleTurk.Core.MTProto
                 this.PushChatLimit = PushChatLimit;
                 this.SavedGifsLimit = SavedGifsLimit;
                 this.EditTimeLimit = EditTimeLimit;
+                this.RatingEDecay = RatingEDecay;
                 this.DisabledFeatures = DisabledFeatures;
             }
 
@@ -24337,6 +25362,7 @@ namespace TeleTurk.Core.MTProto
                 writer.Write(PushChatLimit);
                 writer.Write(SavedGifsLimit);
                 writer.Write(EditTimeLimit);
+                writer.Write(RatingEDecay);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(DisabledFeatures.Count);
                 foreach (DisabledFeature DisabledFeaturesElement in DisabledFeatures)
@@ -24368,6 +25394,7 @@ namespace TeleTurk.Core.MTProto
                 PushChatLimit = reader.ReadInt32();
                 SavedGifsLimit = reader.ReadInt32();
                 EditTimeLimit = reader.ReadInt32();
+                RatingEDecay = reader.ReadInt32();
                 reader.ReadInt32(); // vector code
                 int DisabledFeaturesLength = reader.ReadInt32();
                 DisabledFeatures = new List<DisabledFeature>(DisabledFeaturesLength);
@@ -24377,7 +25404,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(ConfigType Date:{0} Expires:{1} TestMode:{2} ThisDc:{3} DcOptions:{4} ChatSizeMax:{5} MegagroupSizeMax:{6} ForwardedCountMax:{7} OnlineUpdatePeriodMs:{8} OfflineBlurTimeoutMs:{9} OfflineIdleTimeoutMs:{10} OnlineCloudTimeoutMs:{11} NotifyCloudDelayMs:{12} NotifyDefaultDelayMs:{13} ChatBigSize:{14} PushChatPeriodMs:{15} PushChatLimit:{16} SavedGifsLimit:{17} EditTimeLimit:{18} DisabledFeatures:{19})", Date, Expires, TestMode, ThisDc, DcOptions, ChatSizeMax, MegagroupSizeMax, ForwardedCountMax, OnlineUpdatePeriodMs, OfflineBlurTimeoutMs, OfflineIdleTimeoutMs, OnlineCloudTimeoutMs, NotifyCloudDelayMs, NotifyDefaultDelayMs, ChatBigSize, PushChatPeriodMs, PushChatLimit, SavedGifsLimit, EditTimeLimit, DisabledFeatures);
+                return string.Format("(ConfigType Date:{0} Expires:{1} TestMode:{2} ThisDc:{3} DcOptions:{4} ChatSizeMax:{5} MegagroupSizeMax:{6} ForwardedCountMax:{7} OnlineUpdatePeriodMs:{8} OfflineBlurTimeoutMs:{9} OfflineIdleTimeoutMs:{10} OnlineCloudTimeoutMs:{11} NotifyCloudDelayMs:{12} NotifyDefaultDelayMs:{13} ChatBigSize:{14} PushChatPeriodMs:{15} PushChatLimit:{16} SavedGifsLimit:{17} EditTimeLimit:{18} RatingEDecay:{19} DisabledFeatures:{20})", Date, Expires, TestMode, ThisDc, DcOptions, ChatSizeMax, MegagroupSizeMax, ForwardedCountMax, OnlineUpdatePeriodMs, OfflineBlurTimeoutMs, OfflineIdleTimeoutMs, OnlineCloudTimeoutMs, NotifyCloudDelayMs, NotifyDefaultDelayMs, ChatBigSize, PushChatPeriodMs, PushChatLimit, SavedGifsLimit, EditTimeLimit, RatingEDecay, DisabledFeatures);
             }
 
             public override object this[string name]
@@ -24405,6 +25432,7 @@ namespace TeleTurk.Core.MTProto
                         case "PushChatLimit": return PushChatLimit;
                         case "SavedGifsLimit": return SavedGifsLimit;
                         case "EditTimeLimit": return EditTimeLimit;
+                        case "RatingEDecay": return RatingEDecay;
                         case "DisabledFeatures": return DisabledFeatures;
                         default: throw new KeyNotFoundException();
                     }
@@ -24434,6 +25462,7 @@ namespace TeleTurk.Core.MTProto
                     case "PushChatLimit":
                     case "SavedGifsLimit":
                     case "EditTimeLimit":
+                    case "RatingEDecay":
                     case "DisabledFeatures": return true;
                     default: return false;
                 }
@@ -24593,7 +25622,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -25072,7 +26101,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -25173,7 +26202,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -25760,7 +26789,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26102,7 +27131,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26128,7 +27157,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26154,7 +27183,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26180,7 +27209,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26206,7 +27235,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26232,7 +27261,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26309,7 +27338,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26488,7 +27517,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26514,7 +27543,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26624,7 +27653,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26650,7 +27679,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26676,7 +27705,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26702,7 +27731,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26728,7 +27757,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26754,7 +27783,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26838,7 +27867,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26864,7 +27893,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26948,7 +27977,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -26974,7 +28003,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -27058,7 +28087,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -27084,7 +28113,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -27347,7 +28376,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -27512,20 +28541,24 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Voice != null) {
+                if (Voice != null)
+                {
 
                 }
 
                 writer.Write(Duration);
-                if (Title != null) {
+                if (Title != null)
+                {
                     writer.Write(Title);
                 }
 
-                if (Performer != null) {
+                if (Performer != null)
+                {
                     writer.Write(Performer);
                 }
 
-                if (Waveform != null) {
+                if (Waveform != null)
+                {
                     writer.Write(Waveform);
                 }
 
@@ -27534,20 +28567,24 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 10)) != 0) {
+                if ((flags & (1 << 10)) != 0)
+                {
                     Voice = reader.ReadTrue();
                 }
 
                 Duration = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     Title = reader.ReadString();
                 }
 
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Performer = reader.ReadString();
                 }
 
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     Waveform = reader.ReadBytes();
                 }
 
@@ -27660,7 +28697,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -27814,7 +28851,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -28018,7 +29055,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -28044,7 +29081,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -28070,7 +29107,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -28096,7 +29133,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -28290,51 +29327,63 @@ namespace TeleTurk.Core.MTProto
                 writer.Write(Id);
                 writer.Write(Url);
                 writer.Write(DisplayUrl);
-                if (Type != null) {
+                if (Type != null)
+                {
                     writer.Write(Type);
                 }
 
-                if (SiteName != null) {
+                if (SiteName != null)
+                {
                     writer.Write(SiteName);
                 }
 
-                if (Title != null) {
+                if (Title != null)
+                {
                     writer.Write(Title);
                 }
 
-                if (Description != null) {
+                if (Description != null)
+                {
                     writer.Write(Description);
                 }
 
-                if (Photo != null) {
+                if (Photo != null)
+                {
                     Photo.Write(writer);
                 }
 
-                if (EmbedUrl != null) {
+                if (EmbedUrl != null)
+                {
                     writer.Write(EmbedUrl);
                 }
 
-                if (EmbedType != null) {
+                if (EmbedType != null)
+                {
                     writer.Write(EmbedType);
                 }
 
-                if (EmbedWidth != null) {
+                if (EmbedWidth != null)
+                {
                     writer.Write(EmbedWidth.Value);
                 }
 
-                if (EmbedHeight != null) {
+                if (EmbedHeight != null)
+                {
                     writer.Write(EmbedHeight.Value);
                 }
 
-                if (Duration != null) {
+                if (Duration != null)
+                {
                     writer.Write(Duration.Value);
                 }
 
-                if (Author != null) {
+                if (Author != null)
+                {
                     writer.Write(Author);
                 }
 
-                if (Document != null) {
+                if (Document != null)
+                {
                     Document.Write(writer);
                 }
 
@@ -28346,51 +29395,63 @@ namespace TeleTurk.Core.MTProto
                 Id = reader.ReadInt64();
                 Url = reader.ReadString();
                 DisplayUrl = reader.ReadString();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     Type = reader.ReadString();
                 }
 
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     SiteName = reader.ReadString();
                 }
 
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     Title = reader.ReadString();
                 }
 
-                if ((flags & (1 << 3)) != 0) {
+                if ((flags & (1 << 3)) != 0)
+                {
                     Description = reader.ReadString();
                 }
 
-                if ((flags & (1 << 4)) != 0) {
+                if ((flags & (1 << 4)) != 0)
+                {
                     Photo = reader.Read<Photo>();
                 }
 
-                if ((flags & (1 << 5)) != 0) {
+                if ((flags & (1 << 5)) != 0)
+                {
                     EmbedUrl = reader.ReadString();
                 }
 
-                if ((flags & (1 << 5)) != 0) {
+                if ((flags & (1 << 5)) != 0)
+                {
                     EmbedType = reader.ReadString();
                 }
 
-                if ((flags & (1 << 6)) != 0) {
+                if ((flags & (1 << 6)) != 0)
+                {
                     EmbedWidth = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 6)) != 0) {
+                if ((flags & (1 << 6)) != 0)
+                {
                     EmbedHeight = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 7)) != 0) {
+                if ((flags & (1 << 7)) != 0)
+                {
                     Duration = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 8)) != 0) {
+                if ((flags & (1 << 8)) != 0)
+                {
                     Author = reader.ReadString();
                 }
 
-                if ((flags & (1 << 9)) != 0) {
+                if ((flags & (1 << 9)) != 0)
+                {
                     Document = reader.Read<Document>();
                 }
 
@@ -28852,19 +29913,23 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (NewSalt != null) {
+                if (NewSalt != null)
+                {
                     writer.Write(NewSalt);
                 }
 
-                if (NewPasswordHash != null) {
+                if (NewPasswordHash != null)
+                {
                     writer.Write(NewPasswordHash);
                 }
 
-                if (Hint != null) {
+                if (Hint != null)
+                {
                     writer.Write(Hint);
                 }
 
-                if (Email != null) {
+                if (Email != null)
+                {
                     writer.Write(Email);
                 }
 
@@ -28873,19 +29938,23 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     NewSalt = reader.ReadBytes();
                 }
 
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     NewPasswordHash = reader.ReadBytes();
                 }
 
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     Hint = reader.ReadString();
                 }
 
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Email = reader.ReadString();
                 }
 
@@ -29053,7 +30122,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -29200,19 +30269,23 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Channel != null) {
+                if (Channel != null)
+                {
 
                 }
 
-                if (Broadcast != null) {
+                if (Broadcast != null)
+                {
 
                 }
 
-                if (Public != null) {
+                if (Public != null)
+                {
 
                 }
 
-                if (Megagroup != null) {
+                if (Megagroup != null)
+                {
 
                 }
 
@@ -29222,19 +30295,23 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     Channel = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Broadcast = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     Public = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 3)) != 0) {
+                if ((flags & (1 << 3)) != 0)
+                {
                     Megagroup = reader.ReadTrue();
                 }
 
@@ -29297,7 +30374,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -29461,15 +30538,18 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Installed != null) {
+                if (Installed != null)
+                {
 
                 }
 
-                if (Disabled != null) {
+                if (Disabled != null)
+                {
 
                 }
 
-                if (Official != null) {
+                if (Official != null)
+                {
 
                 }
 
@@ -29484,15 +30564,18 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     Installed = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Disabled = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     Official = reader.ReadTrue();
                 }
 
@@ -29802,6 +30885,279 @@ namespace TeleTurk.Core.MTProto
             }
         }
 
+        public class KeyboardButtonUrlType : KeyboardButton
+        {
+            public override Types ConstructorCode => Types.KeyboardButtonUrlType;
+
+            public string Text;
+            public string Url;
+
+            public KeyboardButtonUrlType() { }
+
+            public KeyboardButtonUrlType(string Text, string Url)
+            {
+                this.Text = Text;
+                this.Url = Url;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(Text);
+                writer.Write(Url);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                Text = reader.ReadString();
+                Url = reader.ReadString();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(KeyboardButtonUrlType Text:{0} Url:{1})", Text, Url);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Text": return Text;
+                        case "Url": return Url;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Text":
+                    case "Url": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class KeyboardButtonCallbackType : KeyboardButton
+        {
+            public override Types ConstructorCode => Types.KeyboardButtonCallbackType;
+
+            public string Text;
+            public byte[] Data;
+
+            public KeyboardButtonCallbackType() { }
+
+            public KeyboardButtonCallbackType(string Text, byte[] Data)
+            {
+                this.Text = Text;
+                this.Data = Data;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(Text);
+                writer.Write(Data);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                Text = reader.ReadString();
+                Data = reader.ReadBytes();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(KeyboardButtonCallbackType Text:{0} Data:{1})", Text, Data);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Text": return Text;
+                        case "Data": return Data;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Text":
+                    case "Data": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class KeyboardButtonRequestPhoneType : KeyboardButton
+        {
+            public override Types ConstructorCode => Types.KeyboardButtonRequestPhoneType;
+
+            public string Text;
+
+            public KeyboardButtonRequestPhoneType() { }
+
+            public KeyboardButtonRequestPhoneType(string Text)
+            {
+                this.Text = Text;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(Text);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                Text = reader.ReadString();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(KeyboardButtonRequestPhoneType Text:{0})", Text);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Text": return Text;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Text": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class KeyboardButtonRequestGeoLocationType : KeyboardButton
+        {
+            public override Types ConstructorCode => Types.KeyboardButtonRequestGeoLocationType;
+
+            public string Text;
+
+            public KeyboardButtonRequestGeoLocationType() { }
+
+            public KeyboardButtonRequestGeoLocationType(string Text)
+            {
+                this.Text = Text;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(Text);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                Text = reader.ReadString();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(KeyboardButtonRequestGeoLocationType Text:{0})", Text);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Text": return Text;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Text": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class KeyboardButtonSwitchInlineType : KeyboardButton
+        {
+            public override Types ConstructorCode => Types.KeyboardButtonSwitchInlineType;
+
+            public string Text;
+            public string Query;
+
+            public KeyboardButtonSwitchInlineType() { }
+
+            public KeyboardButtonSwitchInlineType(string Text, string Query)
+            {
+                this.Text = Text;
+                this.Query = Query;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(Text);
+                writer.Write(Query);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                Text = reader.ReadString();
+                Query = reader.ReadString();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(KeyboardButtonSwitchInlineType Text:{0} Query:{1})", Text, Query);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Text": return Text;
+                        case "Query": return Query;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Text":
+                    case "Query": return true;
+                    default: return false;
+                }
+            }
+        }
+
         public class KeyboardButtonRowType : KeyboardButtonRow
         {
             public override Types ConstructorCode => Types.KeyboardButtonRowType;
@@ -29885,7 +31241,8 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Selective != null) {
+                if (Selective != null)
+                {
 
                 }
 
@@ -29894,7 +31251,8 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     Selective = reader.ReadTrue();
                 }
 
@@ -29956,11 +31314,13 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (SingleUse != null) {
+                if (SingleUse != null)
+                {
 
                 }
 
-                if (Selective != null) {
+                if (Selective != null)
+                {
 
                 }
 
@@ -29969,11 +31329,13 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     SingleUse = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     Selective = reader.ReadTrue();
                 }
 
@@ -30044,15 +31406,18 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Resize != null) {
+                if (Resize != null)
+                {
 
                 }
 
-                if (SingleUse != null) {
+                if (SingleUse != null)
+                {
 
                 }
 
-                if (Selective != null) {
+                if (Selective != null)
+                {
 
                 }
 
@@ -30065,15 +31430,18 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     Resize = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     SingleUse = reader.ReadTrue();
                 }
 
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     Selective = reader.ReadTrue();
                 }
 
@@ -30117,6 +31485,64 @@ namespace TeleTurk.Core.MTProto
             }
         }
 
+        public class ReplyInlineMarkupType : ReplyMarkup
+        {
+            public override Types ConstructorCode => Types.ReplyInlineMarkupType;
+
+            public List<KeyboardButtonRow> Rows;
+
+            public ReplyInlineMarkupType() { }
+
+            public ReplyInlineMarkupType(List<KeyboardButtonRow> Rows)
+            {
+                this.Rows = Rows;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(0x1cb5c415); // vector code
+                writer.Write(Rows.Count);
+                foreach (KeyboardButtonRow RowsElement in Rows)
+                    RowsElement.Write(writer);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                reader.ReadInt32(); // vector code
+                int RowsLength = reader.ReadInt32();
+                Rows = new List<KeyboardButtonRow>(RowsLength);
+                for (int RowsIndex = 0; RowsIndex < RowsLength; RowsIndex++)
+                    Rows.Add(reader.Read<KeyboardButtonRow>());
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(ReplyInlineMarkupType Rows:{0})", Rows);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Rows": return Rows;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Rows": return true;
+                    default: return false;
+                }
+            }
+        }
+
         public class HelpAppChangelogEmptyType : HelpAppChangelog
         {
             public override Types ConstructorCode => Types.HelpAppChangelogEmptyType;
@@ -30138,7 +31564,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -30833,6 +32259,132 @@ namespace TeleTurk.Core.MTProto
             }
         }
 
+        public class MessageEntityMentionNameType : MessageEntity
+        {
+            public override Types ConstructorCode => Types.MessageEntityMentionNameType;
+
+            public int Offset;
+            public int Length;
+            public int UserId;
+
+            public MessageEntityMentionNameType() { }
+
+            public MessageEntityMentionNameType(int Offset, int Length, int UserId)
+            {
+                this.Offset = Offset;
+                this.Length = Length;
+                this.UserId = UserId;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(Offset);
+                writer.Write(Length);
+                writer.Write(UserId);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                Offset = reader.ReadInt32();
+                Length = reader.ReadInt32();
+                UserId = reader.ReadInt32();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(MessageEntityMentionNameType Offset:{0} Length:{1} UserId:{2})", Offset, Length, UserId);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Offset": return Offset;
+                        case "Length": return Length;
+                        case "UserId": return UserId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Offset":
+                    case "Length":
+                    case "UserId": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class InputMessageEntityMentionNameType : MessageEntity
+        {
+            public override Types ConstructorCode => Types.InputMessageEntityMentionNameType;
+
+            public int Offset;
+            public int Length;
+            public InputUser UserId;
+
+            public InputMessageEntityMentionNameType() { }
+
+            public InputMessageEntityMentionNameType(int Offset, int Length, InputUser UserId)
+            {
+                this.Offset = Offset;
+                this.Length = Length;
+                this.UserId = UserId;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(Offset);
+                writer.Write(Length);
+                UserId.Write(writer);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                Offset = reader.ReadInt32();
+                Length = reader.ReadInt32();
+                UserId = reader.Read<InputUser>();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(InputMessageEntityMentionNameType Offset:{0} Length:{1} UserId:{2})", Offset, Length, UserId);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Offset": return Offset;
+                        case "Length": return Length;
+                        case "UserId": return UserId;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Offset":
+                    case "Length":
+                    case "UserId": return true;
+                    default: return false;
+                }
+            }
+        }
+
         public class InputChannelEmptyType : InputChannel
         {
             public override Types ConstructorCode => Types.InputChannelEmptyType;
@@ -30854,7 +32406,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -31050,75 +32602,6 @@ namespace TeleTurk.Core.MTProto
             }
         }
 
-        public class MessageGroupType : MessageGroup
-        {
-            public override Types ConstructorCode => Types.MessageGroupType;
-
-            public int MinId;
-            public int MaxId;
-            public int Count;
-            public int Date;
-
-            public MessageGroupType() { }
-
-            public MessageGroupType(int MinId, int MaxId, int Count, int Date)
-            {
-                this.MinId = MinId;
-                this.MaxId = MaxId;
-                this.Count = Count;
-                this.Date = Date;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write((uint)ConstructorCode);
-                writer.Write(MinId);
-                writer.Write(MaxId);
-                writer.Write(Count);
-                writer.Write(Date);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                MinId = reader.ReadInt32();
-                MaxId = reader.ReadInt32();
-                Count = reader.ReadInt32();
-                Date = reader.ReadInt32();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(MessageGroupType MinId:{0} MaxId:{1} Count:{2} Date:{3})", MinId, MaxId, Count, Date);
-            }
-
-            public override object this[string name]
-            {
-                get
-                {
-                    switch (name)
-                    {
-                        case "MinId": return MinId;
-                        case "MaxId": return MaxId;
-                        case "Count": return Count;
-                        case "Date": return Date;
-                        default: throw new KeyNotFoundException();
-                    }
-                }
-            }
-
-            public override bool HasKey(string name)
-            {
-                switch (name)
-                {
-                    case "MinId":
-                    case "MaxId":
-                    case "Count":
-                    case "Date": return true;
-                    default: return false;
-                }
-            }
-        }
-
         public class UpdatesChannelDifferenceEmptyType : UpdatesChannelDifference
         {
             public override Types ConstructorCode => Types.UpdatesChannelDifferenceEmptyType;
@@ -31151,12 +32634,14 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Final != null) {
+                if (Final != null)
+                {
 
                 }
 
                 writer.Write(Pts);
-                if (Timeout != null) {
+                if (Timeout != null)
+                {
                     writer.Write(Timeout.Value);
                 }
 
@@ -31165,12 +32650,14 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     Final = reader.ReadTrue();
                 }
 
                 Pts = reader.ReadInt32();
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Timeout = reader.ReadInt32();
                 }
 
@@ -31215,10 +32702,9 @@ namespace TeleTurk.Core.MTProto
             public int Pts;
             public int? Timeout;
             public int TopMessage;
-            public int TopImportantMessage;
             public int ReadInboxMaxId;
+            public int ReadOutboxMaxId;
             public int UnreadCount;
-            public int UnreadImportantCount;
             public List<Message> Messages;
             public List<Chat> Chats;
             public List<User> Users;
@@ -31232,23 +32718,21 @@ namespace TeleTurk.Core.MTProto
             /// <param name="Pts">Can NOT be null</param>
             /// <param name="Timeout">Can be null</param>
             /// <param name="TopMessage">Can NOT be null</param>
-            /// <param name="TopImportantMessage">Can NOT be null</param>
             /// <param name="ReadInboxMaxId">Can NOT be null</param>
+            /// <param name="ReadOutboxMaxId">Can NOT be null</param>
             /// <param name="UnreadCount">Can NOT be null</param>
-            /// <param name="UnreadImportantCount">Can NOT be null</param>
             /// <param name="Messages">Can NOT be null</param>
             /// <param name="Chats">Can NOT be null</param>
             /// <param name="Users">Can NOT be null</param>
-            public UpdatesChannelDifferenceTooLongType(True Final, int Pts, int? Timeout, int TopMessage, int TopImportantMessage, int ReadInboxMaxId, int UnreadCount, int UnreadImportantCount, List<Message> Messages, List<Chat> Chats, List<User> Users)
+            public UpdatesChannelDifferenceTooLongType(True Final, int Pts, int? Timeout, int TopMessage, int ReadInboxMaxId, int ReadOutboxMaxId, int UnreadCount, List<Message> Messages, List<Chat> Chats, List<User> Users)
             {
                 this.Final = Final;
                 this.Pts = Pts;
                 this.Timeout = Timeout;
                 this.TopMessage = TopMessage;
-                this.TopImportantMessage = TopImportantMessage;
                 this.ReadInboxMaxId = ReadInboxMaxId;
+                this.ReadOutboxMaxId = ReadOutboxMaxId;
                 this.UnreadCount = UnreadCount;
-                this.UnreadImportantCount = UnreadImportantCount;
                 this.Messages = Messages;
                 this.Chats = Chats;
                 this.Users = Users;
@@ -31263,20 +32747,21 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Final != null) {
+                if (Final != null)
+                {
 
                 }
 
                 writer.Write(Pts);
-                if (Timeout != null) {
+                if (Timeout != null)
+                {
                     writer.Write(Timeout.Value);
                 }
 
                 writer.Write(TopMessage);
-                writer.Write(TopImportantMessage);
                 writer.Write(ReadInboxMaxId);
+                writer.Write(ReadOutboxMaxId);
                 writer.Write(UnreadCount);
-                writer.Write(UnreadImportantCount);
                 writer.Write(0x1cb5c415); // vector code
                 writer.Write(Messages.Count);
                 foreach (Message MessagesElement in Messages)
@@ -31294,20 +32779,21 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     Final = reader.ReadTrue();
                 }
 
                 Pts = reader.ReadInt32();
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Timeout = reader.ReadInt32();
                 }
 
                 TopMessage = reader.ReadInt32();
-                TopImportantMessage = reader.ReadInt32();
                 ReadInboxMaxId = reader.ReadInt32();
+                ReadOutboxMaxId = reader.ReadInt32();
                 UnreadCount = reader.ReadInt32();
-                UnreadImportantCount = reader.ReadInt32();
                 reader.ReadInt32(); // vector code
                 int MessagesLength = reader.ReadInt32();
                 Messages = new List<Message>(MessagesLength);
@@ -31327,7 +32813,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(UpdatesChannelDifferenceTooLongType Final:{0} Pts:{1} Timeout:{2} TopMessage:{3} TopImportantMessage:{4} ReadInboxMaxId:{5} UnreadCount:{6} UnreadImportantCount:{7} Messages:{8} Chats:{9} Users:{10})", Final, Pts, Timeout, TopMessage, TopImportantMessage, ReadInboxMaxId, UnreadCount, UnreadImportantCount, Messages, Chats, Users);
+                return string.Format("(UpdatesChannelDifferenceTooLongType Final:{0} Pts:{1} Timeout:{2} TopMessage:{3} ReadInboxMaxId:{4} ReadOutboxMaxId:{5} UnreadCount:{6} Messages:{7} Chats:{8} Users:{9})", Final, Pts, Timeout, TopMessage, ReadInboxMaxId, ReadOutboxMaxId, UnreadCount, Messages, Chats, Users);
             }
 
             public override object this[string name]
@@ -31340,10 +32826,9 @@ namespace TeleTurk.Core.MTProto
                         case "Pts": return Pts;
                         case "Timeout": return Timeout;
                         case "TopMessage": return TopMessage;
-                        case "TopImportantMessage": return TopImportantMessage;
                         case "ReadInboxMaxId": return ReadInboxMaxId;
+                        case "ReadOutboxMaxId": return ReadOutboxMaxId;
                         case "UnreadCount": return UnreadCount;
-                        case "UnreadImportantCount": return UnreadImportantCount;
                         case "Messages": return Messages;
                         case "Chats": return Chats;
                         case "Users": return Users;
@@ -31360,10 +32845,9 @@ namespace TeleTurk.Core.MTProto
                     case "Pts":
                     case "Timeout":
                     case "TopMessage":
-                    case "TopImportantMessage":
                     case "ReadInboxMaxId":
+                    case "ReadOutboxMaxId":
                     case "UnreadCount":
-                    case "UnreadImportantCount":
                     case "Messages":
                     case "Chats":
                     case "Users": return true;
@@ -31416,12 +32900,14 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Final != null) {
+                if (Final != null)
+                {
 
                 }
 
                 writer.Write(Pts);
-                if (Timeout != null) {
+                if (Timeout != null)
+                {
                     writer.Write(Timeout.Value);
                 }
 
@@ -31446,12 +32932,14 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     Final = reader.ReadTrue();
                 }
 
                 Pts = reader.ReadInt32();
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Timeout = reader.ReadInt32();
                 }
 
@@ -31537,7 +33025,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -31546,21 +33034,18 @@ namespace TeleTurk.Core.MTProto
         {
             public override Types ConstructorCode => Types.ChannelMessagesFilterType;
 
-            public True ImportantOnly;
             public True ExcludeNewMessages;
             public List<MessageRange> Ranges;
 
             public ChannelMessagesFilterType() { }
 
             /// <summary>
-            /// The following arguments can be null: ImportantOnly, ExcludeNewMessages
+            /// The following arguments can be null: ExcludeNewMessages
             /// </summary>
-            /// <param name="ImportantOnly">Can be null</param>
             /// <param name="ExcludeNewMessages">Can be null</param>
             /// <param name="Ranges">Can NOT be null</param>
-            public ChannelMessagesFilterType(True ImportantOnly, True ExcludeNewMessages, List<MessageRange> Ranges)
+            public ChannelMessagesFilterType(True ExcludeNewMessages, List<MessageRange> Ranges)
             {
-                this.ImportantOnly = ImportantOnly;
                 this.ExcludeNewMessages = ExcludeNewMessages;
                 this.Ranges = Ranges;
             }
@@ -31568,17 +33053,13 @@ namespace TeleTurk.Core.MTProto
             public override void Write(TBinaryWriter writer)
             {
                 int flags =
-                    (ImportantOnly != null ? 1 << 0 : 0) |
                     (ExcludeNewMessages != null ? 1 << 1 : 0);
 
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (ImportantOnly != null) {
-
-                }
-
-                if (ExcludeNewMessages != null) {
+                if (ExcludeNewMessages != null)
+                {
 
                 }
 
@@ -31591,11 +33072,8 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
-                    ImportantOnly = reader.ReadTrue();
-                }
-
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     ExcludeNewMessages = reader.ReadTrue();
                 }
 
@@ -31608,7 +33086,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(ChannelMessagesFilterType ImportantOnly:{0} ExcludeNewMessages:{1} Ranges:{2})", ImportantOnly, ExcludeNewMessages, Ranges);
+                return string.Format("(ChannelMessagesFilterType ExcludeNewMessages:{0} Ranges:{1})", ExcludeNewMessages, Ranges);
             }
 
             public override object this[string name]
@@ -31617,7 +33095,6 @@ namespace TeleTurk.Core.MTProto
                 {
                     switch (name)
                     {
-                        case "ImportantOnly": return ImportantOnly;
                         case "ExcludeNewMessages": return ExcludeNewMessages;
                         case "Ranges": return Ranges;
                         default: throw new KeyNotFoundException();
@@ -31629,38 +33106,11 @@ namespace TeleTurk.Core.MTProto
             {
                 switch (name)
                 {
-                    case "ImportantOnly":
                     case "ExcludeNewMessages":
                     case "Ranges": return true;
                     default: return false;
                 }
             }
-        }
-
-        public class ChannelMessagesFilterCollapsedType : ChannelMessagesFilter
-        {
-            public override Types ConstructorCode => Types.ChannelMessagesFilterCollapsedType;
-
-            public ChannelMessagesFilterCollapsedType() { }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write((uint)ConstructorCode);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-            }
-
-            public override string ToString()
-            {
-                return "(ChannelMessagesFilterCollapsedType)";
-            }
-
-            public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
-
-            public override bool HasKey(string name) => false;
         }
 
         public class ChannelParticipantType : ChannelParticipant
@@ -32044,7 +33494,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -32070,7 +33520,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -32096,7 +33546,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -32122,7 +33572,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -32148,7 +33598,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -32174,7 +33624,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -32200,7 +33650,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -32626,7 +34076,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -32700,28 +34150,51 @@ namespace TeleTurk.Core.MTProto
             public override Types ConstructorCode => Types.InputBotInlineMessageMediaAutoType;
 
             public string Caption;
+            public ReplyMarkup ReplyMarkup;
 
             public InputBotInlineMessageMediaAutoType() { }
 
-            public InputBotInlineMessageMediaAutoType(string Caption)
+            /// <summary>
+            /// The following arguments can be null: ReplyMarkup
+            /// </summary>
+            /// <param name="Caption">Can NOT be null</param>
+            /// <param name="ReplyMarkup">Can be null</param>
+            public InputBotInlineMessageMediaAutoType(string Caption, ReplyMarkup ReplyMarkup)
             {
                 this.Caption = Caption;
+                this.ReplyMarkup = ReplyMarkup;
             }
 
             public override void Write(TBinaryWriter writer)
             {
+                int flags =
+                    (ReplyMarkup != null ? 1 << 2 : 0);
+
                 writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
                 writer.Write(Caption);
+                if (ReplyMarkup != null)
+                {
+                    ReplyMarkup.Write(writer);
+                }
+
             }
 
             public override void Read(TBinaryReader reader)
             {
+                int flags = reader.ReadInt32();
                 Caption = reader.ReadString();
+                if ((flags & (1 << 2)) != 0)
+                {
+                    ReplyMarkup = reader.Read<ReplyMarkup>();
+                }
+
             }
 
             public override string ToString()
             {
-                return string.Format("(InputBotInlineMessageMediaAutoType Caption:{0})", Caption);
+                return string.Format("(InputBotInlineMessageMediaAutoType Caption:{0} ReplyMarkup:{1})", Caption, ReplyMarkup);
             }
 
             public override object this[string name]
@@ -32731,6 +34204,7 @@ namespace TeleTurk.Core.MTProto
                     switch (name)
                     {
                         case "Caption": return Caption;
+                        case "ReplyMarkup": return ReplyMarkup;
                         default: throw new KeyNotFoundException();
                     }
                 }
@@ -32740,7 +34214,8 @@ namespace TeleTurk.Core.MTProto
             {
                 switch (name)
                 {
-                    case "Caption": return true;
+                    case "Caption":
+                    case "ReplyMarkup": return true;
                     default: return false;
                 }
             }
@@ -32753,41 +34228,52 @@ namespace TeleTurk.Core.MTProto
             public True NoWebpage;
             public string Message;
             public List<MessageEntity> Entities;
+            public ReplyMarkup ReplyMarkup;
 
             public InputBotInlineMessageTextType() { }
 
             /// <summary>
-            /// The following arguments can be null: NoWebpage, Entities
+            /// The following arguments can be null: NoWebpage, Entities, ReplyMarkup
             /// </summary>
             /// <param name="NoWebpage">Can be null</param>
             /// <param name="Message">Can NOT be null</param>
             /// <param name="Entities">Can be null</param>
-            public InputBotInlineMessageTextType(True NoWebpage, string Message, List<MessageEntity> Entities)
+            /// <param name="ReplyMarkup">Can be null</param>
+            public InputBotInlineMessageTextType(True NoWebpage, string Message, List<MessageEntity> Entities, ReplyMarkup ReplyMarkup)
             {
                 this.NoWebpage = NoWebpage;
                 this.Message = Message;
                 this.Entities = Entities;
+                this.ReplyMarkup = ReplyMarkup;
             }
 
             public override void Write(TBinaryWriter writer)
             {
                 int flags =
                     (NoWebpage != null ? 1 << 0 : 0) |
-                    (Entities != null ? 1 << 1 : 0);
+                    (Entities != null ? 1 << 1 : 0) |
+                    (ReplyMarkup != null ? 1 << 2 : 0);
 
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (NoWebpage != null) {
+                if (NoWebpage != null)
+                {
 
                 }
 
                 writer.Write(Message);
-                if (Entities != null) {
+                if (Entities != null)
+                {
                     writer.Write(0x1cb5c415); // vector code
                     writer.Write(Entities.Count);
                     foreach (MessageEntity EntitiesElement in Entities)
                         EntitiesElement.Write(writer);
+                }
+
+                if (ReplyMarkup != null)
+                {
+                    ReplyMarkup.Write(writer);
                 }
 
             }
@@ -32795,24 +34281,31 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     NoWebpage = reader.ReadTrue();
                 }
 
                 Message = reader.ReadString();
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     reader.ReadInt32(); // vector code
                     int EntitiesLength = reader.ReadInt32();
                     Entities = new List<MessageEntity>(EntitiesLength);
                     for (int EntitiesIndex = 0; EntitiesIndex < EntitiesLength; EntitiesIndex++)
                         Entities.Add(reader.Read<MessageEntity>());
-                    }
+                }
+
+                if ((flags & (1 << 2)) != 0)
+                {
+                    ReplyMarkup = reader.Read<ReplyMarkup>();
+                }
 
             }
 
             public override string ToString()
             {
-                return string.Format("(InputBotInlineMessageTextType NoWebpage:{0} Message:{1} Entities:{2})", NoWebpage, Message, Entities);
+                return string.Format("(InputBotInlineMessageTextType NoWebpage:{0} Message:{1} Entities:{2} ReplyMarkup:{3})", NoWebpage, Message, Entities, ReplyMarkup);
             }
 
             public override object this[string name]
@@ -32824,6 +34317,7 @@ namespace TeleTurk.Core.MTProto
                         case "NoWebpage": return NoWebpage;
                         case "Message": return Message;
                         case "Entities": return Entities;
+                        case "ReplyMarkup": return ReplyMarkup;
                         default: throw new KeyNotFoundException();
                     }
                 }
@@ -32835,7 +34329,278 @@ namespace TeleTurk.Core.MTProto
                 {
                     case "NoWebpage":
                     case "Message":
-                    case "Entities": return true;
+                    case "Entities":
+                    case "ReplyMarkup": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class InputBotInlineMessageMediaGeoType : InputBotInlineMessage
+        {
+            public override Types ConstructorCode => Types.InputBotInlineMessageMediaGeoType;
+
+            public InputGeoPoint GeoPoint;
+            public ReplyMarkup ReplyMarkup;
+
+            public InputBotInlineMessageMediaGeoType() { }
+
+            /// <summary>
+            /// The following arguments can be null: ReplyMarkup
+            /// </summary>
+            /// <param name="GeoPoint">Can NOT be null</param>
+            /// <param name="ReplyMarkup">Can be null</param>
+            public InputBotInlineMessageMediaGeoType(InputGeoPoint GeoPoint, ReplyMarkup ReplyMarkup)
+            {
+                this.GeoPoint = GeoPoint;
+                this.ReplyMarkup = ReplyMarkup;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                int flags =
+                    (ReplyMarkup != null ? 1 << 2 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                GeoPoint.Write(writer);
+                if (ReplyMarkup != null)
+                {
+                    ReplyMarkup.Write(writer);
+                }
+
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                int flags = reader.ReadInt32();
+                GeoPoint = reader.Read<InputGeoPoint>();
+                if ((flags & (1 << 2)) != 0)
+                {
+                    ReplyMarkup = reader.Read<ReplyMarkup>();
+                }
+
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(InputBotInlineMessageMediaGeoType GeoPoint:{0} ReplyMarkup:{1})", GeoPoint, ReplyMarkup);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "GeoPoint": return GeoPoint;
+                        case "ReplyMarkup": return ReplyMarkup;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "GeoPoint":
+                    case "ReplyMarkup": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class InputBotInlineMessageMediaVenueType : InputBotInlineMessage
+        {
+            public override Types ConstructorCode => Types.InputBotInlineMessageMediaVenueType;
+
+            public InputGeoPoint GeoPoint;
+            public string Title;
+            public string Address;
+            public string Provider;
+            public string VenueId;
+            public ReplyMarkup ReplyMarkup;
+
+            public InputBotInlineMessageMediaVenueType() { }
+
+            /// <summary>
+            /// The following arguments can be null: ReplyMarkup
+            /// </summary>
+            /// <param name="GeoPoint">Can NOT be null</param>
+            /// <param name="Title">Can NOT be null</param>
+            /// <param name="Address">Can NOT be null</param>
+            /// <param name="Provider">Can NOT be null</param>
+            /// <param name="VenueId">Can NOT be null</param>
+            /// <param name="ReplyMarkup">Can be null</param>
+            public InputBotInlineMessageMediaVenueType(InputGeoPoint GeoPoint, string Title, string Address, string Provider, string VenueId, ReplyMarkup ReplyMarkup)
+            {
+                this.GeoPoint = GeoPoint;
+                this.Title = Title;
+                this.Address = Address;
+                this.Provider = Provider;
+                this.VenueId = VenueId;
+                this.ReplyMarkup = ReplyMarkup;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                int flags =
+                    (ReplyMarkup != null ? 1 << 2 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                GeoPoint.Write(writer);
+                writer.Write(Title);
+                writer.Write(Address);
+                writer.Write(Provider);
+                writer.Write(VenueId);
+                if (ReplyMarkup != null)
+                {
+                    ReplyMarkup.Write(writer);
+                }
+
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                int flags = reader.ReadInt32();
+                GeoPoint = reader.Read<InputGeoPoint>();
+                Title = reader.ReadString();
+                Address = reader.ReadString();
+                Provider = reader.ReadString();
+                VenueId = reader.ReadString();
+                if ((flags & (1 << 2)) != 0)
+                {
+                    ReplyMarkup = reader.Read<ReplyMarkup>();
+                }
+
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(InputBotInlineMessageMediaVenueType GeoPoint:{0} Title:{1} Address:{2} Provider:{3} VenueId:{4} ReplyMarkup:{5})", GeoPoint, Title, Address, Provider, VenueId, ReplyMarkup);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "GeoPoint": return GeoPoint;
+                        case "Title": return Title;
+                        case "Address": return Address;
+                        case "Provider": return Provider;
+                        case "VenueId": return VenueId;
+                        case "ReplyMarkup": return ReplyMarkup;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "GeoPoint":
+                    case "Title":
+                    case "Address":
+                    case "Provider":
+                    case "VenueId":
+                    case "ReplyMarkup": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class InputBotInlineMessageMediaContactType : InputBotInlineMessage
+        {
+            public override Types ConstructorCode => Types.InputBotInlineMessageMediaContactType;
+
+            public string PhoneNumber;
+            public string FirstName;
+            public string LastName;
+            public ReplyMarkup ReplyMarkup;
+
+            public InputBotInlineMessageMediaContactType() { }
+
+            /// <summary>
+            /// The following arguments can be null: ReplyMarkup
+            /// </summary>
+            /// <param name="PhoneNumber">Can NOT be null</param>
+            /// <param name="FirstName">Can NOT be null</param>
+            /// <param name="LastName">Can NOT be null</param>
+            /// <param name="ReplyMarkup">Can be null</param>
+            public InputBotInlineMessageMediaContactType(string PhoneNumber, string FirstName, string LastName, ReplyMarkup ReplyMarkup)
+            {
+                this.PhoneNumber = PhoneNumber;
+                this.FirstName = FirstName;
+                this.LastName = LastName;
+                this.ReplyMarkup = ReplyMarkup;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                int flags =
+                    (ReplyMarkup != null ? 1 << 2 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                writer.Write(PhoneNumber);
+                writer.Write(FirstName);
+                writer.Write(LastName);
+                if (ReplyMarkup != null)
+                {
+                    ReplyMarkup.Write(writer);
+                }
+
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                int flags = reader.ReadInt32();
+                PhoneNumber = reader.ReadString();
+                FirstName = reader.ReadString();
+                LastName = reader.ReadString();
+                if ((flags & (1 << 2)) != 0)
+                {
+                    ReplyMarkup = reader.Read<ReplyMarkup>();
+                }
+
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(InputBotInlineMessageMediaContactType PhoneNumber:{0} FirstName:{1} LastName:{2} ReplyMarkup:{3})", PhoneNumber, FirstName, LastName, ReplyMarkup);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "PhoneNumber": return PhoneNumber;
+                        case "FirstName": return FirstName;
+                        case "LastName": return LastName;
+                        case "ReplyMarkup": return ReplyMarkup;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "PhoneNumber":
+                    case "FirstName":
+                    case "LastName":
+                    case "ReplyMarkup": return true;
                     default: return false;
                 }
             }
@@ -32909,39 +34674,48 @@ namespace TeleTurk.Core.MTProto
 
                 writer.Write(Id);
                 writer.Write(Type);
-                if (Title != null) {
+                if (Title != null)
+                {
                     writer.Write(Title);
                 }
 
-                if (Description != null) {
+                if (Description != null)
+                {
                     writer.Write(Description);
                 }
 
-                if (Url != null) {
+                if (Url != null)
+                {
                     writer.Write(Url);
                 }
 
-                if (ThumbUrl != null) {
+                if (ThumbUrl != null)
+                {
                     writer.Write(ThumbUrl);
                 }
 
-                if (ContentUrl != null) {
+                if (ContentUrl != null)
+                {
                     writer.Write(ContentUrl);
                 }
 
-                if (ContentType != null) {
+                if (ContentType != null)
+                {
                     writer.Write(ContentType);
                 }
 
-                if (W != null) {
+                if (W != null)
+                {
                     writer.Write(W.Value);
                 }
 
-                if (H != null) {
+                if (H != null)
+                {
                     writer.Write(H.Value);
                 }
 
-                if (Duration != null) {
+                if (Duration != null)
+                {
                     writer.Write(Duration.Value);
                 }
 
@@ -32953,39 +34727,48 @@ namespace TeleTurk.Core.MTProto
                 int flags = reader.ReadInt32();
                 Id = reader.ReadString();
                 Type = reader.ReadString();
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Title = reader.ReadString();
                 }
 
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     Description = reader.ReadString();
                 }
 
-                if ((flags & (1 << 3)) != 0) {
+                if ((flags & (1 << 3)) != 0)
+                {
                     Url = reader.ReadString();
                 }
 
-                if ((flags & (1 << 4)) != 0) {
+                if ((flags & (1 << 4)) != 0)
+                {
                     ThumbUrl = reader.ReadString();
                 }
 
-                if ((flags & (1 << 5)) != 0) {
+                if ((flags & (1 << 5)) != 0)
+                {
                     ContentUrl = reader.ReadString();
                 }
 
-                if ((flags & (1 << 5)) != 0) {
+                if ((flags & (1 << 5)) != 0)
+                {
                     ContentType = reader.ReadString();
                 }
 
-                if ((flags & (1 << 6)) != 0) {
+                if ((flags & (1 << 6)) != 0)
+                {
                     W = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 6)) != 0) {
+                if ((flags & (1 << 6)) != 0)
+                {
                     H = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 7)) != 0) {
+                if ((flags & (1 << 7)) != 0)
+                {
                     Duration = reader.ReadInt32();
                 }
 
@@ -33041,233 +34824,18 @@ namespace TeleTurk.Core.MTProto
             }
         }
 
-        public class BotInlineMessageMediaAutoType : BotInlineMessage
+        public class InputBotInlineResultPhotoType : InputBotInlineResult
         {
-            public override Types ConstructorCode => Types.BotInlineMessageMediaAutoType;
-
-            public string Caption;
-
-            public BotInlineMessageMediaAutoType() { }
-
-            public BotInlineMessageMediaAutoType(string Caption)
-            {
-                this.Caption = Caption;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write((uint)ConstructorCode);
-                writer.Write(Caption);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Caption = reader.ReadString();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(BotInlineMessageMediaAutoType Caption:{0})", Caption);
-            }
-
-            public override object this[string name]
-            {
-                get
-                {
-                    switch (name)
-                    {
-                        case "Caption": return Caption;
-                        default: throw new KeyNotFoundException();
-                    }
-                }
-            }
-
-            public override bool HasKey(string name)
-            {
-                switch (name)
-                {
-                    case "Caption": return true;
-                    default: return false;
-                }
-            }
-        }
-
-        public class BotInlineMessageTextType : BotInlineMessage
-        {
-            public override Types ConstructorCode => Types.BotInlineMessageTextType;
-
-            public True NoWebpage;
-            public string Message;
-            public List<MessageEntity> Entities;
-
-            public BotInlineMessageTextType() { }
-
-            /// <summary>
-            /// The following arguments can be null: NoWebpage, Entities
-            /// </summary>
-            /// <param name="NoWebpage">Can be null</param>
-            /// <param name="Message">Can NOT be null</param>
-            /// <param name="Entities">Can be null</param>
-            public BotInlineMessageTextType(True NoWebpage, string Message, List<MessageEntity> Entities)
-            {
-                this.NoWebpage = NoWebpage;
-                this.Message = Message;
-                this.Entities = Entities;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                int flags =
-                    (NoWebpage != null ? 1 << 0 : 0) |
-                    (Entities != null ? 1 << 1 : 0);
-
-                writer.Write((uint)ConstructorCode);
-                writer.Write(flags);
-
-                if (NoWebpage != null) {
-
-                }
-
-                writer.Write(Message);
-                if (Entities != null) {
-                    writer.Write(0x1cb5c415); // vector code
-                    writer.Write(Entities.Count);
-                    foreach (MessageEntity EntitiesElement in Entities)
-                        EntitiesElement.Write(writer);
-                }
-
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
-                    NoWebpage = reader.ReadTrue();
-                }
-
-                Message = reader.ReadString();
-                if ((flags & (1 << 1)) != 0) {
-                    reader.ReadInt32(); // vector code
-                    int EntitiesLength = reader.ReadInt32();
-                    Entities = new List<MessageEntity>(EntitiesLength);
-                    for (int EntitiesIndex = 0; EntitiesIndex < EntitiesLength; EntitiesIndex++)
-                        Entities.Add(reader.Read<MessageEntity>());
-                    }
-
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(BotInlineMessageTextType NoWebpage:{0} Message:{1} Entities:{2})", NoWebpage, Message, Entities);
-            }
-
-            public override object this[string name]
-            {
-                get
-                {
-                    switch (name)
-                    {
-                        case "NoWebpage": return NoWebpage;
-                        case "Message": return Message;
-                        case "Entities": return Entities;
-                        default: throw new KeyNotFoundException();
-                    }
-                }
-            }
-
-            public override bool HasKey(string name)
-            {
-                switch (name)
-                {
-                    case "NoWebpage":
-                    case "Message":
-                    case "Entities": return true;
-                    default: return false;
-                }
-            }
-        }
-
-        public class BotInlineMediaResultDocumentType : BotInlineResult
-        {
-            public override Types ConstructorCode => Types.BotInlineMediaResultDocumentType;
+            public override Types ConstructorCode => Types.InputBotInlineResultPhotoType;
 
             public string Id;
             public string Type;
-            public Document Document;
-            public BotInlineMessage SendMessage;
+            public InputPhoto Photo;
+            public InputBotInlineMessage SendMessage;
 
-            public BotInlineMediaResultDocumentType() { }
+            public InputBotInlineResultPhotoType() { }
 
-            public BotInlineMediaResultDocumentType(string Id, string Type, Document Document, BotInlineMessage SendMessage)
-            {
-                this.Id = Id;
-                this.Type = Type;
-                this.Document = Document;
-                this.SendMessage = SendMessage;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                writer.Write((uint)ConstructorCode);
-                writer.Write(Id);
-                writer.Write(Type);
-                Document.Write(writer);
-                SendMessage.Write(writer);
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                Id = reader.ReadString();
-                Type = reader.ReadString();
-                Document = reader.Read<Document>();
-                SendMessage = reader.Read<BotInlineMessage>();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(BotInlineMediaResultDocumentType Id:{0} Type:{1} Document:{2} SendMessage:{3})", Id, Type, Document, SendMessage);
-            }
-
-            public override object this[string name]
-            {
-                get
-                {
-                    switch (name)
-                    {
-                        case "Id": return Id;
-                        case "Type": return Type;
-                        case "Document": return Document;
-                        case "SendMessage": return SendMessage;
-                        default: throw new KeyNotFoundException();
-                    }
-                }
-            }
-
-            public override bool HasKey(string name)
-            {
-                switch (name)
-                {
-                    case "Id":
-                    case "Type":
-                    case "Document":
-                    case "SendMessage": return true;
-                    default: return false;
-                }
-            }
-        }
-
-        public class BotInlineMediaResultPhotoType : BotInlineResult
-        {
-            public override Types ConstructorCode => Types.BotInlineMediaResultPhotoType;
-
-            public string Id;
-            public string Type;
-            public Photo Photo;
-            public BotInlineMessage SendMessage;
-
-            public BotInlineMediaResultPhotoType() { }
-
-            public BotInlineMediaResultPhotoType(string Id, string Type, Photo Photo, BotInlineMessage SendMessage)
+            public InputBotInlineResultPhotoType(string Id, string Type, InputPhoto Photo, InputBotInlineMessage SendMessage)
             {
                 this.Id = Id;
                 this.Type = Type;
@@ -33288,13 +34856,13 @@ namespace TeleTurk.Core.MTProto
             {
                 Id = reader.ReadString();
                 Type = reader.ReadString();
-                Photo = reader.Read<Photo>();
-                SendMessage = reader.Read<BotInlineMessage>();
+                Photo = reader.Read<InputPhoto>();
+                SendMessage = reader.Read<InputBotInlineMessage>();
             }
 
             public override string ToString()
             {
-                return string.Format("(BotInlineMediaResultPhotoType Id:{0} Type:{1} Photo:{2} SendMessage:{3})", Id, Type, Photo, SendMessage);
+                return string.Format("(InputBotInlineResultPhotoType Id:{0} Type:{1} Photo:{2} SendMessage:{3})", Id, Type, Photo, SendMessage);
             }
 
             public override object this[string name]
@@ -33320,6 +34888,580 @@ namespace TeleTurk.Core.MTProto
                     case "Type":
                     case "Photo":
                     case "SendMessage": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class InputBotInlineResultDocumentType : InputBotInlineResult
+        {
+            public override Types ConstructorCode => Types.InputBotInlineResultDocumentType;
+
+            public string Id;
+            public string Type;
+            public string Title;
+            public string Description;
+            public InputDocument Document;
+            public InputBotInlineMessage SendMessage;
+
+            public InputBotInlineResultDocumentType() { }
+
+            /// <summary>
+            /// The following arguments can be null: Title, Description
+            /// </summary>
+            /// <param name="Id">Can NOT be null</param>
+            /// <param name="Type">Can NOT be null</param>
+            /// <param name="Title">Can be null</param>
+            /// <param name="Description">Can be null</param>
+            /// <param name="Document">Can NOT be null</param>
+            /// <param name="SendMessage">Can NOT be null</param>
+            public InputBotInlineResultDocumentType(string Id, string Type, string Title, string Description, InputDocument Document, InputBotInlineMessage SendMessage)
+            {
+                this.Id = Id;
+                this.Type = Type;
+                this.Title = Title;
+                this.Description = Description;
+                this.Document = Document;
+                this.SendMessage = SendMessage;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                int flags =
+                    (Title != null ? 1 << 1 : 0) |
+                    (Description != null ? 1 << 2 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                writer.Write(Id);
+                writer.Write(Type);
+                if (Title != null)
+                {
+                    writer.Write(Title);
+                }
+
+                if (Description != null)
+                {
+                    writer.Write(Description);
+                }
+
+                Document.Write(writer);
+                SendMessage.Write(writer);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                int flags = reader.ReadInt32();
+                Id = reader.ReadString();
+                Type = reader.ReadString();
+                if ((flags & (1 << 1)) != 0)
+                {
+                    Title = reader.ReadString();
+                }
+
+                if ((flags & (1 << 2)) != 0)
+                {
+                    Description = reader.ReadString();
+                }
+
+                Document = reader.Read<InputDocument>();
+                SendMessage = reader.Read<InputBotInlineMessage>();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(InputBotInlineResultDocumentType Id:{0} Type:{1} Title:{2} Description:{3} Document:{4} SendMessage:{5})", Id, Type, Title, Description, Document, SendMessage);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Type": return Type;
+                        case "Title": return Title;
+                        case "Description": return Description;
+                        case "Document": return Document;
+                        case "SendMessage": return SendMessage;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Type":
+                    case "Title":
+                    case "Description":
+                    case "Document":
+                    case "SendMessage": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class BotInlineMessageMediaAutoType : BotInlineMessage
+        {
+            public override Types ConstructorCode => Types.BotInlineMessageMediaAutoType;
+
+            public string Caption;
+            public ReplyMarkup ReplyMarkup;
+
+            public BotInlineMessageMediaAutoType() { }
+
+            /// <summary>
+            /// The following arguments can be null: ReplyMarkup
+            /// </summary>
+            /// <param name="Caption">Can NOT be null</param>
+            /// <param name="ReplyMarkup">Can be null</param>
+            public BotInlineMessageMediaAutoType(string Caption, ReplyMarkup ReplyMarkup)
+            {
+                this.Caption = Caption;
+                this.ReplyMarkup = ReplyMarkup;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                int flags =
+                    (ReplyMarkup != null ? 1 << 2 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                writer.Write(Caption);
+                if (ReplyMarkup != null)
+                {
+                    ReplyMarkup.Write(writer);
+                }
+
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                int flags = reader.ReadInt32();
+                Caption = reader.ReadString();
+                if ((flags & (1 << 2)) != 0)
+                {
+                    ReplyMarkup = reader.Read<ReplyMarkup>();
+                }
+
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(BotInlineMessageMediaAutoType Caption:{0} ReplyMarkup:{1})", Caption, ReplyMarkup);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Caption": return Caption;
+                        case "ReplyMarkup": return ReplyMarkup;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Caption":
+                    case "ReplyMarkup": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class BotInlineMessageTextType : BotInlineMessage
+        {
+            public override Types ConstructorCode => Types.BotInlineMessageTextType;
+
+            public True NoWebpage;
+            public string Message;
+            public List<MessageEntity> Entities;
+            public ReplyMarkup ReplyMarkup;
+
+            public BotInlineMessageTextType() { }
+
+            /// <summary>
+            /// The following arguments can be null: NoWebpage, Entities, ReplyMarkup
+            /// </summary>
+            /// <param name="NoWebpage">Can be null</param>
+            /// <param name="Message">Can NOT be null</param>
+            /// <param name="Entities">Can be null</param>
+            /// <param name="ReplyMarkup">Can be null</param>
+            public BotInlineMessageTextType(True NoWebpage, string Message, List<MessageEntity> Entities, ReplyMarkup ReplyMarkup)
+            {
+                this.NoWebpage = NoWebpage;
+                this.Message = Message;
+                this.Entities = Entities;
+                this.ReplyMarkup = ReplyMarkup;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                int flags =
+                    (NoWebpage != null ? 1 << 0 : 0) |
+                    (Entities != null ? 1 << 1 : 0) |
+                    (ReplyMarkup != null ? 1 << 2 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                if (NoWebpage != null)
+                {
+
+                }
+
+                writer.Write(Message);
+                if (Entities != null)
+                {
+                    writer.Write(0x1cb5c415); // vector code
+                    writer.Write(Entities.Count);
+                    foreach (MessageEntity EntitiesElement in Entities)
+                        EntitiesElement.Write(writer);
+                }
+
+                if (ReplyMarkup != null)
+                {
+                    ReplyMarkup.Write(writer);
+                }
+
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                int flags = reader.ReadInt32();
+                if ((flags & (1 << 0)) != 0)
+                {
+                    NoWebpage = reader.ReadTrue();
+                }
+
+                Message = reader.ReadString();
+                if ((flags & (1 << 1)) != 0)
+                {
+                    reader.ReadInt32(); // vector code
+                    int EntitiesLength = reader.ReadInt32();
+                    Entities = new List<MessageEntity>(EntitiesLength);
+                    for (int EntitiesIndex = 0; EntitiesIndex < EntitiesLength; EntitiesIndex++)
+                        Entities.Add(reader.Read<MessageEntity>());
+                }
+
+                if ((flags & (1 << 2)) != 0)
+                {
+                    ReplyMarkup = reader.Read<ReplyMarkup>();
+                }
+
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(BotInlineMessageTextType NoWebpage:{0} Message:{1} Entities:{2} ReplyMarkup:{3})", NoWebpage, Message, Entities, ReplyMarkup);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "NoWebpage": return NoWebpage;
+                        case "Message": return Message;
+                        case "Entities": return Entities;
+                        case "ReplyMarkup": return ReplyMarkup;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "NoWebpage":
+                    case "Message":
+                    case "Entities":
+                    case "ReplyMarkup": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class BotInlineMessageMediaGeoType : BotInlineMessage
+        {
+            public override Types ConstructorCode => Types.BotInlineMessageMediaGeoType;
+
+            public GeoPoint Geo;
+            public ReplyMarkup ReplyMarkup;
+
+            public BotInlineMessageMediaGeoType() { }
+
+            /// <summary>
+            /// The following arguments can be null: ReplyMarkup
+            /// </summary>
+            /// <param name="Geo">Can NOT be null</param>
+            /// <param name="ReplyMarkup">Can be null</param>
+            public BotInlineMessageMediaGeoType(GeoPoint Geo, ReplyMarkup ReplyMarkup)
+            {
+                this.Geo = Geo;
+                this.ReplyMarkup = ReplyMarkup;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                int flags =
+                    (ReplyMarkup != null ? 1 << 2 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                Geo.Write(writer);
+                if (ReplyMarkup != null)
+                {
+                    ReplyMarkup.Write(writer);
+                }
+
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                int flags = reader.ReadInt32();
+                Geo = reader.Read<GeoPoint>();
+                if ((flags & (1 << 2)) != 0)
+                {
+                    ReplyMarkup = reader.Read<ReplyMarkup>();
+                }
+
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(BotInlineMessageMediaGeoType Geo:{0} ReplyMarkup:{1})", Geo, ReplyMarkup);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Geo": return Geo;
+                        case "ReplyMarkup": return ReplyMarkup;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Geo":
+                    case "ReplyMarkup": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class BotInlineMessageMediaVenueType : BotInlineMessage
+        {
+            public override Types ConstructorCode => Types.BotInlineMessageMediaVenueType;
+
+            public GeoPoint Geo;
+            public string Title;
+            public string Address;
+            public string Provider;
+            public string VenueId;
+            public ReplyMarkup ReplyMarkup;
+
+            public BotInlineMessageMediaVenueType() { }
+
+            /// <summary>
+            /// The following arguments can be null: ReplyMarkup
+            /// </summary>
+            /// <param name="Geo">Can NOT be null</param>
+            /// <param name="Title">Can NOT be null</param>
+            /// <param name="Address">Can NOT be null</param>
+            /// <param name="Provider">Can NOT be null</param>
+            /// <param name="VenueId">Can NOT be null</param>
+            /// <param name="ReplyMarkup">Can be null</param>
+            public BotInlineMessageMediaVenueType(GeoPoint Geo, string Title, string Address, string Provider, string VenueId, ReplyMarkup ReplyMarkup)
+            {
+                this.Geo = Geo;
+                this.Title = Title;
+                this.Address = Address;
+                this.Provider = Provider;
+                this.VenueId = VenueId;
+                this.ReplyMarkup = ReplyMarkup;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                int flags =
+                    (ReplyMarkup != null ? 1 << 2 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                Geo.Write(writer);
+                writer.Write(Title);
+                writer.Write(Address);
+                writer.Write(Provider);
+                writer.Write(VenueId);
+                if (ReplyMarkup != null)
+                {
+                    ReplyMarkup.Write(writer);
+                }
+
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                int flags = reader.ReadInt32();
+                Geo = reader.Read<GeoPoint>();
+                Title = reader.ReadString();
+                Address = reader.ReadString();
+                Provider = reader.ReadString();
+                VenueId = reader.ReadString();
+                if ((flags & (1 << 2)) != 0)
+                {
+                    ReplyMarkup = reader.Read<ReplyMarkup>();
+                }
+
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(BotInlineMessageMediaVenueType Geo:{0} Title:{1} Address:{2} Provider:{3} VenueId:{4} ReplyMarkup:{5})", Geo, Title, Address, Provider, VenueId, ReplyMarkup);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Geo": return Geo;
+                        case "Title": return Title;
+                        case "Address": return Address;
+                        case "Provider": return Provider;
+                        case "VenueId": return VenueId;
+                        case "ReplyMarkup": return ReplyMarkup;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Geo":
+                    case "Title":
+                    case "Address":
+                    case "Provider":
+                    case "VenueId":
+                    case "ReplyMarkup": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class BotInlineMessageMediaContactType : BotInlineMessage
+        {
+            public override Types ConstructorCode => Types.BotInlineMessageMediaContactType;
+
+            public string PhoneNumber;
+            public string FirstName;
+            public string LastName;
+            public ReplyMarkup ReplyMarkup;
+
+            public BotInlineMessageMediaContactType() { }
+
+            /// <summary>
+            /// The following arguments can be null: ReplyMarkup
+            /// </summary>
+            /// <param name="PhoneNumber">Can NOT be null</param>
+            /// <param name="FirstName">Can NOT be null</param>
+            /// <param name="LastName">Can NOT be null</param>
+            /// <param name="ReplyMarkup">Can be null</param>
+            public BotInlineMessageMediaContactType(string PhoneNumber, string FirstName, string LastName, ReplyMarkup ReplyMarkup)
+            {
+                this.PhoneNumber = PhoneNumber;
+                this.FirstName = FirstName;
+                this.LastName = LastName;
+                this.ReplyMarkup = ReplyMarkup;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                int flags =
+                    (ReplyMarkup != null ? 1 << 2 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                writer.Write(PhoneNumber);
+                writer.Write(FirstName);
+                writer.Write(LastName);
+                if (ReplyMarkup != null)
+                {
+                    ReplyMarkup.Write(writer);
+                }
+
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                int flags = reader.ReadInt32();
+                PhoneNumber = reader.ReadString();
+                FirstName = reader.ReadString();
+                LastName = reader.ReadString();
+                if ((flags & (1 << 2)) != 0)
+                {
+                    ReplyMarkup = reader.Read<ReplyMarkup>();
+                }
+
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(BotInlineMessageMediaContactType PhoneNumber:{0} FirstName:{1} LastName:{2} ReplyMarkup:{3})", PhoneNumber, FirstName, LastName, ReplyMarkup);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "PhoneNumber": return PhoneNumber;
+                        case "FirstName": return FirstName;
+                        case "LastName": return LastName;
+                        case "ReplyMarkup": return ReplyMarkup;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "PhoneNumber":
+                    case "FirstName":
+                    case "LastName":
+                    case "ReplyMarkup": return true;
                     default: return false;
                 }
             }
@@ -33393,39 +35535,48 @@ namespace TeleTurk.Core.MTProto
 
                 writer.Write(Id);
                 writer.Write(Type);
-                if (Title != null) {
+                if (Title != null)
+                {
                     writer.Write(Title);
                 }
 
-                if (Description != null) {
+                if (Description != null)
+                {
                     writer.Write(Description);
                 }
 
-                if (Url != null) {
+                if (Url != null)
+                {
                     writer.Write(Url);
                 }
 
-                if (ThumbUrl != null) {
+                if (ThumbUrl != null)
+                {
                     writer.Write(ThumbUrl);
                 }
 
-                if (ContentUrl != null) {
+                if (ContentUrl != null)
+                {
                     writer.Write(ContentUrl);
                 }
 
-                if (ContentType != null) {
+                if (ContentType != null)
+                {
                     writer.Write(ContentType);
                 }
 
-                if (W != null) {
+                if (W != null)
+                {
                     writer.Write(W.Value);
                 }
 
-                if (H != null) {
+                if (H != null)
+                {
                     writer.Write(H.Value);
                 }
 
-                if (Duration != null) {
+                if (Duration != null)
+                {
                     writer.Write(Duration.Value);
                 }
 
@@ -33437,39 +35588,48 @@ namespace TeleTurk.Core.MTProto
                 int flags = reader.ReadInt32();
                 Id = reader.ReadString();
                 Type = reader.ReadString();
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     Title = reader.ReadString();
                 }
 
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     Description = reader.ReadString();
                 }
 
-                if ((flags & (1 << 3)) != 0) {
+                if ((flags & (1 << 3)) != 0)
+                {
                     Url = reader.ReadString();
                 }
 
-                if ((flags & (1 << 4)) != 0) {
+                if ((flags & (1 << 4)) != 0)
+                {
                     ThumbUrl = reader.ReadString();
                 }
 
-                if ((flags & (1 << 5)) != 0) {
+                if ((flags & (1 << 5)) != 0)
+                {
                     ContentUrl = reader.ReadString();
                 }
 
-                if ((flags & (1 << 5)) != 0) {
+                if ((flags & (1 << 5)) != 0)
+                {
                     ContentType = reader.ReadString();
                 }
 
-                if ((flags & (1 << 6)) != 0) {
+                if ((flags & (1 << 6)) != 0)
+                {
                     W = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 6)) != 0) {
+                if ((flags & (1 << 6)) != 0)
+                {
                     H = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 7)) != 0) {
+                if ((flags & (1 << 7)) != 0)
+                {
                     Duration = reader.ReadInt32();
                 }
 
@@ -33525,6 +35685,144 @@ namespace TeleTurk.Core.MTProto
             }
         }
 
+        public class BotInlineMediaResultType : BotInlineResult
+        {
+            public override Types ConstructorCode => Types.BotInlineMediaResultType;
+
+            public string Id;
+            public string Type;
+            public Photo Photo;
+            public Document Document;
+            public string Title;
+            public string Description;
+            public BotInlineMessage SendMessage;
+
+            public BotInlineMediaResultType() { }
+
+            /// <summary>
+            /// The following arguments can be null: Photo, Document, Title, Description
+            /// </summary>
+            /// <param name="Id">Can NOT be null</param>
+            /// <param name="Type">Can NOT be null</param>
+            /// <param name="Photo">Can be null</param>
+            /// <param name="Document">Can be null</param>
+            /// <param name="Title">Can be null</param>
+            /// <param name="Description">Can be null</param>
+            /// <param name="SendMessage">Can NOT be null</param>
+            public BotInlineMediaResultType(string Id, string Type, Photo Photo, Document Document, string Title, string Description, BotInlineMessage SendMessage)
+            {
+                this.Id = Id;
+                this.Type = Type;
+                this.Photo = Photo;
+                this.Document = Document;
+                this.Title = Title;
+                this.Description = Description;
+                this.SendMessage = SendMessage;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                int flags =
+                    (Photo != null ? 1 << 0 : 0) |
+                    (Document != null ? 1 << 1 : 0) |
+                    (Title != null ? 1 << 2 : 0) |
+                    (Description != null ? 1 << 3 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                writer.Write(Id);
+                writer.Write(Type);
+                if (Photo != null)
+                {
+                    Photo.Write(writer);
+                }
+
+                if (Document != null)
+                {
+                    Document.Write(writer);
+                }
+
+                if (Title != null)
+                {
+                    writer.Write(Title);
+                }
+
+                if (Description != null)
+                {
+                    writer.Write(Description);
+                }
+
+                SendMessage.Write(writer);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                int flags = reader.ReadInt32();
+                Id = reader.ReadString();
+                Type = reader.ReadString();
+                if ((flags & (1 << 0)) != 0)
+                {
+                    Photo = reader.Read<Photo>();
+                }
+
+                if ((flags & (1 << 1)) != 0)
+                {
+                    Document = reader.Read<Document>();
+                }
+
+                if ((flags & (1 << 2)) != 0)
+                {
+                    Title = reader.ReadString();
+                }
+
+                if ((flags & (1 << 3)) != 0)
+                {
+                    Description = reader.ReadString();
+                }
+
+                SendMessage = reader.Read<BotInlineMessage>();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(BotInlineMediaResultType Id:{0} Type:{1} Photo:{2} Document:{3} Title:{4} Description:{5} SendMessage:{6})", Id, Type, Photo, Document, Title, Description, SendMessage);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Id": return Id;
+                        case "Type": return Type;
+                        case "Photo": return Photo;
+                        case "Document": return Document;
+                        case "Title": return Title;
+                        case "Description": return Description;
+                        case "SendMessage": return SendMessage;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Id":
+                    case "Type":
+                    case "Photo":
+                    case "Document":
+                    case "Title":
+                    case "Description":
+                    case "SendMessage": return true;
+                    default: return false;
+                }
+            }
+        }
+
         public class MessagesBotResultsType : MessagesBotResults
         {
             public override Types ConstructorCode => Types.MessagesBotResultsType;
@@ -33532,22 +35830,25 @@ namespace TeleTurk.Core.MTProto
             public True Gallery;
             public long QueryId;
             public string NextOffset;
+            public InlineBotSwitchPM SwitchPm;
             public List<BotInlineResult> Results;
 
             public MessagesBotResultsType() { }
 
             /// <summary>
-            /// The following arguments can be null: Gallery, NextOffset
+            /// The following arguments can be null: Gallery, NextOffset, SwitchPm
             /// </summary>
             /// <param name="Gallery">Can be null</param>
             /// <param name="QueryId">Can NOT be null</param>
             /// <param name="NextOffset">Can be null</param>
+            /// <param name="SwitchPm">Can be null</param>
             /// <param name="Results">Can NOT be null</param>
-            public MessagesBotResultsType(True Gallery, long QueryId, string NextOffset, List<BotInlineResult> Results)
+            public MessagesBotResultsType(True Gallery, long QueryId, string NextOffset, InlineBotSwitchPM SwitchPm, List<BotInlineResult> Results)
             {
                 this.Gallery = Gallery;
                 this.QueryId = QueryId;
                 this.NextOffset = NextOffset;
+                this.SwitchPm = SwitchPm;
                 this.Results = Results;
             }
 
@@ -33555,18 +35856,26 @@ namespace TeleTurk.Core.MTProto
             {
                 int flags =
                     (Gallery != null ? 1 << 0 : 0) |
-                    (NextOffset != null ? 1 << 1 : 0);
+                    (NextOffset != null ? 1 << 1 : 0) |
+                    (SwitchPm != null ? 1 << 2 : 0);
 
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (Gallery != null) {
+                if (Gallery != null)
+                {
 
                 }
 
                 writer.Write(QueryId);
-                if (NextOffset != null) {
+                if (NextOffset != null)
+                {
                     writer.Write(NextOffset);
+                }
+
+                if (SwitchPm != null)
+                {
+                    SwitchPm.Write(writer);
                 }
 
                 writer.Write(0x1cb5c415); // vector code
@@ -33578,13 +35887,20 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     Gallery = reader.ReadTrue();
                 }
 
                 QueryId = reader.ReadInt64();
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     NextOffset = reader.ReadString();
+                }
+
+                if ((flags & (1 << 2)) != 0)
+                {
+                    SwitchPm = reader.Read<InlineBotSwitchPM>();
                 }
 
                 reader.ReadInt32(); // vector code
@@ -33596,7 +35912,7 @@ namespace TeleTurk.Core.MTProto
 
             public override string ToString()
             {
-                return string.Format("(MessagesBotResultsType Gallery:{0} QueryId:{1} NextOffset:{2} Results:{3})", Gallery, QueryId, NextOffset, Results);
+                return string.Format("(MessagesBotResultsType Gallery:{0} QueryId:{1} NextOffset:{2} SwitchPm:{3} Results:{4})", Gallery, QueryId, NextOffset, SwitchPm, Results);
             }
 
             public override object this[string name]
@@ -33608,6 +35924,7 @@ namespace TeleTurk.Core.MTProto
                         case "Gallery": return Gallery;
                         case "QueryId": return QueryId;
                         case "NextOffset": return NextOffset;
+                        case "SwitchPm": return SwitchPm;
                         case "Results": return Results;
                         default: throw new KeyNotFoundException();
                     }
@@ -33621,6 +35938,7 @@ namespace TeleTurk.Core.MTProto
                     case "Gallery":
                     case "QueryId":
                     case "NextOffset":
+                    case "SwitchPm":
                     case "Results": return true;
                     default: return false;
                 }
@@ -33714,16 +36032,19 @@ namespace TeleTurk.Core.MTProto
                 writer.Write((uint)ConstructorCode);
                 writer.Write(flags);
 
-                if (FromId != null) {
+                if (FromId != null)
+                {
                     writer.Write(FromId.Value);
                 }
 
                 writer.Write(Date);
-                if (ChannelId != null) {
+                if (ChannelId != null)
+                {
                     writer.Write(ChannelId.Value);
                 }
 
-                if (ChannelPost != null) {
+                if (ChannelPost != null)
+                {
                     writer.Write(ChannelPost.Value);
                 }
 
@@ -33732,16 +36053,19 @@ namespace TeleTurk.Core.MTProto
             public override void Read(TBinaryReader reader)
             {
                 int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
+                if ((flags & (1 << 0)) != 0)
+                {
                     FromId = reader.ReadInt32();
                 }
 
                 Date = reader.ReadInt32();
-                if ((flags & (1 << 1)) != 0) {
+                if ((flags & (1 << 1)) != 0)
+                {
                     ChannelId = reader.ReadInt32();
                 }
 
-                if ((flags & (1 << 2)) != 0) {
+                if ((flags & (1 << 2)) != 0)
+                {
                     ChannelPost = reader.ReadInt32();
                 }
 
@@ -33780,73 +36104,6 @@ namespace TeleTurk.Core.MTProto
             }
         }
 
-        public class ChannelsMessageEditDataType : ChannelsMessageEditData
-        {
-            public override Types ConstructorCode => Types.ChannelsMessageEditDataType;
-
-            public True Caption;
-
-            public ChannelsMessageEditDataType() { }
-
-            /// <summary>
-            /// The following arguments can be null: Caption
-            /// </summary>
-            /// <param name="Caption">Can be null</param>
-            public ChannelsMessageEditDataType(True Caption)
-            {
-                this.Caption = Caption;
-            }
-
-            public override void Write(TBinaryWriter writer)
-            {
-                int flags =
-                    (Caption != null ? 1 << 0 : 0);
-
-                writer.Write((uint)ConstructorCode);
-                writer.Write(flags);
-
-                if (Caption != null) {
-
-                }
-
-            }
-
-            public override void Read(TBinaryReader reader)
-            {
-                int flags = reader.ReadInt32();
-                if ((flags & (1 << 0)) != 0) {
-                    Caption = reader.ReadTrue();
-                }
-
-            }
-
-            public override string ToString()
-            {
-                return string.Format("(ChannelsMessageEditDataType Caption:{0})", Caption);
-            }
-
-            public override object this[string name]
-            {
-                get
-                {
-                    switch (name)
-                    {
-                        case "Caption": return Caption;
-                        default: throw new KeyNotFoundException();
-                    }
-                }
-            }
-
-            public override bool HasKey(string name)
-            {
-                switch (name)
-                {
-                    case "Caption": return true;
-                    default: return false;
-                }
-            }
-        }
-
         public class AuthCodeTypeSmsType : AuthCodeType
         {
             public override Types ConstructorCode => Types.AuthCodeTypeSmsType;
@@ -33868,7 +36125,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -33894,7 +36151,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -33920,7 +36177,7 @@ namespace TeleTurk.Core.MTProto
             }
 
             public override object this[string name]
-             { get { throw new InvalidOperationException("This type has no properties"); } }
+            { get { throw new InvalidOperationException("This type has no properties"); } }
 
             public override bool HasKey(string name) => false;
         }
@@ -34124,6 +36381,898 @@ namespace TeleTurk.Core.MTProto
                 switch (name)
                 {
                     case "Pattern": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class MessagesBotCallbackAnswerType : MessagesBotCallbackAnswer
+        {
+            public override Types ConstructorCode => Types.MessagesBotCallbackAnswerType;
+
+            public True Alert;
+            public string Message;
+
+            public MessagesBotCallbackAnswerType() { }
+
+            /// <summary>
+            /// The following arguments can be null: Alert, Message
+            /// </summary>
+            /// <param name="Alert">Can be null</param>
+            /// <param name="Message">Can be null</param>
+            public MessagesBotCallbackAnswerType(True Alert, string Message)
+            {
+                this.Alert = Alert;
+                this.Message = Message;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                int flags =
+                    (Alert != null ? 1 << 1 : 0) |
+                    (Message != null ? 1 << 0 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                if (Alert != null)
+                {
+
+                }
+
+                if (Message != null)
+                {
+                    writer.Write(Message);
+                }
+
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                int flags = reader.ReadInt32();
+                if ((flags & (1 << 1)) != 0)
+                {
+                    Alert = reader.ReadTrue();
+                }
+
+                if ((flags & (1 << 0)) != 0)
+                {
+                    Message = reader.ReadString();
+                }
+
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(MessagesBotCallbackAnswerType Alert:{0} Message:{1})", Alert, Message);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Alert": return Alert;
+                        case "Message": return Message;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Alert":
+                    case "Message": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class MessagesMessageEditDataType : MessagesMessageEditData
+        {
+            public override Types ConstructorCode => Types.MessagesMessageEditDataType;
+
+            public True Caption;
+
+            public MessagesMessageEditDataType() { }
+
+            /// <summary>
+            /// The following arguments can be null: Caption
+            /// </summary>
+            /// <param name="Caption">Can be null</param>
+            public MessagesMessageEditDataType(True Caption)
+            {
+                this.Caption = Caption;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                int flags =
+                    (Caption != null ? 1 << 0 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                if (Caption != null)
+                {
+
+                }
+
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                int flags = reader.ReadInt32();
+                if ((flags & (1 << 0)) != 0)
+                {
+                    Caption = reader.ReadTrue();
+                }
+
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(MessagesMessageEditDataType Caption:{0})", Caption);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Caption": return Caption;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Caption": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class InputBotInlineMessageIDType : InputBotInlineMessageID
+        {
+            public override Types ConstructorCode => Types.InputBotInlineMessageIDType;
+
+            public int DcId;
+            public long Id;
+            public long AccessHash;
+
+            public InputBotInlineMessageIDType() { }
+
+            public InputBotInlineMessageIDType(int DcId, long Id, long AccessHash)
+            {
+                this.DcId = DcId;
+                this.Id = Id;
+                this.AccessHash = AccessHash;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(DcId);
+                writer.Write(Id);
+                writer.Write(AccessHash);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                DcId = reader.ReadInt32();
+                Id = reader.ReadInt64();
+                AccessHash = reader.ReadInt64();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(InputBotInlineMessageIDType DcId:{0} Id:{1} AccessHash:{2})", DcId, Id, AccessHash);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "DcId": return DcId;
+                        case "Id": return Id;
+                        case "AccessHash": return AccessHash;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "DcId":
+                    case "Id":
+                    case "AccessHash": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class InlineBotSwitchPMType : InlineBotSwitchPM
+        {
+            public override Types ConstructorCode => Types.InlineBotSwitchPMType;
+
+            public string Text;
+            public string StartParam;
+
+            public InlineBotSwitchPMType() { }
+
+            public InlineBotSwitchPMType(string Text, string StartParam)
+            {
+                this.Text = Text;
+                this.StartParam = StartParam;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(Text);
+                writer.Write(StartParam);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                Text = reader.ReadString();
+                StartParam = reader.ReadString();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(InlineBotSwitchPMType Text:{0} StartParam:{1})", Text, StartParam);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Text": return Text;
+                        case "StartParam": return StartParam;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Text":
+                    case "StartParam": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class MessagesPeerDialogsType : MessagesPeerDialogs
+        {
+            public override Types ConstructorCode => Types.MessagesPeerDialogsType;
+
+            public List<Dialog> Dialogs;
+            public List<Message> Messages;
+            public List<Chat> Chats;
+            public List<User> Users;
+            public UpdatesState State;
+
+            public MessagesPeerDialogsType() { }
+
+            public MessagesPeerDialogsType(List<Dialog> Dialogs, List<Message> Messages, List<Chat> Chats, List<User> Users, UpdatesState State)
+            {
+                this.Dialogs = Dialogs;
+                this.Messages = Messages;
+                this.Chats = Chats;
+                this.Users = Users;
+                this.State = State;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(0x1cb5c415); // vector code
+                writer.Write(Dialogs.Count);
+                foreach (Dialog DialogsElement in Dialogs)
+                    DialogsElement.Write(writer);
+                writer.Write(0x1cb5c415); // vector code
+                writer.Write(Messages.Count);
+                foreach (Message MessagesElement in Messages)
+                    MessagesElement.Write(writer);
+                writer.Write(0x1cb5c415); // vector code
+                writer.Write(Chats.Count);
+                foreach (Chat ChatsElement in Chats)
+                    ChatsElement.Write(writer);
+                writer.Write(0x1cb5c415); // vector code
+                writer.Write(Users.Count);
+                foreach (User UsersElement in Users)
+                    UsersElement.Write(writer);
+                State.Write(writer);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                reader.ReadInt32(); // vector code
+                int DialogsLength = reader.ReadInt32();
+                Dialogs = new List<Dialog>(DialogsLength);
+                for (int DialogsIndex = 0; DialogsIndex < DialogsLength; DialogsIndex++)
+                    Dialogs.Add(reader.Read<Dialog>());
+                reader.ReadInt32(); // vector code
+                int MessagesLength = reader.ReadInt32();
+                Messages = new List<Message>(MessagesLength);
+                for (int MessagesIndex = 0; MessagesIndex < MessagesLength; MessagesIndex++)
+                    Messages.Add(reader.Read<Message>());
+                reader.ReadInt32(); // vector code
+                int ChatsLength = reader.ReadInt32();
+                Chats = new List<Chat>(ChatsLength);
+                for (int ChatsIndex = 0; ChatsIndex < ChatsLength; ChatsIndex++)
+                    Chats.Add(reader.Read<Chat>());
+                reader.ReadInt32(); // vector code
+                int UsersLength = reader.ReadInt32();
+                Users = new List<User>(UsersLength);
+                for (int UsersIndex = 0; UsersIndex < UsersLength; UsersIndex++)
+                    Users.Add(reader.Read<User>());
+                State = reader.Read<UpdatesState>();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(MessagesPeerDialogsType Dialogs:{0} Messages:{1} Chats:{2} Users:{3} State:{4})", Dialogs, Messages, Chats, Users, State);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Dialogs": return Dialogs;
+                        case "Messages": return Messages;
+                        case "Chats": return Chats;
+                        case "Users": return Users;
+                        case "State": return State;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Dialogs":
+                    case "Messages":
+                    case "Chats":
+                    case "Users":
+                    case "State": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class TopPeerType : TopPeer
+        {
+            public override Types ConstructorCode => Types.TopPeerType;
+
+            public Peer Peer;
+            public double Rating;
+
+            public TopPeerType() { }
+
+            public TopPeerType(Peer Peer, double Rating)
+            {
+                this.Peer = Peer;
+                this.Rating = Rating;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                Peer.Write(writer);
+                writer.Write(Rating);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                Peer = reader.Read<Peer>();
+                Rating = reader.ReadDouble();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(TopPeerType Peer:{0} Rating:{1})", Peer, Rating);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Peer": return Peer;
+                        case "Rating": return Rating;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Peer":
+                    case "Rating": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class TopPeerCategoryBotsPMType : TopPeerCategory
+        {
+            public override Types ConstructorCode => Types.TopPeerCategoryBotsPMType;
+
+            public TopPeerCategoryBotsPMType() { }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+            }
+
+            public override string ToString()
+            {
+                return "(TopPeerCategoryBotsPMType)";
+            }
+
+            public override object this[string name]
+            { get { throw new InvalidOperationException("This type has no properties"); } }
+
+            public override bool HasKey(string name) => false;
+        }
+
+        public class TopPeerCategoryBotsInlineType : TopPeerCategory
+        {
+            public override Types ConstructorCode => Types.TopPeerCategoryBotsInlineType;
+
+            public TopPeerCategoryBotsInlineType() { }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+            }
+
+            public override string ToString()
+            {
+                return "(TopPeerCategoryBotsInlineType)";
+            }
+
+            public override object this[string name]
+            { get { throw new InvalidOperationException("This type has no properties"); } }
+
+            public override bool HasKey(string name) => false;
+        }
+
+        public class TopPeerCategoryCorrespondentsType : TopPeerCategory
+        {
+            public override Types ConstructorCode => Types.TopPeerCategoryCorrespondentsType;
+
+            public TopPeerCategoryCorrespondentsType() { }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+            }
+
+            public override string ToString()
+            {
+                return "(TopPeerCategoryCorrespondentsType)";
+            }
+
+            public override object this[string name]
+            { get { throw new InvalidOperationException("This type has no properties"); } }
+
+            public override bool HasKey(string name) => false;
+        }
+
+        public class TopPeerCategoryGroupsType : TopPeerCategory
+        {
+            public override Types ConstructorCode => Types.TopPeerCategoryGroupsType;
+
+            public TopPeerCategoryGroupsType() { }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+            }
+
+            public override string ToString()
+            {
+                return "(TopPeerCategoryGroupsType)";
+            }
+
+            public override object this[string name]
+            { get { throw new InvalidOperationException("This type has no properties"); } }
+
+            public override bool HasKey(string name) => false;
+        }
+
+        public class TopPeerCategoryChannelsType : TopPeerCategory
+        {
+            public override Types ConstructorCode => Types.TopPeerCategoryChannelsType;
+
+            public TopPeerCategoryChannelsType() { }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+            }
+
+            public override string ToString()
+            {
+                return "(TopPeerCategoryChannelsType)";
+            }
+
+            public override object this[string name]
+            { get { throw new InvalidOperationException("This type has no properties"); } }
+
+            public override bool HasKey(string name) => false;
+        }
+
+        public class TopPeerCategoryPeersType : TopPeerCategoryPeers
+        {
+            public override Types ConstructorCode => Types.TopPeerCategoryPeersType;
+
+            public TopPeerCategory Category;
+            public int Count;
+            public List<TopPeer> Peers;
+
+            public TopPeerCategoryPeersType() { }
+
+            public TopPeerCategoryPeersType(TopPeerCategory Category, int Count, List<TopPeer> Peers)
+            {
+                this.Category = Category;
+                this.Count = Count;
+                this.Peers = Peers;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                Category.Write(writer);
+                writer.Write(Count);
+                writer.Write(0x1cb5c415); // vector code
+                writer.Write(Peers.Count);
+                foreach (TopPeer PeersElement in Peers)
+                    PeersElement.Write(writer);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                Category = reader.Read<TopPeerCategory>();
+                Count = reader.ReadInt32();
+                reader.ReadInt32(); // vector code
+                int PeersLength = reader.ReadInt32();
+                Peers = new List<TopPeer>(PeersLength);
+                for (int PeersIndex = 0; PeersIndex < PeersLength; PeersIndex++)
+                    Peers.Add(reader.Read<TopPeer>());
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(TopPeerCategoryPeersType Category:{0} Count:{1} Peers:{2})", Category, Count, Peers);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Category": return Category;
+                        case "Count": return Count;
+                        case "Peers": return Peers;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Category":
+                    case "Count":
+                    case "Peers": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class ContactsTopPeersNotModifiedType : ContactsTopPeers
+        {
+            public override Types ConstructorCode => Types.ContactsTopPeersNotModifiedType;
+
+            public ContactsTopPeersNotModifiedType() { }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+            }
+
+            public override string ToString()
+            {
+                return "(ContactsTopPeersNotModifiedType)";
+            }
+
+            public override object this[string name]
+            { get { throw new InvalidOperationException("This type has no properties"); } }
+
+            public override bool HasKey(string name) => false;
+        }
+
+        public class ContactsTopPeersType : ContactsTopPeers
+        {
+            public override Types ConstructorCode => Types.ContactsTopPeersType;
+
+            public List<TopPeerCategoryPeers> Categories;
+            public List<Chat> Chats;
+            public List<User> Users;
+
+            public ContactsTopPeersType() { }
+
+            public ContactsTopPeersType(List<TopPeerCategoryPeers> Categories, List<Chat> Chats, List<User> Users)
+            {
+                this.Categories = Categories;
+                this.Chats = Chats;
+                this.Users = Users;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+                writer.Write(0x1cb5c415); // vector code
+                writer.Write(Categories.Count);
+                foreach (TopPeerCategoryPeers CategoriesElement in Categories)
+                    CategoriesElement.Write(writer);
+                writer.Write(0x1cb5c415); // vector code
+                writer.Write(Chats.Count);
+                foreach (Chat ChatsElement in Chats)
+                    ChatsElement.Write(writer);
+                writer.Write(0x1cb5c415); // vector code
+                writer.Write(Users.Count);
+                foreach (User UsersElement in Users)
+                    UsersElement.Write(writer);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                reader.ReadInt32(); // vector code
+                int CategoriesLength = reader.ReadInt32();
+                Categories = new List<TopPeerCategoryPeers>(CategoriesLength);
+                for (int CategoriesIndex = 0; CategoriesIndex < CategoriesLength; CategoriesIndex++)
+                    Categories.Add(reader.Read<TopPeerCategoryPeers>());
+                reader.ReadInt32(); // vector code
+                int ChatsLength = reader.ReadInt32();
+                Chats = new List<Chat>(ChatsLength);
+                for (int ChatsIndex = 0; ChatsIndex < ChatsLength; ChatsIndex++)
+                    Chats.Add(reader.Read<Chat>());
+                reader.ReadInt32(); // vector code
+                int UsersLength = reader.ReadInt32();
+                Users = new List<User>(UsersLength);
+                for (int UsersIndex = 0; UsersIndex < UsersLength; UsersIndex++)
+                    Users.Add(reader.Read<User>());
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(ContactsTopPeersType Categories:{0} Chats:{1} Users:{2})", Categories, Chats, Users);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "Categories": return Categories;
+                        case "Chats": return Chats;
+                        case "Users": return Users;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "Categories":
+                    case "Chats":
+                    case "Users": return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public class DraftMessageEmptyType : DraftMessage
+        {
+            public override Types ConstructorCode => Types.DraftMessageEmptyType;
+
+            public DraftMessageEmptyType() { }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                writer.Write((uint)ConstructorCode);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+            }
+
+            public override string ToString()
+            {
+                return "(DraftMessageEmptyType)";
+            }
+
+            public override object this[string name]
+            { get { throw new InvalidOperationException("This type has no properties"); } }
+
+            public override bool HasKey(string name) => false;
+        }
+
+        public class DraftMessageType : DraftMessage
+        {
+            public override Types ConstructorCode => Types.DraftMessageType;
+
+            public True NoWebpage;
+            public int? ReplyToMsgId;
+            public string Message;
+            public List<MessageEntity> Entities;
+            public int Date;
+
+            public DraftMessageType() { }
+
+            /// <summary>
+            /// The following arguments can be null: NoWebpage, ReplyToMsgId, Entities
+            /// </summary>
+            /// <param name="NoWebpage">Can be null</param>
+            /// <param name="ReplyToMsgId">Can be null</param>
+            /// <param name="Message">Can NOT be null</param>
+            /// <param name="Entities">Can be null</param>
+            /// <param name="Date">Can NOT be null</param>
+            public DraftMessageType(True NoWebpage, int? ReplyToMsgId, string Message, List<MessageEntity> Entities, int Date)
+            {
+                this.NoWebpage = NoWebpage;
+                this.ReplyToMsgId = ReplyToMsgId;
+                this.Message = Message;
+                this.Entities = Entities;
+                this.Date = Date;
+            }
+
+            public override void Write(TBinaryWriter writer)
+            {
+                int flags =
+                    (NoWebpage != null ? 1 << 1 : 0) |
+                    (ReplyToMsgId != null ? 1 << 0 : 0) |
+                    (Entities != null ? 1 << 3 : 0);
+
+                writer.Write((uint)ConstructorCode);
+                writer.Write(flags);
+
+                if (NoWebpage != null)
+                {
+
+                }
+
+                if (ReplyToMsgId != null)
+                {
+                    writer.Write(ReplyToMsgId.Value);
+                }
+
+                writer.Write(Message);
+                if (Entities != null)
+                {
+                    writer.Write(0x1cb5c415); // vector code
+                    writer.Write(Entities.Count);
+                    foreach (MessageEntity EntitiesElement in Entities)
+                        EntitiesElement.Write(writer);
+                }
+
+                writer.Write(Date);
+            }
+
+            public override void Read(TBinaryReader reader)
+            {
+                int flags = reader.ReadInt32();
+                if ((flags & (1 << 1)) != 0)
+                {
+                    NoWebpage = reader.ReadTrue();
+                }
+
+                if ((flags & (1 << 0)) != 0)
+                {
+                    ReplyToMsgId = reader.ReadInt32();
+                }
+
+                Message = reader.ReadString();
+                if ((flags & (1 << 3)) != 0)
+                {
+                    reader.ReadInt32(); // vector code
+                    int EntitiesLength = reader.ReadInt32();
+                    Entities = new List<MessageEntity>(EntitiesLength);
+                    for (int EntitiesIndex = 0; EntitiesIndex < EntitiesLength; EntitiesIndex++)
+                        Entities.Add(reader.Read<MessageEntity>());
+                }
+
+                Date = reader.ReadInt32();
+            }
+
+            public override string ToString()
+            {
+                return string.Format("(DraftMessageType NoWebpage:{0} ReplyToMsgId:{1} Message:{2} Entities:{3} Date:{4})", NoWebpage, ReplyToMsgId, Message, Entities, Date);
+            }
+
+            public override object this[string name]
+            {
+                get
+                {
+                    switch (name)
+                    {
+                        case "NoWebpage": return NoWebpage;
+                        case "ReplyToMsgId": return ReplyToMsgId;
+                        case "Message": return Message;
+                        case "Entities": return Entities;
+                        case "Date": return Date;
+                        default: throw new KeyNotFoundException();
+                    }
+                }
+            }
+
+            public override bool HasKey(string name)
+            {
+                switch (name)
+                {
+                    case "NoWebpage":
+                    case "ReplyToMsgId":
+                    case "Message":
+                    case "Entities":
+                    case "Date": return true;
                     default: return false;
                 }
             }

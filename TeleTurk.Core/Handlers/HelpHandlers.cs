@@ -29,9 +29,9 @@ namespace TeleTurk.Core.Handlers
             return await _sender.SendReceive<NearestDc>(new TL.HelpGetNearestDcRequest());
         }
 
-        public async Task<HelpAppUpdate> getAppUpdate(string device_model, string system_version, string app_version, string lang_code)
+        public async Task<HelpAppUpdate> getAppUpdate()
         {
-            return await _sender.SendReceive<HelpAppUpdate>(new TL.HelpGetAppUpdateRequest(device_model, system_version, app_version, lang_code));
+            return await _sender.SendReceive<HelpAppUpdate>(new TL.HelpGetAppUpdateRequest());
         }
 
         public async Task<bool> saveAppLog(List<InputAppEvent> events)
@@ -39,9 +39,9 @@ namespace TeleTurk.Core.Handlers
             return await _sender.SendReceive<bool>(new TL.HelpSaveAppLogRequest(events));
         }
 
-        public async Task<string> getInviteText(string lang_code)
+        public async Task<string> getInviteText()
         {
-            return await _sender.SendReceive<string>(new TL.HelpGetInviteTextRequest(lang_code));
+            return await _sender.SendReceive<string>(new TL.HelpGetInviteTextRequest());
         }
 
         public async Task<HelpSupport> getSupport()
@@ -49,9 +49,9 @@ namespace TeleTurk.Core.Handlers
             return await _sender.SendReceive<HelpSupport>(new TL.HelpGetSupportRequest());
         }
 
-        public async Task<HelpAppChangelog> getAppChangelog(string device_model, string system_version, string app_version, string lang_code)
+        public async Task<HelpAppChangelog> getAppChangelog()
         {
-            return await _sender.SendReceive<HelpAppChangelog>(new TL.HelpGetAppChangelogRequest(device_model, system_version, app_version, lang_code));
+            return await _sender.SendReceive<HelpAppChangelog>(new TL.HelpGetAppChangelogRequest());
         }
 
         public async Task<string> getTermsOfService()

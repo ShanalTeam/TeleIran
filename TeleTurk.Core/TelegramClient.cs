@@ -105,7 +105,7 @@ namespace TeleTurk.Core
 
             while (!completed)
             {
-                request = new TL.AuthSendCodeRequest(null, config.phoneNumber, true, config.apiId, config.apiHash, config.LangCode);
+                request = new TL.AuthSendCodeRequest(null, config.phoneNumber, true, config.apiId, config.apiHash);
                 try
                 {
                     await _sender.Send(request);

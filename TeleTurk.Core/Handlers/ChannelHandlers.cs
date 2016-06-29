@@ -19,18 +19,6 @@ namespace TeleTurk.Core.Handlers
             _sender = sender;
         }
 
-        public async Task<MessagesMessages> getDialogs(int offset, int limit)
-        {
-            return await _sender.SendReceive<MessagesMessages>(new TL.ChannelsGetDialogsRequest(offset, limit));
-        }
-
-        public async Task<MessagesMessages> getImportantHistory(InputChannel input, int offset_id, int offset_date, int add_offset,
-            int limit, int max_id, int min_id)
-        {
-            return await _sender.SendReceive<MessagesMessages>(new
-                TL.ChannelsGetImportantHistoryRequest(input, offset_id, offset_date, add_offset, limit, max_id, min_id));
-        }
-
         public async Task<bool> readHistory(InputChannel channel, int max_id)
         {
             return await _sender.SendReceive<bool>(new TL.ChannelsReadHistoryRequest(channel, max_id));
@@ -99,11 +87,6 @@ namespace TeleTurk.Core.Handlers
         public async Task<Updates> editPhoto(InputChannel channel,InputChatPhoto photo)
         {
             return await _sender.SendReceive<Updates>(new TL.ChannelsEditPhotoRequest(channel, photo));
-        }
-
-        public async Task<Updates> toggleComments(InputChannel channel, bool enabled)
-        {
-            return await _sender.SendReceive<Updates>(new TL.ChannelsToggleCommentsRequest(channel, enabled));
         }
 
         public async Task<bool> checkUsername(InputChannel channel, string username)
