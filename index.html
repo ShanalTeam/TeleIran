@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Teleturk by ShanalTeam</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Teleturk</h1>
+        <h2>Telegram (http://telegram.org) client library implemented in C# - Base driven from TLSharpCore</h2>
+        <a href="https://github.com/ShanalTeam/TeleTurk" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a id="teleturk" class="anchor" href="#teleturk" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>TeleTurk</h1>
+
+<ul>
+<li>This project is driven from <a href="https://github.com/sochix/TLSharp">TLSharp</a> and thanks to Sochix.</li>
+<li>Thanks to <a href="https://github.com/XyLoNaMiyX" class="user-mention">@XyLoNaMiyX</a> for his amazing <a href="https://github.com/LonamiWebs/TLSharp.CodeGenerator">CodeGenerator</a>.</li>
+</ul>
+
+<h1>
+<a id="status" class="anchor" href="#status" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Status</h1>
+
+<p>Do not try to use this project!!! It is still under development and needs a lot of things to implement!</p>
+
+<h1>
+<a id="how-to-use" class="anchor" href="#how-to-use" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How To Use</h1>
+
+<ol>
+<li>Create a <a href="https://my.telegram.org/">developer account</a> in Telegram.</li>
+<li>Fill the <a href="https://github.com/ShanalTeam/TeleTurk/blob/master/TeleTurk.Core/Configuration.cs">Configuration.cs</a> with apiHash and apiID you got from developer account, you also need to put your registered phonenumber there. </li>
+</ol>
+
+<h2>
+<a id="authentication" class="anchor" href="#authentication" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Authentication</h2>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">var</span> store = <span class="pl-k">new</span> FileSessionStore();                     <span class="pl-c">// store session file</span>
+<span class="pl-k">var</span> client = <span class="pl-k">new</span> TelegramClient(store, <span class="pl-s"><span class="pl-pds">"</span>session<span class="pl-pds">"</span></span>);      <span class="pl-c">// create client</span>
+<span class="pl-k">await</span> client.Connect();                                 <span class="pl-c">// try to connect</span>
+<span class="pl-k">var</span> hash = <span class="pl-k">await</span> client.SendCodeRequest();              <span class="pl-c">// send Code request for registerd phone number</span>
+<span class="pl-k">var</span> code = <span class="pl-s"><span class="pl-pds">"</span>87493<span class="pl-pds">"</span></span>;                                     <span class="pl-c">// you can change code in debugger</span>
+<span class="pl-k">var</span> user = <span class="pl-k">await</span> client.MakeAuth(hash, code);           <span class="pl-c">// send code and hash to get confirm from telegram</span></pre></div>
+
+<h2>
+<a id="using-the-library" class="anchor" href="#using-the-library" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Using the library</h2>
+
+<h3>
+<a id="sending-and-receiving-requests" class="anchor" href="#sending-and-receiving-requests" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Sending and receiving requests</h3>
+
+<p>This is still a work in progress. To implement a new request, open up <code>TelegramClient.cs</code> and write down your request following this scheme:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">async</span> Task&lt;...&gt; MakeRequest(...)
+{
+    <span class="pl-k">var</span> request = <span class="pl-k">new</span> TL.SomeRequest(...);
+    <span class="pl-k">return</span> <span class="pl-k">await</span> _sender.SendReceive&lt;...&gt;(request);
+}</pre></div>
+
+<p>For example, if we wanted to write a request to delete a contact we would do:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-c">// Returns true if the contacts were deleted</span>
+<span class="pl-k">public</span> <span class="pl-k">async</span> Task&lt;<span class="pl-k">bool</span>&gt; DeleteContacts(List&lt;InputUser&gt; inputUsers)
+{
+    <span class="pl-k">var</span> request = <span class="pl-k">new</span> TL.ContactsDeleteContactsRequest(inputUsers);
+    <span class="pl-k">return</span> <span class="pl-k">await</span> _sender.SendReceive&lt;<span class="pl-k">bool</span>&gt;(request);
+}</pre></div>
+
+<h3>
+<a id="retrieving-telegram-object-properties" class="anchor" href="#retrieving-telegram-object-properties" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Retrieving Telegram object properties</h3>
+
+<p>You have different ways to use the Telegram types. One is casting the <code>abstract</code> type to its real type. For example:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-c">// We have an abstract Message object</span>
+Message message = ...;
+
+<span class="pl-c">// We want to retrieve its Id</span>
+<span class="pl-k">int</span> id;
+
+<span class="pl-c">// We need to check against what type is before casting</span>
+<span class="pl-k">if</span> (message <span class="pl-k">is</span> TL.MessageEmptyType)
+    id = ((TL.MessageType)message).Id;
+
+<span class="pl-k">else</span> <span class="pl-k">if</span> (message <span class="pl-k">is</span> TL.MessageType)
+    id = ((TL.MessageServiceType)message).Id;
+
+<span class="pl-k">else</span> <span class="pl-k">if</span> (message <span class="pl-k">is</span> TL.MessageServiceType)
+    id = ((TL.MessageServiceType)message).Id;</pre></div>
+
+<p>This however can quickly become annoying. You can also do:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-c">// Accessing the Id by using the indexer</span>
+Message message = ...;
+<span class="pl-k">int</span> id = (<span class="pl-k">int</span>)message[<span class="pl-s"><span class="pl-pds">"</span>Id<span class="pl-pds">"</span></span>];</pre></div>
+
+<p>Fairly easier!</p>
+
+<h1>
+<a id="donations" class="anchor" href="#donations" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Donations</h1>
+
+<p>Thanks for donations! It's highly appreciated. 
+Bitcoin wallet: <strong>3K1ocweFgaHnAibJ3n6hX7RNZWFTFcJjUe</strong></p>
+
+<p>List of donators:</p>
+
+<ul>
+<li><a href="https://github.com/mtbitcoin">mtbitcoin</a></li>
+</ul>
+
+<h1>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h1>
+
+<p><strong>Please, provide link to an author when you using library</strong></p>
+
+<p>The MIT License</p>
+
+<ul>
+<li>Copyright (c) 2015 Ilya Pirozhenko <a href="http://www.sochix.ru">http://www.sochix.ru</a>
+</li>
+<li>Copyright (c) 2016 Lonami <a href="http://lonamiwebs.github.io">http://lonamiwebs.github.io</a>
+</li>
+<li>Copyright (c) 2016 Ehsan Hesam <a href="http://Shanal.ir">http://Shanal.ir</a>
+</li>
+</ul>
+
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/ShanalTeam/TeleTurk/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/ShanalTeam/TeleTurk/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/ShanalTeam/TeleTurk"></a> is maintained by <a href="https://github.com/ShanalTeam">ShanalTeam</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
